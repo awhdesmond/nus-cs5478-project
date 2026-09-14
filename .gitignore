@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Fetched assets (see scripts/fetch_assets.sh)
+third_party/
+
+# Trial outputs
+results/*
+!results/.gitkeep
+*.mp4
+
+# OS / editor
+.DS_Store
+.vscode/
