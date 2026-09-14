@@ -50,6 +50,29 @@ class JointPDConfig:
 
 
 @dataclass
+class MotionConfig:
+    joint_vmax: float = 1.0  # [rad/s] joint-space moves (UR5e hardware limit ~3.14)
+    joint_amax: float = 2.0  # [rad/s²]
+    cart_vmax: float = 0.05  # [m/s] free-space Cartesian lines near the socket
+    cart_amax: float = 0.5  # [m/s²]
+    approach_height: float = 0.05  # pre-insertion tip height above the believed entrance [m]
+    via_height: float = 0.10  # via pose above pre-insertion; arbitrary starts lift to this height first [m]
+    lift_vmax: float = 0.15  # [m/s] lift and via→pre lines (clear of the socket, so faster)
+
+
+@dataclass
+class GuardedRetryConfig:
+    """Guarded-move + random-retry baseline: descend until contact; if blocked, retry elsewhere."""
+
+    hover_height: float = 0.004  # tip height above believed entrance between attempts [m]
+    descend_speed: float = 0.01  # guarded descent speed [m/s]
+    contact_force: float = 3.0  # |F| from wrist F/T that ends a guarded descent [N]
+    search_radius: float = 0.005  # retry xy sampled uniformly in ±radius around the believed entrance [m]
+    max_attempts: int = 100
+    stop_above_bottom: float = 0.0005  # descent target just above nominal hole bottom [m]
+
+
+@dataclass
 class SensorConfig:
     ft_cutoff_hz: float = 30.0  # first-order low-pass on the wrist F/T signal PLACEHOLDER
     tare_steps: int = 50  # samples averaged while holding still before motion
@@ -71,8 +94,14 @@ class TaskConfig:
 
 
 @dataclass
+class StartConfig:
+    joint_noise: float = 0.0  # [rad] uniform perturbation of the home pose per joint (collision-free resampled)
+
+
+@dataclass
 class TrialConfig:
     seed: int = 0
+    start: StartConfig = field(default_factory=StartConfig)
     scene: SceneConfig = field(default_factory=SceneConfig)
     uncertainty: UncertaintyConfig = field(default_factory=UncertaintyConfig)
     task: TaskConfig = field(default_factory=TaskConfig)

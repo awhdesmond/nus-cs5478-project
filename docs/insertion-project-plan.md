@@ -77,16 +77,29 @@ insertion is reliable.
 - Joint-space PD is soft (~1.3 N/mm) and anisotropic in Cartesian space: pressing down also pushes sideways. MuJoCo's soft friction then creeps (0.7 mm/s at 40 N). Expect Cartesian impedance to fix the anisotropy; keep creep in mind for spiral search.
 
 ### Week 2 — Nominal motion pipeline
-- [ ] Grow the week-1 Jacobian step into full IK: add orientation error, damped least squares, joint limits
-- [ ] Quintic/trapezoidal trajectory generation
-- [ ] Reliable pre-insertion reach from varied start configurations
-- [ ] **Guarded-move + random-retry baseline** implemented
-- [ ] **Report skeleton** written (headers, method text, plot placeholders) — weeknight task
+- [x] Grow the week-1 Jacobian step into full IK: add orientation error, damped least squares, joint limits (`control/ik.py`: DLS λ=0.01, joint-limit clamping, random restarts near the initial guess)
+- [x] Quintic/trapezoidal trajectory generation (`control/trajectory.py`: limit-respecting quintic joint moves; trapezoidal Cartesian lines tracked by warm-started IK + feed-forward q̇)
+- [x] Reliable pre-insertion reach from varied start configurations — 300/300 starts at ±0.25/0.5/1.0 rad joint noise, error ≤0.011 mm, no collisions. Needed: IK seeded from home (not the start) + lift → via → line-down approach
+- [x] **Guarded-move + random-retry baseline** implemented (`control/guarded.py`; grid via `scripts/evaluate.py`)
+- [x] **Report skeleton** written (headers, method text, plot placeholders) — weeknight task (`docs/report.md`)
 
 **Done =** IK reaching reliably; dumb baseline produces nonzero success rate.
 
 *Week 2 is the most loaded week. If it runs long, the report skeleton slides first; IK only
 needs to be good enough to reach the pre-insertion pose — don't polish it.*
+
+**Week 2 findings** (grid: 20 seeds per cell, ±0.25 rad start noise, 60 s budget)
+
+| Clearance | Uncertainty | Open-loop | Guarded + retry | Guarded cycle time |
+|---|---|---|---|---|
+| 3 mm | ±2 mm | 60% | 100% | 7.3 s |
+| 3 mm | ±5 mm | 10% | 100% | 17.3 s |
+| 1 mm | ±2 mm | 10% | 55% | 30.4 s |
+| 1 mm | ±5 mm | 5% | 45% | 27.6 s |
+
+- Guarded baseline at 1 mm is **time-budget limited**, not force limited: ~50 attempts at ~0.9 s each. It also samples ±5 mm regardless of the actual uncertainty level, which is why ±2 and ±5 mm score alike.
+- **Impact spikes**: touching down at 1 cm/s with the stiff joint-PD arm gives 12–29 N single-step contact force that decays within ~6 ms (10 ms average ≈ 7 N). Success is still scored on the raw peak (conservative); both are logged (`peak_force`, `peak_force_10ms`). Decide before week 5 which one the force-cap criterion uses — raw peaks sit right under the 30 N cap for the baseline.
+- Open-loop peaks reach 19–66 N on average per cell — the motivating failure for compliance.
 
 ### Weeks 2–3 — Compliance controller
 *Weekend blocks — gain tuning needs contiguous time, not scattered evenings.*

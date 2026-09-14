@@ -9,6 +9,7 @@ contact forces, penetration) is only used here, for scoring.
 """
 
 import json
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable, Protocol
@@ -19,7 +20,7 @@ import pandas as pd
 
 from insertion.config import JointPDConfig, SensorConfig, TrialConfig
 from insertion.control.joint_pd import joint_pd_torque
-from insertion.scene import build_model, hole_width
+from insertion.scene import UR5E_JOINTS, build_model, hole_width
 from insertion.sensors import FTSensor
 from insertion.sim import Sim
 
@@ -41,11 +42,13 @@ class Observation:
 
 
 class Controller(Protocol):
-    def reset(self, model: mujoco.MjModel, q0: np.ndarray, target: InsertionTarget) -> None: ...
+    def reset(self, model: mujoco.MjModel, q0: np.ndarray, target: InsertionTarget, seed: int) -> None: ...
 
     def act(self, obs: Observation) -> np.ndarray:
         """Joint torques [Nm]."""
         ...
+
+    # Optional: `info() -> dict` of controller-specific stats (e.g. retry count), logged per trial.
 
 
 @dataclass
@@ -56,11 +59,13 @@ class TrialResult:
     reached_contact: bool  # first peg contact within contact_step_budget
     contact_time: float  # [s sim time], nan if never
     cycle_time: float  # [s sim time] to seated, or elapsed time if not seated
-    peak_force: float  # [N] ground-truth contact force magnitude
+    peak_force: float  # [N] ground-truth contact force magnitude, single-step (includes ~1 ms impact spikes)
+    peak_force_10ms: float  # [N] peak of the 10 ms moving average (sustained force)
     peak_ft_force: float  # [N] filtered F/T force magnitude (what the controller saw)
     max_penetration: float  # [m]
     final_depth: float  # [m] tip depth below the true entrance
     failure_reason: str = ""
+    controller_info: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -92,6 +97,22 @@ def believed_entrance(cfg: TrialConfig, true_entrance: np.ndarray) -> np.ndarray
     return true_entrance + np.array([*rng.uniform(-t, t, size=2), 0.0])
 
 
+def perturbed_start(sim: Sim, cfg: TrialConfig, max_tries: int = 100) -> None:
+    """Move the arm to home + seeded uniform joint noise, resampling until collision-free."""
+    noise = cfg.start.joint_noise
+    if noise <= 0:
+        return
+    rng = np.random.default_rng([cfg.seed, 1])  # separate stream from the socket-pose uncertainty
+    q_home = sim.q()
+    lower, upper = sim.model.jnt_range[[sim.model.joint(j).id for j in UR5E_JOINTS]].T
+    for _ in range(max_tries):
+        sim.data.qpos[sim.qpos_adr] = np.clip(q_home + rng.uniform(-noise, noise, size=6), lower, upper)
+        mujoco.mj_forward(sim.model, sim.data)
+        if sim.data.ncon == 0:
+            return
+    raise RuntimeError(f"no collision-free start found for seed {cfg.seed} with joint_noise {noise}")
+
+
 def tare_while_holding(sim: Sim, ft: FTSensor) -> None:
     """Hold the current pose with joint PD + gravity comp and tare the F/T on the readings."""
     q_hold = sim.q()
@@ -116,6 +137,7 @@ def run_trial(
     sensor_cfg = sensor_cfg or SensorConfig()
     sim = Sim(build_model(cfg.scene))
     sim.reset()
+    perturbed_start(sim, cfg)
     ft = FTSensor(sim, sensor_cfg)
     dt = sim.model.opt.timestep
 
@@ -125,10 +147,13 @@ def run_trial(
     bottom, _ = sim.site_pose("socket_bottom")
     entrance, _ = sim.site_pose("socket_entrance")
     half_width = hole_width(cfg.scene) / 2
-    controller.reset(sim.model, sim.q(), InsertionTarget(believed_entrance(cfg, entrance), cfg.scene.socket_depth))
+    target = InsertionTarget(believed_entrance(cfg, entrance), cfg.scene.socket_depth)
+    controller.reset(sim.model, sim.q(), target, cfg.seed)
 
     traj = Trajectory() if record else None
     peak_force = peak_ft = max_pen = 0.0
+    window = np.zeros(max(1, round(0.010 / dt)))  # ring buffer for the 10 ms moving average
+    peak_force_10ms = 0.0
     contact_step = None
     seated = False
     max_steps = int(cfg.task.cycle_time_budget / dt)
@@ -143,6 +168,8 @@ def run_trial(
         contacts = sim.peg_contacts()
         force = float(np.linalg.norm(contacts.force))
         peak_force = max(peak_force, force)
+        window[step % len(window)] = force
+        peak_force_10ms = max(peak_force_10ms, float(window.mean()))
         peak_ft = max(peak_ft, float(np.linalg.norm(ft.wrench[:3])))
         max_pen = max(max_pen, contacts.max_penetration)
         if contact_step is None and contacts.count > 0:
@@ -179,12 +206,23 @@ def run_trial(
         contact_time=contact_step * dt if contact_step is not None else float("nan"),
         cycle_time=sim.time - t_start,
         peak_force=peak_force,
+        peak_force_10ms=peak_force_10ms,
         peak_ft_force=peak_ft,
         max_penetration=max_pen,
         final_depth=float(entrance[2] - tip_pos[2]),
         failure_reason=reason,
+        controller_info=controller.info() if hasattr(controller, "info") else {},
     )
     return result, traj
+
+
+def _run_one(args) -> tuple[dict, TrialConfig, Trajectory | None]:
+    cfg, controller_factory, record = args
+    result, traj = run_trial(cfg, controller_factory(), record=record)
+    row = asdict(result)
+    info = row.pop("controller_info")
+    config_cols = pd.json_normalize(cfg.to_dict(), sep=".").iloc[0].to_dict()
+    return {**row, **{f"info.{k}": v for k, v in info.items()}, **{f"cfg.{k}": v for k, v in config_cols.items()}}, cfg, traj
 
 
 def run_trials(
@@ -192,16 +230,25 @@ def run_trials(
     controller_factory: Callable[[], Controller],
     out_csv: Path,
     record_dir: Path | None = None,
+    workers: int = 1,
 ) -> pd.DataFrame:
-    """Run each config with a fresh controller; write one CSV row per trial (result + flattened config)."""
+    """Run each config with a fresh controller; write one CSV row per trial (result + info + flattened config).
+
+    `workers > 1` runs trials in parallel processes (the factory must be picklable, e.g. a class).
+    """
+    jobs = [(cfg, controller_factory, record_dir is not None) for cfg in configs]
+    if workers > 1:
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            outputs = list(pool.map(_run_one, jobs))
+    else:
+        outputs = [_run_one(job) for job in jobs]
+
     rows = []
-    for i, cfg in enumerate(configs):
-        result, traj = run_trial(cfg, controller_factory(), record=record_dir is not None)
+    for i, (row, cfg, traj) in enumerate(outputs):
         if traj is not None:
             record_dir.mkdir(parents=True, exist_ok=True)
             traj.save(record_dir / f"trial_{i:04d}_seed{cfg.seed}.npz", cfg)
-        config_cols = pd.json_normalize(cfg.to_dict(), sep=".").iloc[0].to_dict()
-        rows.append({**asdict(result), **{f"cfg.{k}": v for k, v in config_cols.items()}})
+        rows.append(row)
     df = pd.DataFrame(rows)
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_csv, index=False)

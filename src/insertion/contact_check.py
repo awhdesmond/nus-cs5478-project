@@ -12,7 +12,7 @@ import mujoco
 import numpy as np
 
 from insertion.config import JointPDConfig, SceneConfig
-from insertion.control.jacobian_step import JacobianIK
+from insertion.control.ik import JacobianIK
 from insertion.control.joint_pd import joint_pd_torque
 from insertion.scene import build_model, hole_width
 from insertion.sim import Sim

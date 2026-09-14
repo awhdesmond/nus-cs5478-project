@@ -34,7 +34,7 @@ def make_insert_callback(sim: Sim, cfg: TrialConfig):
     state = {"t_start": sim.time, "last_time": sim.time}
 
     def restart():
-        controller.reset(sim.model, sim.q(), target)
+        controller.reset(sim.model, sim.q(), target, cfg.seed)
         state["t_start"] = sim.time
 
     restart()

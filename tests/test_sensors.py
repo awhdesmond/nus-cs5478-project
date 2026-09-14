@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from insertion.config import JointPDConfig, SceneConfig, SensorConfig
-from insertion.control.jacobian_step import JacobianIK
+from insertion.control.ik import JacobianIK
 from insertion.control.joint_pd import joint_pd_torque
 from insertion.scene import hole_width, build_model
 from insertion.sensors import FTSensor
