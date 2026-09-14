@@ -1,6 +1,6 @@
 # Contact-Rich Connector Insertion with Compliant Control
 
-**CS5478 Intelligent Robots — Project Report** · *Draft skeleton (week 2). `TODO` marks sections filled in later weeks.*
+**CS5478 Intelligent Robots — Project Report** · *Draft (weeks 3.5–4). `TODO` marks sections filled in later weeks.*
 
 ---
 
@@ -31,6 +31,7 @@ A UR5e with a round peg rigidly attached to its flange must insert the peg into 
 - **Clearance** *c* (total): hole width = peg diameter + *c*, with *c* ∈ {3, 1} mm (baseline grid).
 - **Pose uncertainty**: the controller receives a *believed* socket entrance offset from the true one by a seeded uniform xy error in ±*u*, *u* ∈ {2, 5} mm. It never observes the true pose.
 - **Start pose**: home configuration plus seeded uniform joint noise (±0.25 rad), resampled until collision-free.
+- **Friction**: μ = 0.3 (typical of brass or tin-plated pins in plastic housings) is the main setting; μ = 0.8 (dry steel on steel) is a high-friction benchmark.
 - **Success**: the peg tip reaches within 2 mm of the hole bottom, inside the hole footprint, within the cycle-time budget (60 s), without the contact force exceeding the 30 N cap.
 
 ### 2.2 Simulation environment
@@ -44,18 +45,18 @@ A UR5e with a round peg rigidly attached to its flange must insert the peg into 
 
 ### 2.3 Contact validation
 
-Default MuJoCo contact parameters let the peg sink 1.16 mm into the chamfer lip under a 30 N push — more than the 0.5 mm per-side gap at 1 mm clearance, so an "insertion" could succeed by penetration rather than alignment. Stiffer contact parameters (`solref` = 5 ms, `solimp` = [0.95, 0.99, 1 mm]) reduce this to 0.21 mm. We then press the peg against the top surface (up to 40 N), the chamfer lip, the hole bottom and a hole wall at 1 mm clearance:
+Default MuJoCo contact parameters let the peg sink 1.16 mm into the chamfer lip under a 30 N push — more than the 0.5 mm per-side gap at 1 mm clearance, so an "insertion" could succeed by penetration rather than alignment. Stiffer contact parameters (`solref` = 5 ms, `solimp` = [0.95, 0.99, 1 mm]) reduce this to 0.21 mm. We then press the peg against the top surface (up to 25 N), the chamfer lip, the hole bottom and a hole wall at 1 mm clearance:
 
-**Table 1** — Contact sanity check (1 mm clearance, 1 ms timestep). Source: `results/contact_sanity.csv`.
+**Table 1** — Contact sanity check (1 mm clearance, μ = 0.3, 1 ms timestep). Source: `results/contact_sanity.csv`.
 
 | Scenario | Mean force [N] | Force jitter | Max penetration [mm] |
 |---|---|---|---|
-| Top surface (max) | 40.3 | 1.5 % | 0.054 |
-| Chamfer lip | 16.6 | 0.3 % | 0.038 |
-| Hole bottom | 18.1 | 0.02 % | 0.041 |
-| Hole wall | 10.0 | 0.06 % | 0.092 |
+| Top surface (max) | 25.5 | 0.23 % | 0.046 |
+| Chamfer lip | 10.4 | 0.10 % | 0.032 |
+| Hole bottom | 18.2 | 0.02 % | 0.031 |
+| Hole wall | 9.2 | < 0.01 % | 0.079 |
 
-All scenarios stay below 0.5 mm penetration and 5 % jitter with no solver warnings; halving the timestep changes nothing, so 1 ms is used throughout.
+All scenarios stay below 0.5 mm penetration and 5 % jitter with no solver warnings, at both μ = 0.3 and μ = 0.8. Halving the timestep changes nothing, so 1 ms is used throughout.
 
 ---
 
@@ -93,18 +94,52 @@ with τ_bias from recursive Newton–Euler. This holds the home pose with zero d
 
 ### 3.5 Compliant contact control
 
-> TODO (weeks 2–3): Cartesian impedance law at torque level, τ = Jᵀ(K Δx − D ẋ) + τ_bias, with low rotational stiffness; gain selection; validation that the arm yields on surface contact and a tilted peg flattens against a surface. **Figure** — force/position response to surface contact.
+During the contact phase the arm is controlled as a Cartesian spring–damper about a moving setpoint at the peg tip:
+
+$$\tau = J^\top F + \tau_\text{bias}(q, \dot q) - D_q \dot q, \qquad F = \begin{bmatrix} \operatorname{sat}\!\left(K_p e_p\right) + D_p(\dot p^* - \dot p) \\ K_r e_r + D_r(\omega^* - \omega) \end{bmatrix}$$
+
+where *e_p* is the tip position error, *e_r* the orientation error as in §3.1, and [ṗ; ω] = J q̇. In free space the tip tracks the setpoint; in contact it yields, and the contact force settles near K·(setpoint penetration). The spring force is saturated at 15 N so contact force stays bounded whatever the setpoint. Damping is set per axis as D = 2ζ√(K Λ_ii) with ζ = 1, using the task-space inertia Λ = (J M⁻¹ Jᵀ)⁻¹ at the start of the contact phase (4–8 kg translational, 0.1–0.3 kg·m² rotational, nearly constant over the insertion workspace). The control law needs no force measurement; the wrist F/T sensor is used only for contact detection and monitoring.
+
+**Gain selection.**
+- *Lateral* stiffness is low (300 N/m) and *axial* stiffness higher (1000 N/m). On a 45° chamfer with friction μ, a peg pushed with force P slides at most δ = P(1−μ)/(K_xy(1+μ)) before the lateral spring stalls it.
+- *Rotational* stiffness is 0.5 Nm/rad. The edge-contact torque on a 5 mm-radius peg is only ~0.05 Nm per 10 N, so higher values cannot realign the peg (Table 4).
+
+**Insertion.** After the joint-space approach (§3.2), the controller switches to impedance and moves the setpoint straight down to 5 mm below the nominal hole bottom. It moves at 1 cm/s, slowing to 2.5 mm/s within ±3 mm of the entrance. A leash pauses the setpoint whenever the tip lags it by more than 5 mm along the insertion axis. This caps the push at ≈5–6 N and prevents windup: without it, a peg held on the chamfer accumulated spring force and struck the hole wall at 57 mm/s (130 N) when it dropped in.
+
+**Table 4** — Isolation checks (no insertion). Source: `results/compliance_check/`.
+
+| Check | Impedance | Joint PD |
+|---|---|---|
+| Press, setpoint 5 / 10 / 30 mm below surface | 5.0 / 10.0 / 15.0 N (saturated) | 8.1 N at 8 mm |
+| Lateral / normal force while pressing | 0.2 % | 28 % (at the friction limit: the tip slides); 77 % at μ = 0.8 |
+| 3 N lateral push at tip → displacement | 10.0 mm (= F/K) | 2.5 mm |
+| 4° commanded tilt pressed at 15 N → final tilt (K_r = 0.5 / 2 / 20) | 0.01° / 2.1° / 3.8° | — |
+
+> **Figure** — TODO: contact force and tip height vs. time for a surface press (impedance vs. joint PD).
+
+**Impact.** The single-step contact force at touchdown is set by the arm's reflected inertia, not the controller: ~19 N at 1 cm/s for both controllers (μ = 0.3; ~27 N at μ = 0.8). It scales roughly linearly with touchdown speed (31 N at 20 mm/s, 9.9 N at 5 mm/s, 5.4 N at 2.5 mm/s, 5.2 N at 1 mm/s against a 5 N steady press), which motivates the slow touchdown zone.
 
 ### 3.6 Contact-triggered spiral search
 
-> TODO (weeks 3.5–4): Archimedean spiral in the surface plane under constant normal force; pitch chosen from capture width (clearance + chamfer); hole detection by z-drop; transition to insertion. Search-time bound ≈ π r² / pitch / v.
+The impedance insert only succeeds when the offset lies within the chamfer's capture range. Beyond that, the spiral search controller finds the hole by contact:
+
+1. **Touchdown.** Same approach and impedance descent as §3.5. Contact is detected from the wrist F/T sensor (30 Hz low-pass, 2 N on / 1 N off hysteresis, 3-sample debounce), never from ground truth. The tip height at detection is taken as the surface height.
+2. **Search.** Hold the setpoint 3 mm below the surface, which gives a 3 N push, and sweep its xy along an Archimedean spiral r = p·θ/2π around the believed entrance. The pitch is p = 1.5 mm, at most the capture width (clearance + chamfer); the setpoint moves at 10 mm/s, with angular speed capped near the centre. Lateral stiffness rises to 1500 N/m while sweeping, so friction drag (μF/K) doesn't distort the path.
+3. **Pause and centre.** A new drop of more than 0.5 mm, or a spiral stalled for 0.3 s, pauses the sweep. The controller then returns to soft insertion gains and moves the xy setpoint along the sensed lateral contact force, which on the chamfer points toward the hole axis. The pause is extended while the peg keeps dropping.
+4. **Insert.** A drop of more than 2.5 mm below the surface (past the 2 mm chamfer) confirms the hole. The controller then pushes down with insertion gains, using the same leash as §3.5.
+
+**Leashes.** Both the axial and lateral setpoints are leashed. The spiral stops advancing while the tip lags it by more than 2 mm, capping sideways force at ≈3 N.
+
+Two failure modes motivated the leash and the centring step. First, without the lateral leash, a peg that had already dropped into the top of the hole was dragged sideways into the wall at ~15 N, and wall friction then jammed it. Second, without force-guided centring, a peg caught on the chamfer near a corner of the square hole stalled the spiral indefinitely: success at 1 mm clearance with ±5 mm uncertainty was 35 % (μ = 0.3), versus 95 % with centring.
+
+**Search-time bound.** Covering radius r takes a path length of ≈ πr²/p. For the ±5 mm uncertainty square (r ≈ 7.1 mm) that is ≈ 105 mm, or ~10 s at 10 mm/s, before pauses.
 
 ---
 
 ## 4. Evaluation Protocol
 
 - **Harness**: every controller implements the same interface (observation → joint torques). Controllers see the model (for kinematics), joint state, filtered wrist F/T and the believed entrance only. Ground-truth contact force, penetration and the true socket pose are used solely for scoring.
-- **Grid**: clearance {3, 1} mm × uncertainty {±2, ±5} mm × 20 seeds per cell. Seeds fix both the socket offset and the start pose, so all controllers face identical trials.
+- **Grid**: friction {0.3, 0.8} × clearance {3, 1} mm × uncertainty {±2, ±5} mm × 20 seeds per cell. Seeds fix both the socket offset and the start pose, so all controllers face identical trials.
 - **Metrics**: success rate; cycle time over successful trials; peak contact force, both single-step (includes ~1 ms impact spikes) and 10 ms moving average; failure reason (timeout / force cap).
 
 > TODO (week 5): state the final rubric mapping (insertion success 60 %, robustness 25 %, efficiency 15 %) and how each metric feeds it.
@@ -113,23 +148,51 @@ with τ_bias from recursive Newton–Euler. This holds the home pose with zero d
 
 ## 5. Results
 
-### 5.1 Baselines (preliminary, week 2)
+### 5.1 Controller comparison
 
-**Table 2** — Success rate over 20 seeds per cell. Source: `results/{straight,guarded}_grid/summary.csv`.
+**Table 2** — Success rate over 20 seeds per cell (±0.25 rad start noise, 60 s budget). Source: `results/benchmark_*/summary.csv`.
 
-| Clearance | Uncertainty | Open-loop | Guarded + retry | Guarded cycle time [s] |
+| μ | Clearance | Uncertainty | Open-loop | Guarded + retry | Impedance | **Spiral search** |
+|---|---|---|---|---|---|---|
+| 0.3 | 3 mm | ±2 mm | 70 % | 95 % | 100 % | **100 %** |
+| 0.3 | 3 mm | ±5 mm | 15 % | 90 % | 45 % | **100 %** |
+| 0.3 | 1 mm | ±2 mm | 15 % | 60 % | 100 % | **100 %** |
+| 0.3 | 1 mm | ±5 mm | 0 % | 45 % | 25 % | **95 %** |
+| 0.8 | 3 mm | ±2 mm | 60 % | 100 % | 90 % | **100 %** |
+| 0.8 | 3 mm | ±5 mm | 10 % | 100 % | 25 % | **65 %** |
+| 0.8 | 1 mm | ±2 mm | 10 % | 55 % | 50 % | **85 %** |
+| 0.8 | 1 mm | ±5 mm | 5 % | 45 % | 15 % | **55 %** |
+
+**Table 3** — Cycle time of successful trials [s] / force-cap violations (of 20) per cell.
+
+| μ | Clearance | Uncertainty | Open-loop | Guarded + retry | Impedance | Spiral search |
+|---|---|---|---|---|---|---|
+| 0.3 | 3 mm | ±2 mm | 5.8 / 1 | 6.6 / 1 | 10.7 / 0 | 10.7 / 0 |
+| 0.3 | 3 mm | ±5 mm | 5.7 / 3 | 18.5 / 2 | 10.7 / 0 | 12.7 / 0 |
+| 0.3 | 1 mm | ±2 mm | 5.7 / 6 | 30.7 / 0 | 10.7 / 0 | 10.8 / 0 |
+| 0.3 | 1 mm | ±5 mm | — / 3 | 25.2 / 1 | 10.7 / 0 | 14.1 / 0 |
+| 0.8 | 3 mm | ±2 mm | 5.8 / 3 | 7.3 / 0 | 10.7 / 2 | 10.8 / 0 |
+| 0.8 | 3 mm | ±5 mm | 5.6 / 3 | 17.3 / 0 | 19.5 / 2 | 20.3 / 0 |
+| 0.8 | 1 mm | ±2 mm | 5.7 / 7 | 30.4 / 0 | 24.2 / 10 | 18.1 / 0 |
+| 0.8 | 1 mm | ±5 mm | 5.6 / 1 | 27.6 / 1 | 25.5 / 1 | 27.8 / 0 |
+
+Spiral search is the only controller with zero force-cap violations in every cell. Its mean 10 ms-average peak force is 1–6 N, against 10–35 N for open-loop and 3–7 N for guarded retry.
+
+### 5.2 Clearance ratchet (weeks 2–3)
+
+**Table 3a** — Success rate, 20 seeds per cell, uncertainty within the chamfer's capture range. Source: `results/ratchet_{straight,impedance}/summary.csv`. All 10 mm and 5 mm cells are 100 % for both controllers.
+
+| Friction μ | Clearance | Uncertainty | Open-loop | Impedance insert |
 |---|---|---|---|---|
-| 3 mm | ±2 mm | 60 % | 100 % | 7.3 ± 4.2 |
-| 3 mm | ±5 mm | 10 % | 100 % | 17.3 ± 12.0 |
-| 1 mm | ±2 mm | 10 % | 55 % | 30.4 ± 14.4 |
-| 1 mm | ±5 mm | 5 % | 45 % | 27.6 ± 15.3 |
+| 0.3 | 3 mm | ±2 mm | 70 % | 100 % |
+| 0.3 | 1 mm | ±1 mm | 45 % | 100 % |
+| 0.3 | 1 mm | ±2 mm | 15 % | 100 % |
+| 0.8 | 3 mm | ±2 mm | 60 % | 90 % |
+| 0.8 | 1 mm | ±1 mm | 25 % | 65 % |
+| 0.8 | 1 mm | ±2 mm | 10 % | 30 % |
 
-> TODO (week 5): add the compliant controller column and rerun all three on the final grid.
+### 5.3 Figures
 
-### 5.2 Compliant controller
-
-> **Table 3** — TODO: success rate, cycle time, peak force per cell for impedance + spiral search.
->
 > **Figure 2** — TODO: success rate vs. uncertainty, one line per controller, one panel per clearance.
 >
 > **Figure 3** — TODO: cycle-time distribution (successful trials) per controller.
@@ -143,8 +206,10 @@ with τ_bias from recursive Newton–Euler. This holds the home pose with zero d
 > TODO: failure-mode breakdown per controller. Points to address:
 > - Clearance alone is not what makes the task hard: with zero uncertainty the open-loop insert tracks the hole axis to 0.08 mm and seats at 1 mm clearance. Uncertainty is the driver.
 > - The guarded baseline's success at 1 mm is bounded by the time budget: each attempt lands inside a ~1 mm capture region with low probability and costs ~0.9 s (median, including the approach).
-> - Impact spikes: a stiff position-controlled arm produces 12–29 N single-step contact force when touching down at 1 cm/s, decaying within ~6 ms (10 ms average ≈ 7 N). Compliance should reduce both.
-> - Simulation validity: penetration stays < 0.1 mm; MuJoCo's soft friction allows slow creep (0.7 mm/s at 40 N), relevant to spiral search.
+> - Impact spikes come from the arm's reflected inertia, not controller stiffness: both controllers spike at touchdown, ∝ touchdown speed. A slow touchdown zone, not compliance, is what keeps them small.
+> - Friction dominates chamfer-guided insertion (δ = P(1−μ)/(K_xy(1+μ))). At μ = 0.8, spiral search success at 1 mm / ±5 mm drops to 55 %; timeouts dominate, with mean search time 33 s, ~34 pauses and 16 s stalled per trial. The chamfer barely guides the peg, so centring has to do more of the work. At 3 mm / ±5 mm, guarded retry (100 %) beats spiral search (65 %) at μ = 0.8: lifting off between attempts avoids dragging a high-friction peg across the surface.
+> - Guarded retry at 1 mm is bounded by the time budget: each attempt lands inside a ~1 mm capture region with low probability and costs ~0.9 s.
+> - Simulation validity: penetration stays < 0.1 mm; MuJoCo's soft friction allows slow creep under sustained lateral load (0.2 mm/s at 25 N, μ = 0.3).
 
 ---
 

@@ -58,3 +58,15 @@ def test_contact_force_pushes_peg_up_when_pressing(pressed):
 def test_ft_external_force_matches_ground_truth_contact(pressed):
     sim, ft, _ = pressed
     np.testing.assert_allclose(ft.force_world(), sim.peg_contacts().force, atol=0.2)
+
+
+def test_contact_detector_debounces_and_has_hysteresis():
+    from insertion.sensors import ContactDetector
+
+    det = ContactDetector(SensorConfig(contact_on=2.0, contact_off=1.0, contact_debounce=3))
+    wrench = lambda f: np.array([0.0, 0.0, f, 0.0, 0.0, 0.0])
+    assert [det.update(wrench(f)) for f in (3.0, 3.0)] == [False, False]  # not yet debounced
+    assert det.update(wrench(0.5)) is False  # a dip resets the count
+    assert [det.update(wrench(3.0)) for _ in range(3)] == [False, False, True]
+    assert det.update(wrench(1.5)) is True  # stays on above contact_off
+    assert det.update(wrench(0.9)) is False

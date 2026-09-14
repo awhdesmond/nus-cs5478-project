@@ -40,3 +40,22 @@ class FTSensor:
         """Filtered external force on the peg, world frame."""
         _, rot = self.sim.site_pose("ft_site")
         return rot @ self.wrench[:3]
+
+
+class ContactDetector:
+    """Hysteresis + debounce on filtered F/T force magnitude, so contact chatter doesn't toggle it."""
+
+    def __init__(self, cfg: SensorConfig):
+        self.cfg = cfg
+        self.in_contact = False
+        self._count = 0
+
+    def update(self, wrench: np.ndarray) -> bool:
+        force = float(np.linalg.norm(wrench[:3]))
+        if self.in_contact:
+            self.in_contact = force > self.cfg.contact_off
+            self._count = 0
+        else:
+            self._count = self._count + 1 if force > self.cfg.contact_on else 0
+            self.in_contact = self._count >= self.cfg.contact_debounce
+        return self.in_contact

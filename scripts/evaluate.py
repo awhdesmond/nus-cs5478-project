@@ -14,15 +14,13 @@ import os
 import pandas as pd
 
 from insertion.config import RESULTS_DIR, SceneConfig, StartConfig, TaskConfig, TrialConfig, UncertaintyConfig
-from insertion.control.guarded import GuardedRetry
-from insertion.control.scripted import StraightDownInsert
+from insertion.controllers import CONTROLLERS
 from insertion.harness import run_trials
-
-CONTROLLERS = {"straight": StraightDownInsert, "guarded": GuardedRetry}
 
 
 def summarize(df: pd.DataFrame) -> pd.DataFrame:
-    groups = df.groupby(["cfg.scene.clearance", "cfg.uncertainty.translation_max"])
+    keys = ["cfg.scene.friction", "cfg.scene.clearance", "cfg.uncertainty.translation_max"]
+    groups = df.groupby(keys)
     summary = groups.agg(
         trials=("success", "size"),
         success_rate=("success", "mean"),
@@ -32,7 +30,7 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
         over_cap=("failure_reason", lambda r: int((r == "force_cap").sum())),
         timeouts=("failure_reason", lambda r: int((r == "timeout").sum())),
     )
-    successes = df[df.success].groupby(["cfg.scene.clearance", "cfg.uncertainty.translation_max"])
+    successes = df[df.success].groupby(keys)
     summary["cycle_time_mean"] = successes.cycle_time.mean()
     summary["cycle_time_std"] = successes.cycle_time.std()
     if "info.attempts" in df:
@@ -45,6 +43,7 @@ def main():
     parser.add_argument("--controller", choices=CONTROLLERS, default="guarded")
     parser.add_argument("--clearances", type=float, nargs="+", default=[0.003, 0.001])
     parser.add_argument("--uncertainties", type=float, nargs="+", default=[0.002, 0.005])
+    parser.add_argument("--frictions", type=float, nargs="+", default=[SceneConfig().friction])
     parser.add_argument("--trials", type=int, default=20, help="trials (seeds) per grid cell")
     parser.add_argument("--joint-noise", type=float, default=0.25, help="start-pose perturbation [rad]")
     parser.add_argument("--budget", type=float, default=60.0, help="cycle time budget [s sim time]")
@@ -56,12 +55,12 @@ def main():
     configs = [
         TrialConfig(
             seed=seed,
-            scene=SceneConfig(clearance=clearance),
+            scene=SceneConfig(clearance=clearance, friction=friction),
             uncertainty=UncertaintyConfig(translation_max=uncertainty),
             start=StartConfig(joint_noise=args.joint_noise),
             task=TaskConfig(cycle_time_budget=args.budget),
         )
-        for clearance, uncertainty in itertools.product(args.clearances, args.uncertainties)
+        for friction, clearance, uncertainty in itertools.product(args.frictions, args.clearances, args.uncertainties)
         for seed in range(args.trials)
     ]
     out_dir = RESULTS_DIR / (args.name or f"{args.controller}_grid")

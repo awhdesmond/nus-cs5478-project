@@ -88,7 +88,7 @@ insertion is reliable.
 *Week 2 is the most loaded week. If it runs long, the report skeleton slides first; IK only
 needs to be good enough to reach the pre-insertion pose — don't polish it.*
 
-**Week 2 findings** (grid: 20 seeds per cell, ±0.25 rad start noise, 60 s budget)
+**Week 2 findings** (grid: 20 seeds per cell, ±0.25 rad start noise, 60 s budget; measured at the old μ = 0.8 default — see the weeks 3.5–4 benchmark for μ = 0.3)
 
 | Clearance | Uncertainty | Open-loop | Guarded + retry | Guarded cycle time |
 |---|---|---|---|---|
@@ -104,18 +104,36 @@ needs to be good enough to reach the pre-insertion pose — don't polish it.*
 ### Weeks 2–3 — Compliance controller
 *Weekend blocks — gain tuning needs contiguous time, not scattered evenings.*
 
-- [ ] Cartesian impedance controller at torque level (Jacobian, `qfrc_bias`, joint-space damping)
-- [ ] F/T-based contact detection + force-cap monitor wired into the harness
-- [ ] Validated in isolation: arm yields on surface contact rather than fighting it; low rotational stiffness lets a tilted peg flatten against a surface
-- [ ] Begin ratcheting clearance: 10 → 5 mm
+- [x] Cartesian impedance controller at torque level (Jacobian, `qfrc_bias`, joint-space damping) — `control/impedance.py`: damping from task-space inertia Λ (4–8 kg translational), spring-force saturation (15 N). Defaults K_xy 300, K_z 1000 N/m, K_rot 0.5 Nm/rad
+- [x] F/T-based contact detection + force-cap monitor wired into the harness — `ContactDetector` (hysteresis + debounce); harness logs `ft_contact_time`, `ft_detect_latency` (2 ms on decisive contact), `ft_over_cap`
+- [x] Validated in isolation: arm yields on surface contact rather than fighting it; low rotational stiffness lets a tilted peg flatten against a surface — `scripts/compliance_check.py`: press force = K·depth to 0.1%, lateral 0.1% (joint PD 77%), push displacement = F/K; 4° tilt flattens to 0.01° at K_rot ≤ 0.5
+- [x] Begin ratcheting clearance: 10 → 5 mm — went to 1 mm: `ImpedanceInsert` (`control/compliant.py`) 100% at 10/5/3/1 mm with ±2 mm uncertainty (μ=0.3), 0 force-cap violations
 
 **Done =** compliant contact response verified independently of insertion.
 
+**Weeks 2–3 findings** (default friction was 0.8 at the time)
+- **Impact spikes come from arm inertia, not controller stiffness.** Touching down at 1 cm/s gives ~27 N single-step force with both impedance and joint PD. The spike scales ~2.7 N per mm/s (48 N at 20 mm/s → 5 N at 1 mm/s). Rule: descend fast, touch down at ≤2.5 mm/s. This mostly resolves the raw-vs-10 ms force-cap question: at slow touchdown they agree.
+- **Setpoint windup** caused a 130 N wall strike: while the peg was held on the chamfer the setpoint kept descending, and the stored spring force fired the peg into the hole wall (57 mm/s) when it dropped in. Fixed with a leash (`max_lead` 5 mm): the setpoint path pauses while the tip lags.
+- **Chamfer guidance needs low lateral stiffness.** On a 45° chamfer the peg slides at most δ = P(1−μ)/(K_xy(1+μ)) before stalling. Hence K_xy 300 (not 1000).
+- **Friction is the dominant parameter.** Decided 2026-09-14: default μ = 0.3 (brass/tin-plated pins in plastic), μ = 0.8 kept as a high-friction benchmark. Ratchet (20 seeds/cell, ±0.25 rad start noise):
+
+| μ | Clearance | Uncertainty | Open-loop | Impedance |
+|---|---|---|---|---|
+| 0.3 | 3 mm | ±2 mm | 70% | 100% |
+| 0.3 | 1 mm | ±1 mm | 45% | 100% |
+| 0.3 | 1 mm | ±2 mm | 15% | 100% |
+| 0.8 | 3 mm | ±2 mm | 60% | 90% |
+| 0.8 | 1 mm | ±1 mm | 25% | 65% |
+| 0.8 | 1 mm | ±2 mm | 10% | 30% |
+
+  All 10 and 5 mm cells: 100% for both. Beyond the chamfer's capture range (e.g. ±5 mm) the impedance insert presses at bounded force (~6 N) and times out — that's what spiral search is for.
+- F/T detection latency is 2 ms on decisive contact; the metric is ill-defined when force ramps slowly through the threshold.
+
 ### Weeks 3.5–4 — Search and alignment
-- [ ] Spiral search triggered on contact detection
-- [ ] Transition logic: search → insert once aligned (detect via z-drop below surface height)
-- [ ] **First full end-to-end success at target clearance**
-- [ ] Ratchet: clearance → 3 mm, then translation uncertainty, then rotation uncertainty
+- [x] Spiral search triggered on contact detection — `SpiralSearchInsert` (`control/compliant.py`): F/T contact → 3 N push, Archimedean spiral (1.5 mm pitch, 10 mm/s), stiff lateral gains while sweeping
+- [x] Transition logic: search → insert once aligned (detect via z-drop below surface height) — >0.5 mm new drop or 0.3 s stall pauses the spiral and centres along the sensed lateral force; >2.5 mm drop → insert
+- [x] **First full end-to-end success at target clearance** — 95% at 1 mm / ±5 mm (μ = 0.3), 0 force-cap violations
+- [ ] Ratchet: clearance → 3 mm, then translation uncertainty, then rotation uncertainty — clearance and translation done (benchmark below); **rotation uncertainty not started** (needs a rotatable socket in the scene + harness)
 - [ ] If time: round peg → rectangular connector (yaw now matters — see note)
 
 **Spiral budget.** Pitch must be ≤ capture width (clearance + chamfer). Path length to cover
@@ -128,8 +146,27 @@ chamfer + rotational compliance to self-align, or cap yaw uncertainty at ~±2°.
 
 **Done =** end-to-end success at target conditions on at least one seed.
 
+**Weeks 3.5–4 findings** — benchmark: 20 seeds per cell, ±0.25 rad start noise, 60 s budget (`results/benchmark_*`)
+
+| μ | Clearance | Uncertainty | Open-loop | Guarded + retry | Impedance | **Spiral** |
+|---|---|---|---|---|---|---|
+| 0.3 | 3 mm | ±2 mm | 70% | 95% | 100% | **100%** |
+| 0.3 | 3 mm | ±5 mm | 15% | 90% | 45% | **100%** |
+| 0.3 | 1 mm | ±2 mm | 15% | 60% | 100% | **100%** |
+| 0.3 | 1 mm | ±5 mm | 0% | 45% | 25% | **95%** |
+| 0.8 | 3 mm | ±2 mm | 60% | 100% | 90% | **100%** |
+| 0.8 | 3 mm | ±5 mm | 10% | 100% | 25% | **65%** |
+| 0.8 | 1 mm | ±2 mm | 10% | 55% | 50% | **85%** |
+| 0.8 | 1 mm | ±5 mm | 5% | 45% | 15% | **55%** |
+
+- Spiral search has **zero force-cap violations in all 8 cells** (open-loop: 27 total, impedance: 15, guarded: 5). Cycle time 10.7–14 s at μ = 0.3.
+- Two failure modes found and fixed while building it: (1) a peg already in the top of the hole got dragged into the wall by the stiff spiral spring (~15 N, jam) → lateral leash + shallower hole-drop threshold; (2) a peg caught on the chamfer near a hole corner stalled the spiral forever → force-guided centring (move along the sensed lateral force). (2) took 1 mm/±5 mm from 35% → 95%.
+- **High friction (μ = 0.8) is where search struggles**: timeouts, ~34 pauses and 16 s stalled per trial at 1 mm/±5 mm. At 3 mm/±5 mm guarded retry (100%) beats spiral (65%) — lifting between attempts avoids dragging a high-friction peg. Candidate week-5 fixes: lift-and-hop when stalled, or lower search force.
+- Force-cap scoring: with the slow touchdown zone, the raw-vs-10 ms question only matters for the open-loop and guarded baselines (their 1 cm/s touchdowns spike ~19–30 N). Still to decide before the final grid.
+- Spiral budget in practice: mean search 6 s at 1 mm/±5 mm (μ = 0.3), 33 s at μ = 0.8.
+
 ### Week 5 — Evaluation and tuning
-- [ ] Run grid: **2 clearances × 2 uncertainty levels × 20 trials per cell** (80 trials; each trial is a distinct seed). Headless sim runs well faster than real time — this is minutes, not hours
+- [ ] Run grid: **2 clearances × 2 uncertainty levels × 20 trials per cell** (80 trials; each trial is a distinct seed). Headless sim runs well faster than real time — this is minutes, not hours — *a full 4-controller × 2-friction version already exists from weeks 3.5–4; rerun after any week-5 fixes*
 - [ ] Diagnose and fix failure modes
 - [ ] Comparison run: spiral search vs. guarded-move baseline
 - [ ] Buffer week if earlier weeks ran long
@@ -138,27 +175,6 @@ chamfer + rotational compliance to self-align, or cap yaw uncertainty at ~±2°.
 - [ ] Plots: success rate vs. clearance/uncertainty; contact force; cycle time
 - [ ] Report (~3–5 pages): task, method, results, discussion
 - [ ] Demo video / trajectory replay
-
----
-
-## 6. Fallback
-
-**Trigger:** *no end-to-end success by end of week 4* → immediately drop to reduced grid
-and guarded-move baseline. Act on the slip; don't spend week 5 hoping.
-
-**Descoping order** (cut bottom-up, never top-down):
-
-1. Shrink evaluation grid → 1 clearance × uncertainty sweep. Cut *conditions*, not trials per cell — running trials is cheap; diagnosing failures across many conditions is what costs time
-2. Force-safety criterion → simple pass/fail cap instead of tuned metric
-3. Graceful degradation → don't engineer for it, but still report the success-rate-vs-uncertainty curve (the rubric metric)
-4. Rectangular connector → stay with round peg
-5. Spiral search → fall back to guarded-move + retry
-
-**Never cut:** the compliance controller, and at least one clean end-to-end success.
-Together these are the minimum viable result.
-
-**Also kept:** IK + joint-trajectory approach — it's core course content (IK/DH/Jacobian) and
-cheap once the shared Jacobian code exists. Keep it minimal rather than cutting it.
 
 ---
 

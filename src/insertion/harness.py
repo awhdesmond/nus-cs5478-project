@@ -21,7 +21,7 @@ import pandas as pd
 from insertion.config import JointPDConfig, SensorConfig, TrialConfig
 from insertion.control.joint_pd import joint_pd_torque
 from insertion.scene import UR5E_JOINTS, build_model, hole_width
-from insertion.sensors import FTSensor
+from insertion.sensors import ContactDetector, FTSensor
 from insertion.sim import Sim
 
 
@@ -62,6 +62,9 @@ class TrialResult:
     peak_force: float  # [N] ground-truth contact force magnitude, single-step (includes ~1 ms impact spikes)
     peak_force_10ms: float  # [N] peak of the 10 ms moving average (sustained force)
     peak_ft_force: float  # [N] filtered F/T force magnitude (what the controller saw)
+    ft_over_cap: bool  # filtered F/T force exceeded the force cap (what an on-robot monitor would flag)
+    ft_contact_time: float  # [s] first contact per the F/T contact detector, nan if never
+    ft_detect_latency: float  # [s] F/T detection minus when the 10 ms-average true contact force first reaches contact_on
     max_penetration: float  # [m]
     final_depth: float  # [m] tip depth below the true entrance
     failure_reason: str = ""
@@ -150,6 +153,8 @@ def run_trial(
     target = InsertionTarget(believed_entrance(cfg, entrance), cfg.scene.socket_depth)
     controller.reset(sim.model, sim.q(), target, cfg.seed)
 
+    detector = ContactDetector(sensor_cfg)
+    ft_contact_step = true_threshold_step = None
     traj = Trajectory() if record else None
     peak_force = peak_ft = max_pen = 0.0
     window = np.zeros(max(1, round(0.010 / dt)))  # ring buffer for the 10 ms moving average
@@ -174,6 +179,10 @@ def run_trial(
         max_pen = max(max_pen, contacts.max_penetration)
         if contact_step is None and contacts.count > 0:
             contact_step = step
+        if true_threshold_step is None and window.mean() >= sensor_cfg.contact_on:
+            true_threshold_step = step
+        if detector.update(ft.wrench) and ft_contact_step is None:
+            ft_contact_step = step
         if traj is not None:
             for key, value in (
                 ("time", obs.time), ("q", obs.q), ("qd", obs.qd), ("ft", obs.ft), ("tip_pos", tip_pos),
@@ -208,6 +217,9 @@ def run_trial(
         peak_force=peak_force,
         peak_force_10ms=peak_force_10ms,
         peak_ft_force=peak_ft,
+        ft_over_cap=peak_ft > cfg.task.force_cap,
+        ft_contact_time=ft_contact_step * dt if ft_contact_step is not None else float("nan"),
+        ft_detect_latency=(ft_contact_step - true_threshold_step) * dt if ft_contact_step is not None and true_threshold_step is not None else float("nan"),
         max_penetration=max_pen,
         final_depth=float(entrance[2] - tip_pos[2]),
         failure_reason=reason,

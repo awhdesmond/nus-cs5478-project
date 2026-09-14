@@ -32,7 +32,9 @@ class SceneConfig:
 
     # Physics
     timestep: float = 0.001  # try 0.0005 if contact jitters
-    friction: float = 0.8  # PLACEHOLDER
+    # Sliding friction. 0.3 ≈ brass/tin-plated pins in plastic housings (main setting); 0.8 (dry steel-on-steel)
+    # is used as a high-friction benchmark. Dominant factor for chamfer-guided insertion: see weeks 2–3 findings.
+    friction: float = 0.3
     elliptic_cone: bool = True
     # Stiffer-than-default contact, applied to socket AND peg (MuJoCo averages the pair).
     # 2 kg effective mass + 30 N push on the chamfer lip sinks ≤0.21 mm (default params: 1.16 mm,
@@ -61,6 +63,58 @@ class MotionConfig:
 
 
 @dataclass
+class ImpedanceConfig:
+    """Cartesian impedance at the peg tip: τ = Jᵀ[K·e + D·(ẋ* − ẋ)] + τ_bias − D_q·q̇."""
+
+    # Soft laterally, stiff along the insertion axis. On a 45° chamfer with friction μ, a peg pushed with
+    # force P slides at most δ = P(1−μ)/(K_xy(1+μ)) before the lateral spring stalls it, so K_xy must be low.
+    # Sweep at 1 mm clearance, ±2 mm: K_xy 1000 → 70–80% success (μ=0.3); K_xy ≤ 300 → 100%, no cap violations.
+    stiffness_pos: tuple[float, float, float] = (300.0, 300.0, 1000.0)  # [N/m]
+    # 4° commanded tilt pressed at 15 N ends at 0.01° for K_rot ≤ 0.5, 0.9° at 1.0, 2.1° at 2.0, 3.8° at 20.
+    stiffness_rot: tuple[float, float, float] = (0.5, 0.5, 0.5)  # [Nm/rad]
+    damping_ratio: float = 1.0  # D = 2ζ·sqrt(K·Λ_ii), Λ = task-space inertia at the start of the impedance phase
+    joint_damping: float = 0.5  # [Nm·s/rad] small extra damping on every joint
+    max_spring_force: float = 15.0  # [N] saturate |K_pos·e| so contact force stays bounded whatever the setpoint
+
+
+@dataclass
+class ImpedanceInsertConfig:
+    descend_speed: float = 0.01  # setpoint speed outside the touchdown zone [m/s]
+    touchdown_speed: float = 0.0025  # setpoint speed within ±touchdown_zone of the entrance [m/s]
+    touchdown_zone: float = 0.003  # [m] impact spike ≈ 2.7 N per mm/s of touchdown speed, so slow down here
+    press_depth: float = 0.005  # setpoint ends this far below the nominal hole bottom, so the spring keeps pushing [m]
+    # Setpoint leash: the path pauses while the tip lags the setpoint by more than this along the axis,
+    # so push force stays ≈ K_z·max_lead. Without it the setpoint winds up while the peg is held on the
+    # chamfer, and the stored spring force fires the peg into the hole wall once it drops in (130 N spike).
+    max_lead: float = 0.005  # [m]
+
+
+@dataclass
+class SpiralSearchConfig:
+    """Contact-triggered Archimedean spiral search under impedance control."""
+
+    search_force: float = 3.0  # [N] normal push while searching (setpoint held search_force/K_z below contact height)
+    search_stiffness_xy: float = 1500.0  # [N/m] stiffer laterally while searching so friction drag (μ·F/K) doesn't distort the spiral
+    pitch: float = 0.0015  # [m] radial spacing between turns; must not exceed the capture width (clearance + chamfer)
+    search_speed: float = 0.01  # [m/s] setpoint speed along the spiral
+    max_angular_speed: float = 6.28  # [rad/s] caps the spin near the centre, where v/r blows up
+    search_radius: float = 0.0075  # [m] restart the spiral beyond this (covers a ±5 mm square)
+    partial_drop: float = 0.0005  # [m] new drop since the spiral last resumed that pauses it to let the chamfer act
+    hole_drop: float = 0.0025  # [m] tip below contact height that confirms the hole → insert (just past the 2 mm chamfer depth)
+    # Lateral leash: the spiral stops advancing while the tip lags the spiral setpoint by more than this, capping
+    # sideways force at ≈ search_stiffness_xy·max_lateral_lead. Without it a peg that has dropped into the top of
+    # the hole gets dragged into the wall at ~15 N, and wall friction then holds it up (jam).
+    max_lateral_lead: float = 0.002  # [m]
+    pause_time: float = 0.4  # [s] pause length after a partial drop or stall; extended while the peg keeps dropping
+    progress_drop: float = 0.0002  # [m] drop during a pause that counts as progress (extends the pause)
+    stall_timeout: float = 0.3  # [s] continuous leash stall that triggers a centring pause
+    # Force-guided centring while paused: pressed on the chamfer, the sensed lateral contact force points toward
+    # the hole axis, so the xy setpoint moves along it. Unhooks pegs caught on the chamfer near the hole's corners.
+    center_gain: float = 0.002  # [m/s per N]
+    center_speed_max: float = 0.005  # [m/s]
+
+
+@dataclass
 class GuardedRetryConfig:
     """Guarded-move + random-retry baseline: descend until contact; if blocked, retry elsewhere."""
 
@@ -76,6 +130,9 @@ class GuardedRetryConfig:
 class SensorConfig:
     ft_cutoff_hz: float = 30.0  # first-order low-pass on the wrist F/T signal PLACEHOLDER
     tare_steps: int = 50  # samples averaged while holding still before motion
+    contact_on: float = 2.0  # [N] filtered |F| that declares contact
+    contact_off: float = 1.0  # [N] hysteresis: contact released below this
+    contact_debounce: int = 3  # consecutive samples above `contact_on` before declaring contact
 
 
 @dataclass
