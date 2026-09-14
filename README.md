@@ -1,6 +1,6 @@
 # Wire Connector Insertion with Compliant Control
 
-CS5478 Intelligent Robots project. See [insertion-project-plan.md](insertion-project-plan.md) (source of truth) and [insertion-project-proposal.md](insertion-project-proposal.md).
+CS5478 Intelligent Robots project. See [docs/insertion-project-plan.md](docs/insertion-project-plan.md) (source of truth) and [docs/insertion-project-proposal.md](docs/insertion-project-proposal.md).
 
 ## Setup
 
@@ -9,32 +9,29 @@ CS5478 Intelligent Robots project. See [insertion-project-plan.md](insertion-pro
 uv sync                            # Python 3.12 venv + deps
 uv run python scripts/smoke_test.py
 uv run pytest
-uv run python scripts/view.py      # interactive viewer
+uv run python scripts/view.py --insert   # live physics: watch the insert, shove the arm with Ctrl+right-drag
 ```
 
 ## Layout
 
 ```
 src/insertion/
-  config.py              scene / uncertainty / task parameters (all tunables live here)
-  scene.py               build the MuJoCo model (MjSpec) for a trial
-  sim.py                 stepping, state, F/T and contact readout
-  harness.py             N-trial runner + per-trial logging
+  config.py              scene / controller / sensor / task parameters (all tunables live here)
+  scene.py               build the MuJoCo model (MjSpec): torque-controlled UR5e, welded peg, F/T sensor, socket
+  sim.py                 stepping, state, raw F/T, ground-truth peg contacts
+  sensors.py             F/T tare + low-pass filter (what controllers see)
+  harness.py             controller interface, trial runner, CSV + trajectory logging
+  contact_check.py       contact sanity scenarios and pass/fail thresholds
   control/
-    jacobian_step.py     week 1 Cartesian step → week 2 DLS IK
-scripts/                 entry points (smoke test, viewer, easy insert)
+    jacobian_step.py     Jacobian step / iterative IK (grows into DLS IK in week 2)
+    joint_pd.py          joint PD + gravity compensation
+    scripted.py          straight-down insert (week 1 easy mode)
+scripts/
+  easy_insert.py         run the straight-down insert through the harness
+  contact_sanity.py      contact health table; non-zero exit on failure
+  replay.py              replay a recorded trial in the viewer or render an MP4
+  smoke_test.py, view.py, fetch_assets.sh
 tests/
-results/                 trial CSVs and plots (gitignored)
+results/                 trial CSVs, trajectories and plots (gitignored)
 third_party/             fetched assets (gitignored)
 ```
-
-## Week 1 checklist
-
-- [x] MuJoCo installed, stock UR5e loads and steps
-- [ ] Swap position actuators → torque motors; joint PD + gravity comp holds home
-- [ ] Socket (box geoms) + round peg welded to flange, 8–10 mm clearance
-- [ ] Contact sanity check (≤4 hrs tuning)
-- [ ] Wrist F/T sensors: tare + low-pass filter; contact forces readable
-- [ ] Harness skeleton logging success / cycle time / peak force
-- [ ] Jacobian step `Δq = J⁺·Δx`
-- [ ] Hardcoded straight-down insert succeeds (`scripts/easy_insert.py`)

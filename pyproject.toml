@@ -8,6 +8,8 @@ dependencies = [
     "numpy>=1.26",
     "pandas>=2.2",
     "matplotlib>=3.8",
+    "imageio>=2.37.4",
+    "imageio-ffmpeg>=0.6.0",
 ]
 
 [dependency-groups]

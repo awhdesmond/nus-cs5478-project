@@ -51,40 +51,30 @@ insertion is reliable.
 
 ---
 
-## 4. De-risking principles
-
-These govern the whole schedule. The theme: **front-load what proves the project can
-finish; defer what makes it good.** Slipping then costs quality, never completion.
-
-1. **Harness in week 1, not week 5.** Every tuning session yields a number, not a vibe. Results section exists before results do.
-2. **Easy-mode end-to-end success first.** 8–10 mm clearance, zero uncertainty, hardcoded straight-down insert. Converts "will I finish?" into "how good will it be?"
-3. **Ratchet one variable at a time.** Clearance 10 → 5 → 3 → 1 mm; translation uncertainty 0 → small → target; then rotation uncertainty; then round peg → rectangular connector. Never two at once — otherwise a week-4 failure is unattributable.
-4. **Dumb baseline before smart one.** Guarded-move + random retry (~30 lines). Gives a guaranteed result, a comparison point the rubric already wants, and a drama-free fallback.
-5. **Hard 4-hour cap on contact-physics tuning.** If `solref`/`solimp`/timestep fighting exceeds it: loosen clearance, reduce stiffness, move on. 3 mm that works beats 1 mm that doesn't.
-6. **Commit known-good configs.** Tag every working scene/controller state. Contact tuning breaks three things while fixing one.
-7. **Report skeleton in week 2.** Method text is easiest to write while building. Week 6 becomes fill-in, not from-scratch.
-8. **Pre-committed fallback trigger** — see §6.
-
----
-
 ## 5. Schedule (Plan B — committed)
 
 ### Week 1 — Environment + harness + easy-mode success
 *Weeknights: setup. Weekend: contact sanity + first insert.*
 
-- [ ] `pip install mujoco`, viewer runs on a stock model
-- [ ] Load UR5e MJCF from `mujoco_menagerie`; swap position actuators → torque `motor`s
-- [ ] Joint-space PD + `qfrc_bias` gravity compensation holds the arm steady
-- [ ] Add socket (box geoms, small chamfer) + round peg welded to gripper — **clearance 8–10 mm**
-- [ ] Basic step loop: set targets, `mj_step`, read state
-- [ ] Contact sanity check: no penetration, no jitter, no explosion (**≤4 hrs tuning**; try `timestep` 1 ms → 0.5 ms, `cone="elliptic"`)
-- [ ] Wrist `force`/`torque` site sensors: tare before contact (they include connector weight/inertia) + low-pass filter
-- [ ] Read contact forces programmatically — this is what the week-2 guarded-move baseline uses
-- [ ] **Evaluation harness skeleton** — logs success, cycle time, peak force per trial
-- [ ] Quick Jacobian step for Cartesian motion: `mj_jacSite` → `Δq = J⁺·Δx`, iterated toward a target EE position (~5 lines; seeds the week-2 IK)
-- [ ] **Hardcoded straight-down insert succeeds at loose clearance** (uses the Jacobian step)
+- [x] MuJoCo installed (uv), stock UR5e loads and steps (viewer not yet opened interactively)
+- [x] Load UR5e MJCF from `mujoco_menagerie`; swap position actuators → torque `motor`s
+- [x] Joint-space PD + `qfrc_bias` gravity compensation holds the arm steady (zero drift at home; 44 mrad sag without gravity comp; 0.05 rad step settles in 0.46 s)
+- [x] Add socket (box geoms, small chamfer). Needed stiffer contact params: default sank 1.16 mm under 30 N on the chamfer lip, tuned ≤0.21 mm
+- [x] Round peg welded to flange (same contact params as the socket), with `ft_site` and `peg_tip` sites
+- [x] Basic step loop: set targets, `mj_step`, read state (`Sim`)
+- [x] Contact sanity check: no penetration, no jitter, no explosion (**≤4 hrs tuning**; try `timestep` 1 ms → 0.5 ms, `cone="elliptic"`) — `scripts/contact_sanity.py`: 6 scenarios (top surface to 40 N, chamfer lip, hole bottom, hole wall) at 1 mm clearance all pass: penetration ≤0.12 mm, force jitter ≤1.5%, no warnings. 0.5 ms gives no improvement → keep 1 ms
+- [x] Wrist `force`/`torque` site sensors: tare before contact (they include connector weight/inertia) + low-pass filter (`FTSensor`, 30 Hz; sign flipped to external force on peg — matches ground-truth contact force within 0.2 N)
+- [x] Read contact forces programmatically — this is what the week-2 guarded-move baseline uses (`Sim.peg_contacts()` ground truth for scoring; controllers use `FTSensor`)
+- [x] **Evaluation harness skeleton** — logs success, cycle time, peak force per trial (`harness.run_trials` → CSV + per-step `.npz` trajectories; controllers only see believed socket pose + proprioception + F/T)
+- [x] Quick Jacobian step for Cartesian motion: `mj_jacSite` → `Δq = J⁺·Δx`, iterated toward a target EE position (~5 lines; seeds the week-2 IK) — `JacobianIK`, includes orientation hold so the peg stays vertical
+- [x] **Hardcoded straight-down insert succeeds at loose clearance** (uses the Jacobian step) — `scripts/easy_insert.py`: 3/3 at 10 mm, 5.7 s cycle, no contact. Socket moved to (−0.15, 0.50, 0.18), clear of singularities
 
 **Done =** arm commandable, stable contact, forces readable, harness logging, one easy success.
+
+**Week 1 findings**
+- With zero uncertainty, the open-loop insert tracks the hole axis to 0.08 mm and seats even at **1 mm** clearance without touching. Ratcheting clearance alone is uninformative — uncertainty is what makes the task hard, so ratchet uncertainty early.
+- With ±5 mm uncertainty at 1 mm clearance, the open-loop insert jams on every seed tried (peak force 51–69 N, over the 30 N cap). This is the motivating failure for compliance.
+- Joint-space PD is soft (~1.3 N/mm) and anisotropic in Cartesian space: pressing down also pushes sideways. MuJoCo's soft friction then creeps (0.7 mm/s at 40 N). Expect Cartesian impedance to fix the anisotropy; keep creep in mind for spiral search.
 
 ### Week 2 — Nominal motion pipeline
 - [ ] Grow the week-1 Jacobian step into full IK: add orientation error, damped least squares, joint limits
@@ -199,6 +189,8 @@ some of its weight to seating if the instructor allows.*
 | Tier | Scope | Cost |
 |---|---|---|
 | **Plan A grid** | Expand to 3 clearances × 3 uncertainty levels × 50 trials per cell | Low — harness already exists |
+| **Visual gripper** | Mount menagerie Robotiq 2F-85 on the flange, closed around a connector that stays welded. Looks like a gripper insertion; physics and results unchanged | ~2–4 hrs. Good for the week-6 demo video and report figures |
+| **Real grasp** | Connector becomes a free body held by finger friction. Adds in-hand slip and unknown grasp offset; F/T now reads through the gripper, so force thresholds need re-tuning | ~1 week, real risk. Only if week 5 finishes early |
 | **Tier B** | Partially deformable connector: 2–3 link chain with joint compliance, so the plug lags/swings relative to gripper | ~1 week |
 | **Tier C** | Fully deformable cable (MuJoCo composite body) + tip state estimation | Research-scale; comparable to the Intrinsic AI-for-Industry challenge task |
 | **LeRobot** | Use the classical controller as a scripted expert → generate demos → train ACT/diffusion policy → compare against classical on the same harness | ~15–25 hrs + GPU. **Post-submission, not week 6** |

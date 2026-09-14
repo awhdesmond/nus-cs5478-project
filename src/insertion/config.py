@@ -21,13 +21,38 @@ class SceneConfig:
     clearance: float = 0.010
     peg_radius: float = 0.005
     peg_length: float = 0.040
-    socket_depth: float = 0.020
-    socket_pos: tuple[float, float, float] = (0.45, 0.10, 0.0)  # PLACEHOLDER: keep arm away from singularities
+    socket_depth: float = 0.020  # hole depth, bottom to top surface
+    socket_wall: float = 0.015  # wall thickness around the hole
+    socket_base: float = 0.010  # base plate thickness under the hole
+    socket_chamfer: float = 0.002  # 45° lead-in leg length; 0 disables
+    # Hole-bottom centre in world frame. A pedestal fills the gap down to the floor.
+    # Chosen below the home pose with the peg pointing down: along pre-insert → seated the elbow stays
+    # ≈2.0 rad, wrist_2 at −π/2 and the wrist 0.43 m off the base axis (clear of all UR singularities).
+    socket_pos: tuple[float, float, float] = (-0.15, 0.50, 0.18)
 
     # Physics
     timestep: float = 0.001  # try 0.0005 if contact jitters
     friction: float = 0.8  # PLACEHOLDER
     elliptic_cone: bool = True
+    # Stiffer-than-default contact, applied to socket AND peg (MuJoCo averages the pair).
+    # 2 kg effective mass + 30 N push on the chamfer lip sinks ≤0.21 mm (default params: 1.16 mm,
+    # which exceeds the 0.5 mm per-side gap at 1 mm clearance). solref[0] must stay ≥ 2·timestep.
+    contact_solref: tuple[float, float] = (0.005, 1.0)
+    contact_solimp: tuple[float, float, float, float, float] = (0.95, 0.99, 0.001, 0.5, 2.0)
+
+
+@dataclass
+class JointPDConfig:
+    # Per joint: shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3.
+    # From home: 0.05 rad step on all joints settles to 2% in 0.46 s, ≤7% overshoot, ≤18% torque limit.
+    kp: tuple[float, ...] = (400.0, 400.0, 400.0, 100.0, 100.0, 50.0)  # [Nm/rad]
+    kd: tuple[float, ...] = (40.0, 40.0, 40.0, 10.0, 10.0, 5.0)  # [Nm·s/rad]
+
+
+@dataclass
+class SensorConfig:
+    ft_cutoff_hz: float = 30.0  # first-order low-pass on the wrist F/T signal PLACEHOLDER
+    tare_steps: int = 50  # samples averaged while holding still before motion
 
 
 @dataclass
