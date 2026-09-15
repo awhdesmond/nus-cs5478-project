@@ -8,7 +8,8 @@ default. Uses MuJoCo's passive viewer, which on macOS must be launched with `mjp
     uv run mjpython scripts/view.py --scene assembly --orientation lying --speed 2 # all lying, twice real time
     uv run mjpython scripts/view.py --scene assembly --seed 7 --once --condition ideal --clearance 0.003
     uv run mjpython scripts/view.py --scene assembly --orientation upright         # the M3/M4 task
-    uv run python   scripts/view.py --scene assembly --hold                        # just look at the scene
+    uv run mjpython scripts/view.py --scene assembly --cable                       # add the deformable cable (scenery)
+    uv run python   scripts/view.py --scene assembly --hold --cable                # just look at the scene; poke the cable
 
 Insertion-only scene (weeks 1–5 controllers; managed viewer, plain python works):
 
@@ -18,6 +19,9 @@ Insertion-only scene (weeks 1–5 controllers; managed viewer, plain python work
     uv run python scripts/view.py --controller guarded --joint-noise 1.0     # start from a perturbed pose
     uv run python scripts/view.py --controller impedance --clearance 0.001 --uncertainty 0.002 --seed 1
                                                                               # watch the chamfer guide a compliant peg in
+
+The top-right corner shows the overhead camera live and, below it, what perception made of the last capture
+(detected outlines labelled round/square, socket centres, the chosen grasp); `--no-camera` hides both.
 
 In the viewer: drag to orbit, right-drag to pan, scroll to zoom. Double-click a body to select it, then
 Ctrl + right-drag to push it (try shoving the arm mid-insertion). In the insertion scene, Space pauses and
@@ -29,8 +33,10 @@ import sys
 import time
 from dataclasses import replace
 
+import cv2
 import mujoco
 import mujoco.viewer
+import numpy as np
 
 from insertion.assembly_scene import build_assembly_model, sample_layout
 from insertion.assembly_sim import AssemblySim
@@ -43,6 +49,7 @@ from insertion.harness import InsertionTarget, believed_entrance, observe, pertu
 from insertion.scene import build_model
 from insertion.sensors import FTSensor
 from insertion.sim import Sim
+from pipeline_demo import perception_overlay
 
 CONDITIONS = {
     "ideal": DepthNoise(),
@@ -106,11 +113,63 @@ class ViewerClosed(Exception):
     pass
 
 
+class CameraPanels:
+    """Picture-in-picture overlays: the live overhead camera and the perception result of the last capture."""
+
+    def __init__(self, viewer, model: mujoco.MjModel, live_hz: float = 10.0):
+        self.viewer = viewer
+        self.renderer = mujoco.Renderer(model, 480, 640)
+        self.live_period = 1.0 / live_hz
+        self.last_live = -np.inf
+        self.live = None
+        self.perceived = None
+        self.capture_key = None
+
+    def close(self) -> None:
+        self.renderer.close()
+
+    @staticmethod
+    def _label(image: np.ndarray, text: str) -> np.ndarray:
+        image = image.copy()
+        cv2.rectangle(image, (0, 0), (image.shape[1], 26), (20, 22, 28), thickness=-1)
+        cv2.putText(image, text, (8, 19), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (240, 240, 240), 1, cv2.LINE_AA)
+        return image
+
+    def update(self, data: mujoco.MjData, run: AssemblyRun | None) -> None:
+        viewport = self.viewer.viewport
+        if viewport is None or viewport.width < 100:
+            return
+        width = max(240, viewport.width // 4)
+        height = width * 3 // 4
+        margin = max(8, viewport.width // 200)
+        now = time.perf_counter()
+        if self.live is None or now - self.last_live >= self.live_period:
+            self.last_live = now
+            self.renderer.update_scene(data, camera="overhead")
+            self.live = self.renderer.render().copy()
+        panels = [(self._label(self.live, "overhead camera (live)"), 0)]
+        if run is not None and run.result.captures:
+            t, observation, scene, proposals = run.result.captures[-1]
+            key = (len(run.result.captures), len(proposals))
+            if key != self.capture_key or self.perceived is None or self.perceived.shape[1] != 640:
+                self.capture_key = key
+                self.perceived = perception_overlay(observation, scene, proposals, (640, 480))
+            panels.append((self._label(self.perceived, f"perception at t = {t:.1f} s"), 1))
+        images = []
+        for image, row in panels:
+            rect = mujoco.MjrRect(viewport.left + viewport.width - width - margin,
+                                  viewport.bottom + viewport.height - (row + 1) * (height + margin), width, height)
+            images.append((rect, cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)))
+        self.viewer.set_images(images)
+
+
 class ViewerPacer:
     """Physics-step hook: pushes frames to the passive viewer and keeps the run at `speed`× real time."""
 
-    def __init__(self, viewer, sim: AssemblySim, speed: float, fps: float = 60.0):
+    def __init__(self, viewer, sim: AssemblySim, speed: float, fps: float = 60.0, panels: CameraPanels | None = None,
+                 run: AssemblyRun | None = None):
         self.viewer, self.speed = viewer, speed
+        self.panels, self.run = panels, run
         self.frame_dt = 1.0 / fps
         self.wall_start = time.perf_counter()
         self.sim_start = sim.time
@@ -122,6 +181,8 @@ class ViewerPacer:
         self.last_frame = sim.time
         if not self.viewer.is_running():
             raise ViewerClosed
+        if self.panels is not None:
+            self.panels.update(sim.data, self.run)
         self.viewer.sync()
         lag = (sim.time - self.sim_start) / self.speed - (time.perf_counter() - self.wall_start)
         if lag > 0:
@@ -181,7 +242,7 @@ class NarratedRun(AssemblyRun):
 
 
 def run_assembly(args) -> None:
-    base = replace(AssemblyConfig(), clearance=args.clearance, friction=args.friction)
+    base = replace(AssemblyConfig(), clearance=args.clearance, friction=args.friction, cable=args.cable)
     cfg = sample_layout(base, args.seed, orientation=args.orientation)
     sim = AssemblySim(build_assembly_model(cfg), cfg)
     sim.reset()
@@ -198,12 +259,13 @@ def run_assembly(args) -> None:
     with viewer:
         viewer.cam.lookat[:] = [-0.04, 0.50, 0.23]
         viewer.cam.distance, viewer.cam.azimuth, viewer.cam.elevation = 0.9, 145, -30
+        panels = None if args.no_camera else CameraPanels(viewer, sim.model)
         seed, tally = args.seed, []
         while True:
             # Same model and data every run (the viewer is attached to them); only the layout changes.
             cfg = sample_layout(base, seed, orientation=args.orientation)
             run = NarratedRun(cfg, seed=seed, noise=CONDITIONS[args.condition], sim=sim)
-            pacer = ViewerPacer(viewer, sim, args.speed)
+            pacer = ViewerPacer(viewer, sim, args.speed, panels=panels, run=run)
             run.robot.on_step.append(pacer)
             lying = [kind for kind, pose in (("round", cfg.round_pose), ("square", cfg.square_pose)) if pose.lying]
             print(f"\n=== Assembly seed {seed}: {args.condition} camera, {cfg.clearance * 1e3:.0f} mm clearance, friction {cfg.friction}, "
@@ -213,6 +275,8 @@ def run_assembly(args) -> None:
                 run._play([], settle=args.pause)  # hold at the ready pose so the finished layout can be seen
             except ViewerClosed:
                 print("Viewer closed.")
+                if panels is not None:
+                    panels.close()
                 return
             finally:
                 run.robot.camera.renderer.close()
@@ -225,8 +289,12 @@ def run_assembly(args) -> None:
             seed += 1
         print("Done. Close the viewer window to exit.")
         while viewer.is_running():
+            if panels is not None:
+                panels.update(sim.data, run)
             viewer.sync()
             time.sleep(1 / 60)
+        if panels is not None:
+            panels.close()
 
 
 def main():
@@ -242,6 +310,8 @@ def main():
     parser.add_argument("--pause", type=float, default=2.0, help="assembly: seconds to show each finished layout")
     parser.add_argument("--speed", type=float, default=1.0, help="assembly: playback speed relative to real time")
     parser.add_argument("--hold", action="store_true", help="assembly: just show the scene with the arm holding still")
+    parser.add_argument("--cable", action="store_true", help="assembly: add the deformable cable at the table's left edge")
+    parser.add_argument("--no-camera", action="store_true", help="assembly: hide the camera and perception overlays")
     # insertion
     parser.add_argument("--controller", choices=CONTROLLERS, help="insertion: run this controller live (default: hold home)")
     parser.add_argument("--uncertainty", type=float, default=0.0, help="insertion: max xy offset of believed socket pose [m]")

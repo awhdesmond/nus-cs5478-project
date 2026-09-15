@@ -146,6 +146,29 @@ def test_lying_connectors_rest_without_rolling(seed):
     assert abs(abs(square_rot[2, 0]) - 1.0) < 1e-3  # lying on a face
 
 
+def test_optional_cable_is_stable_and_out_of_the_camera_view():
+    from dataclasses import replace
+
+    cfg = replace(CFG, cable=True)
+    model = build_assembly_model(cfg)
+    assert build_assembly_model(CFG).nplugin == 0 and model.nplugin == 1
+    cable_bodies = [b for b in range(model.nbody) if model.body(b).name.startswith("cable_B")]
+    assert len(cable_bodies) == cfg.cable_segments  # count = segments + 1 points → one body per segment
+    sim = AssemblySim(model, cfg)
+    sim.reset()
+    q0 = sim.q()
+    for _ in range(3000):
+        sim.step(joint_pd_torque(sim, q0, JointPDConfig()))
+    assert np.isfinite(sim.data.qpos).all()
+    end = sim.data.body("cable_B_last").xpos
+    assert end[0] < cfg.table_center[0] - cfg.table_half[0] and end[2] < cfg.table_height  # draped over the edge
+    renderer = mujoco.Renderer(model, 240, 320)
+    renderer.enable_segmentation_rendering()
+    renderer.update_scene(sim.data, camera="overhead")
+    seg = renderer.render()[..., 0]
+    assert not np.isin(seg, [g for g in range(model.ngeom) if model.geom_bodyid[g] in cable_bodies]).any()
+
+
 # --- round (N-gon) socket geometry ---------------------------------------------------------------
 
 

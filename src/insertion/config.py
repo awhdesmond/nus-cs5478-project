@@ -274,6 +274,17 @@ class AssemblyConfig:
     image_width: int = 1280
     image_height: int = 960
 
+    # Deformable cable (MuJoCo elastic `cable` composite): clamped at the table's left edge, just outside the camera's
+    # view, and draped over the edge. Scenery for now (Tier C groundwork); off by default so perception and the
+    # benchmarks are unaffected.
+    cable: bool = False
+    cable_length: float = 0.20  # [m] hangs clear of the floor (table top 0.17 m)
+    cable_radius: float = 0.003  # [m]
+    cable_segments: int = 24
+    cable_bend_stiffness: float = 2e6  # [Pa] elasticity plugin "bend" (Young's modulus)
+    cable_twist_stiffness: float = 1e6  # [Pa] elasticity plugin "twist" (shear modulus)
+    cable_anchor: tuple[float, float] = (-0.285, 0.50)  # [m] clamp centre on the table; camera sees x ≥ −0.25
+
     # Physics (as SceneConfig)
     timestep: float = 0.001
     friction: float = 0.3

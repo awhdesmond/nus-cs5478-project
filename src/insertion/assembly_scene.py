@@ -186,6 +186,43 @@ def add_connectors(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
         )
 
 
+CABLE_RGBA = "0.08 0.08 0.1 1"
+
+
+def add_cable(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
+    """Fully deformable cable: MuJoCo's `cable` composite (a chain of capsules with ball joints) with the elasticity
+    plugin supplying bending and twisting stiffness. One end is clamped at the table's left edge (`initial="none"`:
+    the first segment is fixed to the clamp) and the rest points off the table, so it drapes over the edge.
+
+    Composites only exist in MJCF, so the cable is built in its own spec from XML and attached with a prefix.
+    Bodies are `cable_B_first`, `cable_B_1`, … `cable_B_last`.
+    """
+    n = cfg.cable_segments + 1
+    xml = f"""
+    <mujoco>
+      <extension><plugin plugin="mujoco.elasticity.cable"/></extension>
+      <worldbody>
+        <body name="clamp">
+          <geom name="clamp" type="box" size="0.012 0.012 0.006" pos="0 0 0.002" rgba="0.25 0.25 0.3 1" contype="0" conaffinity="0"/>
+          <composite prefix="" type="cable" curve="s" count="{n} 1 1" size="{cfg.cable_length}" initial="none">
+            <plugin plugin="mujoco.elasticity.cable">
+              <config key="twist" value="{cfg.cable_twist_stiffness}"/>
+              <config key="bend" value="{cfg.cable_bend_stiffness}"/>
+              <config key="vmax" value="0"/>
+            </plugin>
+            <joint kind="main" damping="0.002" armature="1e-5"/>
+            <geom type="capsule" size="{cfg.cable_radius}" rgba="{CABLE_RGBA}" density="1500" friction="{cfg.friction} 0.005 0.0001"/>
+          </composite>
+        </body>
+      </worldbody>
+    </mujoco>"""
+    cable = mujoco.MjSpec.from_string(xml)
+    x, y = cfg.cable_anchor
+    # The composite runs along the clamp's +x; turn it 180° so the cable points off the table's left edge (−x).
+    frame = spec.worldbody.add_frame(pos=[x, y, cfg.table_height + cfg.cable_radius + 0.001], quat=[0, 0, 0, 1])
+    frame.attach_body(cable.body("clamp"), "cable_", "")
+
+
 def add_camera(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
     """Overhead camera: MuJoCo cameras look along their −z, so identity orientation looks straight down."""
     spec.worldbody.add_camera(name="overhead", pos=list(cfg.camera_pos), quat=[1, 0, 0, 0], fovy=cfg.camera_fovy)
@@ -217,6 +254,8 @@ def build_assembly_spec(cfg: AssemblyConfig) -> mujoco.MjSpec:
     add_connectors(spec, cfg)
     add_camera(spec, cfg)
     add_planning_obstacles(spec)
+    if cfg.cable:
+        add_cable(spec, cfg)
     _set_home_keyframe(spec, cfg)
     return spec
 
