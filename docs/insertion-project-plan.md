@@ -1,4 +1,4 @@
-# Wire Connector Insertion — Final Project Plan
+# Vision-Guided Contact-Rich Connector Insertion — Final Project Plan
 
 **Course:** Intelligent Robots — Algorithms and Systems
 **Duration:** 6 weeks
@@ -134,7 +134,7 @@ needs to be good enough to reach the pre-insertion pose — don't polish it.*
 - [x] Transition logic: search → insert once aligned (detect via z-drop below surface height) — >0.5 mm new drop or 0.3 s stall pauses the spiral and centres along the sensed lateral force; >2.5 mm drop → insert
 - [x] **First full end-to-end success at target clearance** — 95% at 1 mm / ±5 mm (μ = 0.3), 0 force-cap violations
 - [ ] Ratchet: clearance → 3 mm, then translation uncertainty, then rotation uncertainty — clearance and translation done (benchmark below); **rotation uncertainty not started** (needs a rotatable socket in the scene + harness)
-- [ ] If time: round peg → rectangular connector (yaw now matters — see note)
+- [ ] If time: round peg → rectangular connector (yaw now matters — see note) — **superseded** by the square connector in the weeks 6–7 extension
 
 **Spiral budget.** Pitch must be ≤ capture width (clearance + chamfer). Path length to cover
 radius *r* ≈ π·r²/pitch — at r = 10 mm, pitch = 1 mm that's ~314 mm, i.e. **30–60 s** at
@@ -169,7 +169,7 @@ chamfer + rotational compliance to self-align, or cap yaw uncertainty at ~±2°.
 - [x] Run grid: **2 clearances × 2 uncertainty levels × 20 trials per cell** (80 trials; each trial is a distinct seed). Headless sim runs well faster than real time — this is minutes, not hours — rerun for all 4 controllers × 2 frictions after the week-5 fixes (`results/benchmark_*`)
 - [x] Diagnose and fix failure modes — `scripts/diagnose_spiral.py`; spiral 140 → 160/160 (details below)
 - [x] Comparison run: spiral search vs. guarded-move baseline — `scripts/compare.py`: 160/160 vs 123/160, paired McNemar p = 1.5e-11
-- [ ] Buffer week if earlier weeks ran long — used for the Plan A grid (running)
+- [x] Buffer week if earlier weeks ran long — used for the Plan A grid (done, see §8)
 
 **Week 5 decisions**
 - **Force cap scored on the 10 ms moving average** of true contact force (decided 2026-09-14). Single-step peaks still logged (`peak_force`, `raw_over_cap`) and reported. Reason: remaining violations were one 1 ms step in ~17,000 when the peg clipped the chamfer mid-sweep (10 ms average 6–9 N); spikes scale with contact speed and solver contact stiffness.
@@ -200,10 +200,72 @@ Final benchmark (20 seeds/cell, 10 ms scoring):
 - Spiral vs guarded, paired by seed: 37 trials only spiral solved, 0 only guarded. At 1 mm clearance spiral is also 1.5–2.5× faster; at 3 mm / ±2 mm guarded is faster (7 s vs 11 s).
 - Spiral: 0 timeouts, 0 force-cap violations, 8 trials with a single-step peak > 30 N (7 of them at μ = 0.8, 1 mm / ±5 mm).
 
-### Week 6 — Results and writeup
-- [ ] Plots: success rate vs. clearance/uncertainty; contact force; cycle time
-- [ ] Report (~3–5 pages): task, method, results, discussion
-- [ ] Demo video / trajectory replay
+### Weeks 6–7 — Extension: camera, two connector types, grasping
+*Added 2026-09-15. Turns the task into perceive → identify → pick → insert into the matching socket.
+The insertion-only benchmark and Plan A results stay as the "insertion module" results.*
+
+**Task.** Each trial has **both connectors** on the table, one round and one square, upright at random,
+non-overlapping poses in a pick area (random which is where). A fixture holds **two sockets**: a round hole and a
+square hole. The robot must use the camera to find the **round connector first**, grasp it, insert it into the round
+socket and release it; then find the square connector, grasp it and insert it into the square socket. No
+ground-truth poses reach the controller: connector and socket poses come from perception.
+
+**Sequence per trial:** capture → identify both connectors and both socket holes → pick round → insert round →
+release and retract → **re-capture** (the first pick or insertion may have nudged the square connector) → pick
+square → insert square → release and retract.
+
+**Design decisions (2026-09-15)**
+| Choice | Decision | Why |
+|---|---|---|
+| Camera | **Fixed overhead RGB-D**, calibrated (intrinsics from `fovy`, extrinsics from the model) | Sees connector and both sockets in one shot; simplest pipeline. Image taken with the arm clear of the view |
+| Perception | **Classical CV** (OpenCV): depth/colour segmentation, contour shape analysis, back-projection | Explainable, no training data, easy to report |
+| Grasp synthesis | **Antipodal grasp proposals from the camera point cloud** (M3), decided 2026-09-15 | The standard condition for a parallel-jaw gripper (the default Pick-Nav-Reach project grades the same algorithm on ground-truth point clouds); derives the grasp from perception instead of hand-coding it per shape |
+| Grasp physics | **Attach on grasp** for M1–M5 (weld activated when both fingers contact the connector); **friction grasp in M6**, attach kept as fallback | Attach keeps the validated insertion physics while the pipeline is built; M6 matches the default project's friction-grasp physics (hold and carry stability) |
+| Gripper | Simple parallel-jaw gripper built from primitives (finger slide joints + position actuator) | Robust contact, fast; menagerie Robotiq 2F-85 can replace it visually later |
+| Pose uncertainty | Comes from **perception error** (plus optional depth noise), replacing the synthetic believed-entrance offset | More realistic; the synthetic mode stays for the insertion-only benchmark |
+
+**Geometry: each connector fits only its own socket.** Proposed with 1 mm clearance: square peg 8 mm side → square
+hole 9 mm; round peg Ø10 mm → round hole Ø11 mm. The round peg can't enter the square hole (10 > 9), and the square
+peg's 11.3 mm diagonal can't enter the round hole (> 11). At larger clearances the exclusivity breaks, so the
+harness scores "correct socket" explicitly rather than relying on fit. Round hole = N-gon of box primitives
+(N ≈ 16; faces within ~0.1 mm of a true circle) with per-face chamfer boxes; must pass the contact sanity check.
+
+**Milestones**
+- [ ] **M1 Scene.** Table, fixture with round (N-gon) + square holes, round and square connectors as free bodies, overhead RGB-D camera, parallel gripper on the flange with the F/T sensor behind it, attach-on-grasp weld. Insertion-only scene still builds unchanged (flag). Contact sanity check passes for square-in-square and round-in-N-gon.
+  **Done =** scene renders; gripper closes on either connector and the weld holds it; both pegs seat by hand-scripted motion.
+- [ ] **M2 Perception.** RGB-D render → point back-projection; segment connector and socket holes; classify round vs square (circularity + polygon vertex count); estimate connector xy/yaw/height and socket-hole centres/yaw. `perception_check` over random layouts vs ground truth.
+  **Done =** 100% classification; position error < 1 mm and square yaw error < 2° (95th percentile), with and without depth noise.
+- [ ] **M3 Antipodal grasping, pick and release.**
+  - *Antipodal grasp proposals:* back-project the connector's depth pixels to a point cloud, estimate surface normals (local PCA), sample finger contact pairs across the closing direction at the grasp height, and keep pairs where the contact line lies within both friction cones (angle to each normal ≤ atan(μ_assumed) with a safety margin). Reject pairs wider than the gripper opening or whose fingers would hit the table or the other connector; rank by friction-cone margin, then by closeness to the connector axis. Expected outcome: any diameter for the round connector, opposite flats for the square.
+  - *Pick and release:* approach / close / attach / lift from the best proposal; in-hand offset estimate (connector tip relative to the gripper, from perception at pick time); re-tare F/T after the grasp (carried mass). Release: open fingers, deactivate the weld, retract without dragging the seated connector back out. Pick order: round first, chosen by classification, not by position.
+  **Done =** proposals are antipodal against ground-truth geometry (square: finger axis within 2° of the flat normals); ≥ 95% grasp success over random two-connector layouts; the other connector is not disturbed by the pick; released connectors stay seated.
+- [ ] **M4 Square insertion.** Generalise impedance insert + spiral search to a tool-tip site set from the in-hand estimate, with yaw alignment to the perceived socket; square peg in square hole, round peg in round hole.
+  **Done =** insertion-only benchmark (perception-derived uncertainty) for both shapes at 3 mm and 1 mm, both frictions.
+- [ ] **M5 Full pipeline.** `PickAndInsert` controller (round then square) + harness task mode; metrics per connector and per trial: classification correct, round picked first, grasp success, correct socket, seated, still seated at the end, force cap (10 ms), cycle time per connector and total, perception errors vs ground truth. Grid: clearance {3, 1} mm × friction {0.3, 0.8} × depth noise {off, on} × 20–50 seeds (each seed = a random two-connector layout). Demo videos (trace panel + camera view).
+  **Done =** end-to-end success (both connectors seated in the correct sockets) reported per cell; failure modes diagnosed by stage (perception / grasp / insertion / release) and by connector.
+- [ ] **M6 Friction grasp** (after M5; attach-on-grasp stays as the fallback). Remove the weld: the connector is held only by finger friction. Force-limited finger actuation (grip force set from connector mass, insertion push and μ, with margin), finger pad contact parameters validated like the socket contact check, and F/T thresholds re-checked with the gripper and connector in the load path. Log in-hand slip (connector tip displacement relative to the gripper) through lift, transport and insertion.
+  **Done =** on the full-task grid, (a) ≥ 90% of grasps lift and transport without a drop, (b) in-hand slip during insertion < 0.5 mm in ≥ 90% of trials, and (c) end-to-end success within 10 percentage points of the attach-on-grasp result in every cell. If not met by the start of week 8, report friction grasp as a documented partial result and keep attach-on-grasp for the headline numbers.
+
+**Risks**
+| Risk | Mitigation |
+|---|---|
+| Fingers hit the socket top during insertion | Grasp high on the connector: finger tips must stay above insertion depth + chamfer; check clearance in M1 |
+| N-gon round hole gives poor contact (corners, chamfer seams) | Run the contact sanity check on it first; fall back to a round peg in a square-with-rounded-feel hole only if it fails |
+| Arm occludes the camera | Capture images from a camera-clear arm pose, before each pick |
+| Picking or inserting the first connector knocks the second | Minimum spacing between connectors in the layout sampler; approach from above; re-capture before the second pick |
+| Retracting after release pulls the seated connector out | Open fingers fully and wait before lifting; check "still seated" at the end of the trial |
+| A connector lands inside the other's grasp or approach path | Layout sampler rejects overlapping keep-out regions; plan approach yaw to keep fingers away from the other connector |
+| Weld relative pose wrong when activated | Set the weld's relative pose from the current body poses at activation; test that the connector doesn't jump |
+| Square peg jams at the corners from yaw error | Low rotational stiffness about z + chamfer; measure yaw tolerance in M4 |
+| F/T thresholds shift with gripper + connector mass | Tare at start and again after grasp |
+| Friction grasp slips under insertion force (up to ~6 N sustained) | Size grip force so the two-finger friction hold 2·μ·F_grip exceeds the insertion push with margin (at μ = 0.3 and ~6 N push: F_grip ≳ 10 N plus margin); M6 done-criteria include slip; fallback to attach-on-grasp |
+| Scope creep | Arbitrary pick order, wrist camera and tilt uncertainty are stretch only |
+
+### Week 8 — Friction grasp (M6) and results and writeup
+- [ ] Plots: success rate vs. clearance/uncertainty; contact force; cycle time; perception error distributions; stage-wise failure breakdown
+- [ ] Report (~3–5 pages): task, method, results, discussion — add perception + grasping sections
+- [ ] Demo video / trajectory replay (full pipeline, with camera view)
+- [ ] Update the proposal's task definition to the extended task (instructor-facing)
 
 ---
 
@@ -246,8 +308,9 @@ some of its weight to seating if the instructor allows.*
 
 | Tier | Scope | Cost |
 |---|---|---|
-| **Plan A grid** | Expand to 3 clearances × 3 uncertainty levels × 50 trials per cell | Low — harness already exists. **Running** (2026-09-14): clearance 3/2/1 mm × uncertainty ±1/±3/±5 mm × 50 seeds × μ 0.3/0.8 × 4 controllers = 3,600 trials → `results/plan_a_*` |
-| **Real grasp** | Connector becomes a free body held by finger friction. Adds in-hand slip and unknown grasp offset; F/T now reads through the gripper, so force thresholds need re-tuning | ~1 week, real risk. Only if week 5 finishes early |
+| **Plan A grid** | Expand to 3 clearances × 3 uncertainty levels × 50 trials per cell | **Done** (2026-09-15): clearance 3/2/1 mm × uncertainty ±1/±3/±5 mm × 50 seeds × μ 0.3/0.8 × 4 controllers = 3,600 trials → `results/plan_a_*`. Overall success: open-loop 56%, guarded 86%, impedance 78%, **spiral 99.1%** (lowest cell 92% at μ 0.8, 1 mm, ±3 mm; 6 timeouts, 2 force-cap violations in 900 spiral trials). Compute took ~19 h wall clock because the laptop slept on battery — plug in for long runs |
+| **Friction grasp** | Replace attach-on-grasp with a connector held only by finger friction | **Moved into the schedule as M6** (2026-09-15) |
+| **Tilt (rotation) uncertainty** | Socket axis tilted a few degrees from its believed orientation | ~half a day. Yaw is now covered by perception for the square connector; tilt remains untested |
 | **Tier B** | Partially deformable connector: 2–3 link chain with joint compliance, so the plug lags/swings relative to gripper | ~1 week |
 | **Tier C** | Fully deformable cable (MuJoCo composite body) + tip state estimation | Research-scale; comparable to the Intrinsic AI-for-Industry challenge task |
 | **LeRobot** | Use the classical controller as a scripted expert → generate demos → train ACT/diffusion policy → compare against classical on the same harness | ~15–25 hrs + GPU. **Post-submission, not week 6** |

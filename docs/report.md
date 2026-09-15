@@ -1,4 +1,4 @@
-# Contact-Rich Connector Insertion with Compliant Control
+# Vision-Guided Contact-Rich Connector Insertion with Compliant Control
 
 **CS5478 Intelligent Robots — Project Report** · *Draft (weeks 3.5–4). `TODO` marks sections filled in later weeks.*
 

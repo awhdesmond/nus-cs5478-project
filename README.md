@@ -1,4 +1,4 @@
-# Wire Connector Insertion with Compliant Control
+# Vision-Guided Contact-Rich Connector Insertion with Compliant Control
 
 CS5478 Intelligent Robots project. See [docs/insertion-project-plan.md](docs/insertion-project-plan.md) (source of truth) and [docs/insertion-project-proposal.md](docs/insertion-project-proposal.md).
 
