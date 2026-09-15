@@ -25,6 +25,8 @@ src/insertion/
   reach_check.py         pre-insertion reach from perturbed starts
   compliance_check.py    impedance isolation checks: surface press, external push, tilted press
   controllers.py         controller registry (shared by evaluate.py and view.py)
+  diagnose.py            spiral search failure diagnostics (phase log vs. ground-truth hole)
+  stats.py               Wilson intervals, exact McNemar test
   control/
     ik.py                damped least-squares IK with joint limits and restarts
     trajectory.py        quintic joint trajectories, trapezoidal Cartesian lines
@@ -35,7 +37,9 @@ src/insertion/
     impedance.py         Cartesian impedance law at torque level
     compliant.py         impedance insert (approach → impedance descent with leash); spiral search insert
 scripts/
-  evaluate.py            run a controller over a clearance × uncertainty grid → trials.csv + summary.csv
+  evaluate.py            run a controller over a friction × clearance × uncertainty grid → trials.csv + summary.csv
+  compare.py             paired comparison of two benchmarked controllers (CIs, McNemar, efficiency)
+  diagnose_spiral.py     re-run failing spiral trials with diagnostics
   easy_insert.py         run the straight-down insert through the harness
   contact_sanity.py      contact health table; non-zero exit on failure
   compliance_check.py    impedance isolation tables → results/compliance_check/

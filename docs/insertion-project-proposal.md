@@ -14,12 +14,6 @@ difficult for robots because it is *contact-rich*: at the millimetre scale, pose
 uncertainty between the gripper and the socket exceeds the insertion clearance, so a
 purely position-controlled arm will jam or damage the part rather than seat it.
 
-This is an active industrial problem. Intrinsic (Alphabet) and Open Robotics are currently
-running a $180k "AI for Industry Challenge" targeting exactly this task, using a UR5e with
-a wrist force-torque sensor. Their framing confirms both the relevance of the problem and
-that the fully deformable-cable version of it is a research-scale undertaking — which
-motivates the deliberately scoped version proposed here.
-
 ## 2. Task Definition
 
 A 6-DOF manipulator inserts a **rigid wire terminal / connector** into a socket with

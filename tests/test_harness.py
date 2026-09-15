@@ -48,3 +48,19 @@ def test_run_trials_writes_csv_with_config_and_trajectories(tmp_path):
     assert df.success.all()
     traj = np.load(next((tmp_path / "traj").glob("*.npz")))
     assert traj["q"].shape[1] == 6 and traj["action"].shape == traj["q"].shape
+
+
+def test_force_cap_is_scored_on_the_10ms_average():
+    # Guarded retry seed 0 touches down at 1 cm/s: a ~30.2 N single-step impact spike, ~6 N sustained.
+    from insertion.control.guarded import GuardedRetry
+
+    cfg = TrialConfig(
+        seed=0,
+        scene=SceneConfig(clearance=0.003),
+        uncertainty=UncertaintyConfig(translation_max=0.005),
+        task=TaskConfig(cycle_time_budget=30.0),
+    )
+    result, _ = run_trial(cfg, GuardedRetry())
+    assert result.raw_over_cap and result.peak_force > cfg.task.force_cap
+    assert result.peak_force_10ms < cfg.task.force_cap
+    assert result.success and result.failure_reason == ""

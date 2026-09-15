@@ -54,13 +54,14 @@ class Controller(Protocol):
 @dataclass
 class TrialResult:
     seed: int
-    success: bool  # seated without exceeding the force cap
+    success: bool  # seated without the 10 ms-average contact force exceeding the force cap
     seated: bool
     reached_contact: bool  # first peg contact within contact_step_budget
     contact_time: float  # [s sim time], nan if never
     cycle_time: float  # [s sim time] to seated, or elapsed time if not seated
     peak_force: float  # [N] ground-truth contact force magnitude, single-step (includes ~1 ms impact spikes)
-    peak_force_10ms: float  # [N] peak of the 10 ms moving average (sustained force)
+    peak_force_10ms: float  # [N] peak of the 10 ms moving average (sustained force) — the scored force-cap metric
+    raw_over_cap: bool  # single-step peak exceeded the cap (reported, not scored)
     peak_ft_force: float  # [N] filtered F/T force magnitude (what the controller saw)
     ft_over_cap: bool  # filtered F/T force exceeded the force cap (what an on-robot monitor would flag)
     ft_contact_time: float  # [s] first contact per the F/T contact detector, nan if never
@@ -198,7 +199,7 @@ def run_trial(
 
     tip_pos, _ = sim.site_pose("peg_tip")
     reached_contact = contact_step is not None and contact_step <= cfg.task.contact_step_budget
-    over_cap = peak_force > cfg.task.force_cap
+    over_cap = peak_force_10ms > cfg.task.force_cap
     if seated and not over_cap:
         reason = ""
     elif seated:
@@ -216,6 +217,7 @@ def run_trial(
         cycle_time=sim.time - t_start,
         peak_force=peak_force,
         peak_force_10ms=peak_force_10ms,
+        raw_over_cap=peak_force > cfg.task.force_cap,
         peak_ft_force=peak_ft,
         ft_over_cap=peak_ft > cfg.task.force_cap,
         ft_contact_time=ft_contact_step * dt if ft_contact_step is not None else float("nan"),

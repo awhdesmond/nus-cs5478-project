@@ -93,25 +93,38 @@ class ImpedanceInsertConfig:
 class SpiralSearchConfig:
     """Contact-triggered Archimedean spiral search under impedance control."""
 
-    search_force: float = 3.0  # [N] normal push while searching (setpoint held search_force/K_z below contact height)
+    # Sweep lightly (friction drag μ·F must stay well under the lateral leash force), push harder when paused.
+    search_force: float = 2.0  # [N] normal push while sweeping (setpoint held search_force/K_z below contact height)
+    # Normal push while paused on the chamfer, from a setpoint anchored below the CONTACT height so the spring relaxes
+    # as the peg drops (a setpoint tracking the tip kept pushing and drove the peg into the hole wall, 32–72 N).
+    pause_force: float = 5.0  # [N]
     search_stiffness_xy: float = 1500.0  # [N/m] stiffer laterally while searching so friction drag (μ·F/K) doesn't distort the spiral
-    pitch: float = 0.0015  # [m] radial spacing between turns; must not exceed the capture width (clearance + chamfer)
+    # Radial spacing between turns. Must not exceed the capture width. At high friction the chamfer barely funnels
+    # (friction angle 38.7° at μ=0.8 vs a 45° chamfer), so capture ≈ clearance: 1.5 mm stepped over the ±0.5 mm
+    # direct-entry zone at 1 mm clearance.
+    pitch: float = 0.001  # [m]
     search_speed: float = 0.01  # [m/s] setpoint speed along the spiral
     max_angular_speed: float = 6.28  # [rad/s] caps the spin near the centre, where v/r blows up
     search_radius: float = 0.0075  # [m] restart the spiral beyond this (covers a ±5 mm square)
     partial_drop: float = 0.0005  # [m] new drop since the spiral last resumed that pauses it to let the chamfer act
     hole_drop: float = 0.0025  # [m] tip below contact height that confirms the hole → insert (just past the 2 mm chamfer depth)
-    # Lateral leash: the spiral stops advancing while the tip lags the spiral setpoint by more than this, capping
-    # sideways force at ≈ search_stiffness_xy·max_lateral_lead. Without it a peg that has dropped into the top of
-    # the hole gets dragged into the wall at ~15 N, and wall friction then holds it up (jam).
-    max_lateral_lead: float = 0.002  # [m]
-    pause_time: float = 0.4  # [s] pause length after a partial drop or stall; extended while the peg keeps dropping
+    # Lateral leash: the spiral setpoint is clamped to within this of the tip and only advances while the tip
+    # keeps up, capping sideways force at ≈ search_stiffness_xy·max_lateral_lead. Without it a peg that has
+    # dropped into the top of the hole gets dragged into the wall at ~15 N, and wall friction then jams it.
+    max_lateral_lead: float = 0.003  # [m]
+    pause_time: float = 0.6  # [s] pause length after a partial drop or chamfer stall; extended while the peg keeps dropping
     progress_drop: float = 0.0002  # [m] drop during a pause that counts as progress (extends the pause)
-    stall_timeout: float = 0.3  # [s] continuous leash stall that triggers a centring pause
+    stall_timeout: float = 0.3  # [s] continuous leash stall before reacting (centre if on the chamfer, hop if on the flat)
+    chamfer_evidence: float = 0.0003  # [m] drop below contact height that means a stall is on the chamfer, not the flat top
+    hop_time: float = 0.15  # [s] unload the peg (setpoint at the contact height) to break static friction on the flat
     # Force-guided centring while paused: pressed on the chamfer, the sensed lateral contact force points toward
-    # the hole axis, so the xy setpoint moves along it. Unhooks pegs caught on the chamfer near the hole's corners.
-    center_gain: float = 0.002  # [m/s per N]
+    # the hole axis, so the xy setpoint moves along it. At high friction that signal is weak, hence the high gain.
+    center_gain: float = 0.01  # [m/s per N]
     center_speed_max: float = 0.005  # [m/s]
+    # Drop-speed governor: when the sweep carries the peg off the flat top over the (lower) chamfer or hole, it is
+    # briefly airborne and falls toward the setpoint; landing at ~20 mm/s gave 30–53 N spikes (≈2.7 N per mm/s).
+    # While falling faster than this, the vertical spring is released and damping holds the fall to this speed.
+    max_drop_speed: float = 0.003  # [m/s]
 
 
 @dataclass
@@ -144,7 +157,10 @@ class UncertaintyConfig:
 
 @dataclass
 class TaskConfig:
-    force_cap: float = 30.0  # [N] PLACEHOLDER
+    # Scored on the 10 ms moving average of true contact force (sustained force). Single-step 1 ms peaks are
+    # logged and reported but not scored: they scale with touchdown/sweep speed and the solver's contact stiffness,
+    # and safety standards (e.g. ISO/TS 15066) treat transient contact separately from quasi-static force.
+    force_cap: float = 30.0  # [N]
     cycle_time_budget: float = 60.0  # [s sim time] PLACEHOLDER; see spiral budget note in plan
     contact_step_budget: int = 20_000  # PLACEHOLDER
     seated_depth_tol: float = 0.002  # [m] PLACEHOLDER

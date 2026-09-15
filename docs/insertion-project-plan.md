@@ -146,7 +146,7 @@ chamfer + rotational compliance to self-align, or cap yaw uncertainty at ~±2°.
 
 **Done =** end-to-end success at target conditions on at least one seed.
 
-**Weeks 3.5–4 findings** — benchmark: 20 seeds per cell, ±0.25 rad start noise, 60 s budget (`results/benchmark_*`)
+**Weeks 3.5–4 findings** — benchmark: 20 seeds per cell, ±0.25 rad start noise, 60 s budget, raw force-cap scoring (superseded by the week-5 rerun below)
 
 | μ | Clearance | Uncertainty | Open-loop | Guarded + retry | Impedance | **Spiral** |
 |---|---|---|---|---|---|---|
@@ -166,10 +166,39 @@ chamfer + rotational compliance to self-align, or cap yaw uncertainty at ~±2°.
 - Spiral budget in practice: mean search 6 s at 1 mm/±5 mm (μ = 0.3), 33 s at μ = 0.8.
 
 ### Week 5 — Evaluation and tuning
-- [ ] Run grid: **2 clearances × 2 uncertainty levels × 20 trials per cell** (80 trials; each trial is a distinct seed). Headless sim runs well faster than real time — this is minutes, not hours — *a full 4-controller × 2-friction version already exists from weeks 3.5–4; rerun after any week-5 fixes*
-- [ ] Diagnose and fix failure modes
-- [ ] Comparison run: spiral search vs. guarded-move baseline
-- [ ] Buffer week if earlier weeks ran long
+- [x] Run grid: **2 clearances × 2 uncertainty levels × 20 trials per cell** (80 trials; each trial is a distinct seed). Headless sim runs well faster than real time — this is minutes, not hours — rerun for all 4 controllers × 2 frictions after the week-5 fixes (`results/benchmark_*`)
+- [x] Diagnose and fix failure modes — `scripts/diagnose_spiral.py`; spiral 140 → 160/160 (details below)
+- [x] Comparison run: spiral search vs. guarded-move baseline — `scripts/compare.py`: 160/160 vs 123/160, paired McNemar p = 1.5e-11
+- [ ] Buffer week if earlier weeks ran long — used for the Plan A grid (running)
+
+**Week 5 decisions**
+- **Force cap scored on the 10 ms moving average** of true contact force (decided 2026-09-14). Single-step peaks still logged (`peak_force`, `raw_over_cap`) and reported. Reason: remaining violations were one 1 ms step in ~17,000 when the peg clipped the chamfer mid-sweep (10 ms average 6–9 N); spikes scale with contact speed and solver contact stiffness.
+
+**Week 5 findings**
+
+Spiral failure diagnosis (20 failing trials from the weeks 3.5–4 benchmark, 19 at μ = 0.8): the controller spent ~28 s paused and ~21 s stalled out of ~50 s searching, sweeping only 1–4 s (1–3 spiral turns). Fixes, in the order they were found:
+1. Sweep lighter (2 N) with a looser lateral leash (3 mm) so friction drag can't stall it; push harder (5 N) only when paused.
+2. Clamp the spiral setpoint to the leash and re-anchor it at the tip after a pause (it was jumping ahead and re-stalling).
+3. Leaky stall timer (a clamped setpoint flickers stalled/free every step, so a hard reset never fired).
+4. Hop over flat-top stalls and over chamfer spots where centring already failed; pitch 1.5 → 1.0 mm (at μ = 0.8 the chamfer doesn't funnel, so capture ≈ clearance).
+5. Anchor the pause push at the contact height (a tip-tracking push drove the peg into the wall, 32–72 N).
+6. Drop-speed governor, 3 mm/s (falling off the flat top onto the chamfer at ~20 mm/s gave 30–53 N landings).
+
+Final benchmark (20 seeds/cell, 10 ms scoring):
+
+| μ | Clearance | Uncertainty | Open-loop | Guarded | Impedance | **Spiral** |
+|---|---|---|---|---|---|---|
+| 0.3 | 3 mm | ±2 mm | 75% | 100% | 100% | **100%** |
+| 0.3 | 3 mm | ±5 mm | 30% | 100% | 45% | **100%** |
+| 0.3 | 1 mm | ±2 mm | 45% | 60% | 100% | **100%** |
+| 0.3 | 1 mm | ±5 mm | 15% | 50% | 25% | **100%** |
+| 0.8 | 3 mm | ±2 mm | 75% | 100% | 100% | **100%** |
+| 0.8 | 3 mm | ±5 mm | 25% | 100% | 35% | **100%** |
+| 0.8 | 1 mm | ±2 mm | 45% | 55% | 100% | **100%** |
+| 0.8 | 1 mm | ±5 mm | 10% | 50% | 20% | **100%** |
+
+- Spiral vs guarded, paired by seed: 37 trials only spiral solved, 0 only guarded. At 1 mm clearance spiral is also 1.5–2.5× faster; at 3 mm / ±2 mm guarded is faster (7 s vs 11 s).
+- Spiral: 0 timeouts, 0 force-cap violations, 8 trials with a single-step peak > 30 N (7 of them at μ = 0.8, 1 mm / ±5 mm).
 
 ### Week 6 — Results and writeup
 - [ ] Plots: success rate vs. clearance/uncertainty; contact force; cycle time
@@ -217,8 +246,7 @@ some of its weight to seating if the instructor allows.*
 
 | Tier | Scope | Cost |
 |---|---|---|
-| **Plan A grid** | Expand to 3 clearances × 3 uncertainty levels × 50 trials per cell | Low — harness already exists |
-| **Visual gripper** | Mount menagerie Robotiq 2F-85 on the flange, closed around a connector that stays welded. Looks like a gripper insertion; physics and results unchanged | ~2–4 hrs. Good for the week-6 demo video and report figures |
+| **Plan A grid** | Expand to 3 clearances × 3 uncertainty levels × 50 trials per cell | Low — harness already exists. **Running** (2026-09-14): clearance 3/2/1 mm × uncertainty ±1/±3/±5 mm × 50 seeds × μ 0.3/0.8 × 4 controllers = 3,600 trials → `results/plan_a_*` |
 | **Real grasp** | Connector becomes a free body held by finger friction. Adds in-hand slip and unknown grasp offset; F/T now reads through the gripper, so force thresholds need re-tuning | ~1 week, real risk. Only if week 5 finishes early |
 | **Tier B** | Partially deformable connector: 2–3 link chain with joint compliance, so the plug lags/swings relative to gripper | ~1 week |
 | **Tier C** | Fully deformable cable (MuJoCo composite body) + tip state estimation | Research-scale; comparable to the Intrinsic AI-for-Industry challenge task |

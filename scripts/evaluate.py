@@ -28,6 +28,7 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
         peak_force_mean=("peak_force", "mean"),
         peak_force_10ms_mean=("peak_force_10ms", "mean"),
         over_cap=("failure_reason", lambda r: int((r == "force_cap").sum())),
+        raw_over_cap=("raw_over_cap", "sum"),
         timeouts=("failure_reason", lambda r: int((r == "timeout").sum())),
     )
     successes = df[df.success].groupby(keys)

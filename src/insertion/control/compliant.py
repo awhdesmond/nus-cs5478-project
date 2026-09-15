@@ -119,19 +119,27 @@ class SpiralSearchInsert(ImpedanceInsert):
         self.phase = self.DESCEND
         self.contact_z = None
         self.theta = 0.0
+        self.search_xy = self.entrance[:2].copy()
         self.paused_until = 0.0
+        self.hop_until = 0.0
         self.search_start = None
         self.found_time = None
         self.pauses = 0
+        self.hops = 0
         self.restarts = 0
-        self.stalls = 0.0  # [s] spiral held by the lateral leash
+        self.stalls = 0.0  # [s] total time the spiral was held by the lateral leash
         self.stall_run = 0.0  # [s] current continuous stall
         self.drop_ref = None
         self.drop_at_pause = None
+        self.drop_at_pause_start = 0.0
+        self.last_pause_productive = True  # a stall on the chamfer gets one centring attempt before hopping past
+        self._last_tip_z = None
+        self._z_speed = 0.0
 
-    def _spiral_xy(self) -> np.ndarray:
-        radius = self.search_cfg.pitch * self.theta / (2 * np.pi)
-        return self.entrance[:2] + radius * np.array([np.cos(self.theta), np.sin(self.theta)])
+    def _spiral_xy(self, theta: float | None = None) -> np.ndarray:
+        theta = self.theta if theta is None else theta
+        radius = self.search_cfg.pitch * theta / (2 * np.pi)
+        return self.entrance[:2] + radius * np.array([np.cos(theta), np.sin(theta)])
 
     def act(self, obs: Observation) -> np.ndarray:
         c = self.search_cfg
@@ -151,7 +159,6 @@ class SpiralSearchInsert(ImpedanceInsert):
             self.phase = self.SEARCH
             self.contact_z = tip[2]
             self.search_start = obs.time
-            self.search_xy = self.entrance[:2].copy()
             self._pause(obs)
 
         if self.phase == self.SEARCH:
@@ -159,22 +166,7 @@ class SpiralSearchInsert(ImpedanceInsert):
             if drop > c.hole_drop:
                 self._start_insert(obs)
             else:
-                if obs.time < self.paused_until:
-                    self._center(obs, dt)
-                elif self.drop_at_pause is not None and drop - self.drop_at_pause > c.progress_drop:
-                    self.paused_until = obs.time + c.pause_time  # still sliding in: keep centring
-                    self.drop_at_pause = drop
-                else:
-                    if self.drop_ref is None:
-                        self.drop_ref = drop  # pause just ended: measure new drops from where the peg settled
-                        self.drop_at_pause = None
-                    if drop - self.drop_ref > c.partial_drop or self.stall_run > c.stall_timeout:
-                        self.pauses += 1
-                        self._pause(obs)  # new dip or stalled on the chamfer: stop sweeping, centre on force
-                    else:
-                        self._advance_spiral(dt, tip)
-                pos_des = np.array([*self.search_xy, self.contact_z - c.search_force / self.impedance.stiffness[2]])
-                return self.impedance.torque(obs.q, obs.qd, pos_des, self.rot)[0]
+                return self._search_torque(obs, dt, drop)
 
         if self.phase == self.INSERT:
             pos_des, vel_des = self.insert_path.sample(obs.time - self.insert_start)
@@ -185,14 +177,70 @@ class SpiralSearchInsert(ImpedanceInsert):
 
         return super()._descend_torque(obs, dt)
 
+    def _search_torque(self, obs: Observation, dt: float, drop: float) -> np.ndarray:
+        c = self.search_cfg
+        tip = obs.tip_pos
+        if obs.time < self.paused_until:
+            self._center(obs, dt)
+            z_des = self.contact_z - c.pause_force / self.impedance.stiffness[2]
+        else:
+            if self.drop_at_pause is not None:
+                if drop - self.drop_at_pause > c.progress_drop:
+                    self.paused_until = obs.time + c.pause_time  # still sliding in: keep centring
+                    self.drop_at_pause = drop
+                    return self._search_torque(obs, dt, drop)
+                self._resume(tip, drop)
+            if drop - self.drop_ref > c.partial_drop:
+                self.pauses += 1
+                self._pause(obs)  # new dip (peg catching the chamfer): stop sweeping, centre on force
+                return self._search_torque(obs, dt, drop)
+            if self.stall_run > c.stall_timeout:
+                if drop > c.chamfer_evidence and self.last_pause_productive:
+                    self.pauses += 1
+                    self._pause(obs)  # held on the chamfer: centre on force
+                    return self._search_torque(obs, dt, drop)
+                # On the flat, or centring here already failed: unload and carry on sweeping past it.
+                self.last_pause_productive = True
+                self.hops += 1
+                self.hop_until = obs.time + c.hop_time  # held by friction on the flat top: unload briefly
+                self.stall_run = 0.0
+            hopping = obs.time < self.hop_until
+            self._advance_spiral(dt, tip, ignore_stall=hopping)
+            z_des = self.contact_z if hopping else self.contact_z - c.search_force / self.impedance.stiffness[2]
+        pos_des = np.array([*self.search_xy, z_des])
+        vel_des = None
+        z_speed = self._tip_z_speed(obs, dt)
+        if z_speed < -c.max_drop_speed:
+            pos_des[2] = tip[2]  # falling onto a lower surface: no spring push, damp to the touchdown speed
+            vel_des = np.array([0.0, 0.0, -c.max_drop_speed])
+        return self.impedance.torque(obs.q, obs.qd, pos_des, self.rot, vel_des)[0]
+
+    def _tip_z_speed(self, obs: Observation, dt: float) -> float:
+        """Low-pass filtered vertical tip speed from successive observations."""
+        if self._last_tip_z is not None and dt > 0:
+            raw = (obs.tip_pos[2] - self._last_tip_z) / dt
+            self._z_speed += 0.3 * (raw - self._z_speed)
+        self._last_tip_z = obs.tip_pos[2]
+        return self._z_speed
+
     def _pause(self, obs: Observation) -> None:
         """Stop the spiral: soft insertion gains, xy setpoint at the tip, then centre along the sensed force."""
         self.paused_until = obs.time + self.search_cfg.pause_time
-        self.drop_ref = None
         self.drop_at_pause = self.contact_z - obs.tip_pos[2]
+        self.drop_at_pause_start = self.drop_at_pause
         self.stall_run = 0.0
         self.search_xy = obs.tip_pos[:2].copy()
         self.impedance.set_stiffness(self.insert_stiffness)
+
+    def _resume(self, tip: np.ndarray, drop: float) -> None:
+        """Pause over: re-anchor the spiral at the point nearest the tip so the setpoint doesn't jump."""
+        candidates = np.linspace(max(0.0, self.theta - 2 * np.pi), self.theta + 2 * np.pi, 200)
+        distances = [np.linalg.norm(self._spiral_xy(th) - tip[:2]) for th in candidates]
+        self.theta = float(candidates[int(np.argmin(distances))])
+        self.drop_ref = drop  # measure new drops from where the peg settled
+        self.last_pause_productive = drop - self.drop_at_pause_start > self.search_cfg.progress_drop
+        self.drop_at_pause = None
+        self.impedance.set_stiffness(self.search_stiffness)
 
     def _center(self, obs: Observation, dt: float) -> None:
         """Move the xy setpoint along the lateral external force (world frame) felt at the wrist."""
@@ -204,22 +252,26 @@ class SpiralSearchInsert(ImpedanceInsert):
             velocity *= c.center_speed_max / speed
         self.search_xy = self.search_xy + velocity * dt
 
-    def _advance_spiral(self, dt: float, tip: np.ndarray) -> None:
+    def _advance_spiral(self, dt: float, tip: np.ndarray, ignore_stall: bool = False) -> None:
+        """Advance the spiral only while the tip keeps up; clamp the setpoint to within the leash of the tip."""
         c = self.search_cfg
-        if self.impedance.stiffness[0] != self.search_stiffness[0]:
-            self.impedance.set_stiffness(self.search_stiffness)
-        lead = self.search_xy - tip[:2]
-        if np.linalg.norm(lead) > c.max_lateral_lead:
-            self.stalls += dt  # tip held back (friction or a wall): don't wind the spiral further ahead
+        behind = np.linalg.norm(self._spiral_xy() - tip[:2]) > c.max_lateral_lead
+        if behind and not ignore_stall:
+            self.stalls += dt
             self.stall_run += dt
-            return
-        self.stall_run = 0.0
-        radius = c.pitch * self.theta / (2 * np.pi)
-        self.theta += min(c.max_angular_speed, c.search_speed / max(radius, 1e-4)) * dt
-        if radius > c.search_radius:
-            self.theta = 0.0
-            self.restarts += 1
-        self.search_xy = self._spiral_xy()
+        else:
+            # Leaky: a clamped setpoint flickers behind/not-behind step to step, which must still count as a stall.
+            self.stall_run = max(0.0, self.stall_run - 0.5 * dt)
+            radius = c.pitch * self.theta / (2 * np.pi)
+            self.theta += min(c.max_angular_speed, c.search_speed / max(radius, 1e-4)) * dt
+            if radius > c.search_radius:
+                self.theta = 0.0
+                self.restarts += 1
+        lead = self._spiral_xy() - tip[:2]
+        distance = np.linalg.norm(lead)
+        if distance > c.max_lateral_lead:
+            lead *= c.max_lateral_lead / distance
+        self.search_xy = tip[:2] + lead
 
     def _start_insert(self, obs: Observation) -> None:
         self.phase = self.INSERT
@@ -236,6 +288,7 @@ class SpiralSearchInsert(ImpedanceInsert):
             "search_time": (self.found_time or self.last_time) - self.search_start if self.search_start is not None else 0.0,
             "found": self.found_time is not None,
             "pauses": self.pauses,
+            "hops": self.hops,
             "spiral_restarts": self.restarts,
             "stall_time": self.stalls,
         }
