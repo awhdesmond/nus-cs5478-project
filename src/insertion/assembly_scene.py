@@ -123,6 +123,11 @@ def add_table_and_fixture(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
             add_ngon_hole_geoms(body, socket_apothem(cfg, kind), cfg.round_sides, cfg, prefix=f"{kind}_socket")
         else:
             add_square_hole_geoms(body, socket_apothem(cfg, kind), cfg, prefix=f"{kind}_socket")
+        if cfg.socket_debris is not None and cfg.socket_debris[0] == kind:
+            height = cfg.socket_debris[1]
+            half = 0.6 * socket_apothem(cfg, kind)  # well inside the hole: blocks depth, not the walls
+            body.add_geom(name=f"{kind}_socket_debris", type=BOX, size=[half, half, height / 2], pos=[0, 0, height / 2],
+                          rgba=[0.3, 0.25, 0.2, 1], **contact_params(cfg))
         body.add_site(name=f"{kind}_socket_bottom", pos=[0, 0, 0], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
         body.add_site(name=f"{kind}_socket_entrance", pos=[0, 0, cfg.socket_depth], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
 
@@ -189,13 +194,34 @@ def add_connectors(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
 CABLE_RGBA = "0.08 0.08 0.1 1"
 
 
+def _add_cable_plug(parent: mujoco.MjsBody, name: str, pos, quat, cfg: AssemblyConfig) -> mujoco.MjsBody:
+    """Strain-relief boot + square plug with a blue marked tip, extending along the new body's +x from `pos`."""
+    boot, plug, band = cfg.cable_boot_length, cfg.cable_plug_length, cfg.tip_band_length
+    half = cfg.square_half
+    body = parent.add_body(name=name, pos=list(pos), quat=list(quat))
+    along_x = [0.7071068, 0, 0.7071068, 0]  # a cylinder's own z → the body's x
+    body.add_geom(name=f"{name}_boot", type=CYLINDER, size=[cfg.cable_radius * 1.6, boot / 2], pos=[boot / 2, 0, 0],
+                  quat=along_x, rgba=[0.08, 0.08, 0.1, 1], density=1200.0, **contact_params(cfg))
+    body.add_geom(name=name, type=BOX, size=[plug / 2, half, half], pos=[boot + plug / 2, 0, 0],
+                  rgba=CONNECTOR_RGBA, density=1200.0, **contact_params(cfg))
+    body.add_geom(name=f"{name}_tip_band", type=BOX, size=[band / 2 + TIP_BAND_PROUD, half + TIP_BAND_PROUD, half + TIP_BAND_PROUD],
+                  pos=[boot + plug - band / 2, 0, 0], rgba=TIP_BAND_RGBA, contype=0, conaffinity=0, density=0.0)
+    body.add_site(name=f"{name}_tip", pos=[boot + plug, 0, 0], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
+    return body
+
+
 def add_cable(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
-    """Fully deformable cable: MuJoCo's `cable` composite (a chain of capsules with ball joints) with the elasticity
-    plugin supplying bending and twisting stiffness. One end is clamped at the table's left edge (`initial="none"`:
-    the first segment is fixed to the clamp) and the rest points off the table, so it drapes over the edge.
+    """Dual-ended deformable cable: MuJoCo's `cable` composite (a chain of capsules with ball joints) with the
+    elasticity plugin supplying bending and twisting stiffness, and a square plug on each end — the square
+    connector's cross-section, colour and blue marked tip, behind a strain-relief boot — so either end looks like it
+    belongs in the square socket.
+
+    End A (`cable_plug_a`) is docked horizontally in a port block at the table's left edge; the composite's first
+    segment is fixed there (`initial="none"`), so the port holds the cable. The rest points off the table and drapes
+    over the edge, with end B (`cable_plug_b`) hanging free.
 
     Composites only exist in MJCF, so the cable is built in its own spec from XML and attached with a prefix.
-    Bodies are `cable_B_first`, `cable_B_1`, … `cable_B_last`.
+    Bodies: `cable_clamp` (port) → `cable_plug_a`, and `cable_B_first`, `cable_B_1`, … `cable_B_last` → `cable_plug_b`.
     """
     n = cfg.cable_segments + 1
     xml = f"""
@@ -203,7 +229,6 @@ def add_cable(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
       <extension><plugin plugin="mujoco.elasticity.cable"/></extension>
       <worldbody>
         <body name="clamp">
-          <geom name="clamp" type="box" size="0.012 0.012 0.006" pos="0 0 0.002" rgba="0.25 0.25 0.3 1" contype="0" conaffinity="0"/>
           <composite prefix="" type="cable" curve="s" count="{n} 1 1" size="{cfg.cable_length}" initial="none">
             <plugin plugin="mujoco.elasticity.cable">
               <config key="twist" value="{cfg.cable_twist_stiffness}"/>
@@ -218,9 +243,25 @@ def add_cable(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
     </mujoco>"""
     cable = mujoco.MjSpec.from_string(xml)
     x, y = cfg.cable_anchor
-    # The composite runs along the clamp's +x; turn it 180° so the cable points off the table's left edge (−x).
-    frame = spec.worldbody.add_frame(pos=[x, y, cfg.table_height + cfg.cable_radius + 0.001], quat=[0, 0, 0, 1])
+    axis_height = cfg.square_half + 0.0005  # plug A rests just above the table
+    # The composite runs along the clamp's +x; turn it 180° about z so the cable points off the table's left edge (−x).
+    frame = spec.worldbody.add_frame(pos=[x, y, cfg.table_height + axis_height], quat=[0, 0, 0, 1])
     frame.attach_body(cable.body("clamp"), "cable_", "")
+
+    # End A: plug pointing back onto the table (clamp −x), inserted socket-depth deep into a port block.
+    clamp = spec.body("cable_clamp")
+    _add_cable_plug(clamp, "cable_plug_a", [0, 0, 0], [0, 0, 0, 1], cfg)
+    exposed = cfg.cable_boot_length + cfg.cable_plug_length - cfg.socket_depth  # boot + plug length left outside the port
+    depth = cfg.socket_depth + 0.002
+    port_half = cfg.square_half + 0.005
+    port_top = axis_height + port_half
+    clamp.add_geom(name="cable_port", type=BOX, size=[depth / 2, port_half, port_top / 2],
+                   pos=[-(exposed + depth / 2), 0, port_top / 2 - axis_height],
+                   rgba=[0.25, 0.25, 0.3, 1], contype=0, conaffinity=0, density=0.0)
+
+    # End B: each cable segment's capsule runs along its body's +x from the origin, so the free end is one segment
+    # length along the last body's x.
+    _add_cable_plug(spec.body("cable_B_last"), "cable_plug_b", [cfg.cable_length / cfg.cable_segments, 0, 0], [1, 0, 0, 0], cfg)
 
 
 def add_camera(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:

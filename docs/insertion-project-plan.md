@@ -4,12 +4,21 @@
 **Duration:** 8 weeks (6 originally; extended after week 5 — see weeks 6–7)
 **Available time:** ~10–16 hrs/week (2–3 weeknights + weekend blocks) → ~60–95 hrs total
 
+**Final scope (frozen 2026-09-15).** Nothing beyond this is committed:
+1. **Insertion module** (weeks 1–5, done): impedance + spiral search vs baselines, Plan A grid.
+2. **Two-connector task** (M1–M5): overhead RGB-D perception, round/square identification, antipodal and lying
+   grasps, sideways reorientation, compliant insertion into randomised sockets, F/T + visual completion checks.
+   M1–M4c done; M5 grid running.
+3. **Writeup** (week 8): plots, report, demo videos.
+
+Stretch only (§8): friction grasp (M6), cable task (M7), tilt uncertainty, LeRobot.
+
 ---
 
 ## 1. Task
 
 *This section is the original (weeks 1–5) insertion task, which remains the "insertion module". The extended
-task — perceive, identify and pick two keyed connectors, insert each into its own socket — is defined under
+task — perceive, identify and pick two keyed connectors, insert each into its own socket (M1–M5) — is defined under
 "Weeks 6–7". Lessons from both are collected in §10.*
 
 A 6-DOF manipulator inserts a **rigid wire terminal / connector** into a socket with
@@ -296,9 +305,28 @@ below the top) stay 12 mm above the socket when seated.
   - *Found and fixed:* **along-axis perception error becomes depth error.** An upright connector's height error cancels against the socket's (same camera); a lying connector's position along its axis comes from image xy, and once it hangs down that error (3.6–4.7 mm seen, realistic camera) is in depth, while the socket's xy bias (up to 5.4 mm) stays lateral. Symptoms: (a) physically seated but only 1.5 N push because the controller believed it was past its goal → F/T completion never fired; (b) resting on the fixture top but believed 3.3 mm inside the hole → spiral search never started, connector toppled on release. Fixes, lying pickups only: `push_after_path` (setpoint stays max_lead below the tip after the path ends, ≈ 5 N) and `surface_contact_depth` = half the hole depth for both the surface-contact test and the seating depth gate. Both failing seeds then seated (seed 23: search found the hole in 8.4 s). Default controller behaviour is unchanged.
   - *Viewer:* `scripts/view.py --scene assembly` loops over seeds in one window (layouts applied in place with `AssemblySim.apply_layout`), default mixed orientations.
   - *Benchmark (480 runs: 20 layouts × {upright, lying, mixed} × clearance {3, 1} mm × μ {0.3, 0.8} × camera {ideal, realistic}; 520 lying and 440 upright connectors):* **480/480 runs seated both connectors**, including the mixed-orientation seeds that had failed before the depth-bias fix. Lying connectors: 100% grasped, turned, seated marked end first and still seated after release; 0 wrong ends, 0 wrong sockets; F/T belief, visual check and `verified` all agreed with ground truth on every connector. Planned arm clearance ≥ 9.2 mm. Peak sustained force ≤ 14.0 N (p95 7.1 N; cap 30 N). **Spiral search was needed in 52% of lying insertions with the realistic camera** (0% ideal) — the depth/lateral bias that doesn't cancel after reorientation is exactly what search is for — vs 0.2% of upright ones. In-hand tip error p95 0.28 mm (ideal) / 4.2 mm (realistic). Mean run 50.8 s simulated all upright, 59.9 s mixed, 65.3 s all lying. Upright results unchanged from M4c.
-- [ ] **M5 Full pipeline.** `PickAndInsert` controller (round then square) + harness task mode; metrics per connector and per trial: classification correct, round picked first, grasp success, correct socket, seated, still seated at the end, force cap (10 ms), cycle time per connector and total, perception errors vs ground truth. Grid: clearance {3, 1} mm × friction {0.3, 0.8} × depth noise {off, on} × orientation {all upright, mixed upright/lying} × 20–50 seeds (each seed = a random two-connector layout). Demo videos (trace panel + camera view).
+- [x] **M5 Full pipeline.** `PickAndInsert` controller (round then square) + harness task mode; metrics per connector and per trial: classification correct, round picked first, grasp success, correct socket, seated, still seated at the end, force cap (10 ms), cycle time per connector and total, perception errors vs ground truth. Grid: clearance {3, 1} mm × friction {0.3, 0.8} × depth noise {off, on} × orientation {all upright, mixed upright/lying} × 20–50 seeds (each seed = a random two-connector layout). Demo videos (trace panel + camera view).
   **Done =** end-to-end success (both connectors seated in the correct sockets) reported per cell; failure modes diagnosed by stage (perception / grasp / insertion / release) and by connector.
-- [ ] **M6 Friction grasp** (after M5; attach-on-grasp stays as the fallback). Remove the weld: the connector is held only by finger friction. Force-limited finger actuation (grip force set from connector mass, insertion push and μ, with margin), finger pad contact parameters validated like the socket contact check, and F/T thresholds re-checked with the gripper and connector in the load path. Log in-hand slip (connector tip displacement relative to the gripper) through lift, transport and insertion.
+  *Done 2026-09-15* — results in `results/m5/` and `results/m5_debris/`:
+  - *Harness:* `AssemblyRun` is the pick-and-insert controller (round first by construction) and `scripts/assembly_benchmark.py` the task-mode harness. It now appends every finished run to `connectors.csv` and prints it (an interrupted grid keeps its results; the first M4b grid was lost when the session ended), with axes orientation × camera × clearance × friction × per-object error × debris.
+  - *Independent per-object perception error* (`perception_noise.ObjectOffsetEstimator`): a fixed xy offset per connector and per socket, uniform ±e per axis, drawn once per run and applied to every capture. Unlike camera calibration error it doesn't cancel between a part and its socket, so it stresses search on upright insertions too. The visual check's xy margin widens to 1 mm + 2√2·e (a seated connector can then look that far off its socket); height still decides seated vs not.
+  - *Failure injection — debris* (`AssemblyConfig.socket_debris`): a 4 mm block on one socket's floor, so that connector can't seat. Tests the completion checks: the F/T check pushes, stops and is inside its depth window, so it falsely accepts; the visual check sees 34 mm instead of 30 and rejects. First runs: exactly that (`verified` false, stage "verification").
+  - *Metrics added:* `identified_correctly` (the estimate for a kind lies on that true connector), connector / socket / **relative** (non-cancelling) xy perception error at the pick's capture, `cycle_time` per connector (pick start → post-release capture and check), `failure_stage` (perception / grasp / planning / insertion / release / verification), completion-check confusion overall and on debris sockets.
+  - *Grids:* M5 = {upright, mixed} × camera {ideal, realistic} × clearance {3, 1} mm × μ {0.3, 0.8} × per-object error {0, ±2 mm} × 20 layouts (640 runs); debris = {upright, mixed} × realistic × 1 mm × μ 0.3 × 4 mm debris × 20 (40 runs).
+  - *Debris results (40 runs, 80 connectors):* all 40 obstructed connectors were **falsely accepted by the F/T check** (upright and lying alike: pushing, stopped, inside its depth window) and **all 40 rejected by the visual check** (measured 33.6–34.2 mm vs 30 mm seated; threshold 33 mm); `verified` agreed with ground truth on all 80 connectors, and every clean-socket connector in the same runs seated and verified. Neither check alone is enough: F/T can't see a few mm of missing depth under a biased depth estimate; vision can't feel. Caveat: the visual margin is only ~0.6 mm at 4 mm of debris, so 2–3 mm obstructions sit in the ambiguous band between the ground-truth tolerance (2 mm) and the visual threshold (3 mm).
+  - *M5 grid results (640 runs, 1,280 connectors: 880 upright, 400 lying):* **640/640 runs seated both connectors**; identification 100%, 0 wrong sockets, 0 wrong ends, no failure at any stage; F/T belief, visual check and `verified` agreed with ground truth on every connector (no false accepts/rejects — the debris grid is what exercises them). Peak sustained force ≤ 17.2 N (cap 30 N). Mean cycle time per connector 25 s upright, 32 s lying; mean run 51 s all upright, 59–62 s mixed.
+  - **Spiral search usage** (share of insertions; all searches found the hole):
+
+    | Per-object error | Camera | Upright | Lying |
+    |---|---|---|---|
+    | 0 | ideal | 0% | 0% |
+    | 0 | realistic | 0.5% | 54% |
+    | ±2 mm | ideal | 26% | 9% |
+    | ±2 mm | realistic | 14% | 55% |
+
+    By clearance with ±2 mm per-object error (both cameras): upright 34–36% at 1 mm vs 4–6% at 3 mm; lying 40% vs 22–26%. Non-cancelling connector–socket error p95: 0.1–1.3 mm without per-object error, 3.1–3.4 mm with it. Mean search time 0.8–3.1 s; a searched upright insertion took ~1.1 s longer on average.
+  - *Reading:* camera calibration bias alone almost never needs search for upright parts (it cancels); per-object error and reorientation (lying parts, whose along-axis error becomes depth/lateral error) are what the search handles. **The grid never failed**, so ±2 mm is inside the pipeline's capacity — the insertion-module Plan A grid (±5 mm, 99.1%) is where degradation shows. A larger per-object error (e.g. ±4 mm) would be the next stress level if a failure boundary is needed for the report.
+- [ ] **M6 Friction grasp — stretch, not committed** (moved out of scope at the 2026-09-15 scope freeze; only after the writeup is done; attach-on-grasp stays for all headline results). Remove the weld: the connector is held only by finger friction. Force-limited finger actuation (grip force set from connector mass, insertion push and μ, with margin), finger pad contact parameters validated like the socket contact check, and F/T thresholds re-checked with the gripper and connector in the load path. Log in-hand slip (connector tip displacement relative to the gripper) through lift, transport and insertion.
   **Done =** on the full-task grid, (a) ≥ 90% of grasps lift and transport without a drop, (b) in-hand slip during insertion < 0.5 mm in ≥ 90% of trials, and (c) end-to-end success within 10 percentage points of the attach-on-grasp result in every cell. If not met by the start of week 8, report friction grasp as a documented partial result and keep attach-on-grasp for the headline numbers.
 
 **Risks**
@@ -318,11 +346,13 @@ below the top) stay 12 mm above the socket when seated.
 | Lying round connector rolls when bumped or pinched | Check rest stability in the scene; pinch at the centreline height; re-capture before picking |
 | Scope creep | Arbitrary pick order, wrist camera and tilt uncertainty are stretch only |
 
-### Week 8 — Friction grasp (M6) and results and writeup
-- [ ] Plots: success rate vs. clearance/uncertainty; contact force; cycle time; perception error distributions; stage-wise failure breakdown
-- [ ] Report (~3–5 pages): task, method, results, discussion — add perception + grasping sections
-- [ ] Demo video / trajectory replay (full pipeline, with camera view)
-- [ ] Update the proposal's task definition to the extended task (instructor-facing)
+### Week 8 — Results and writeup
+Remaining committed work, in order: M5 results → the items below.
+- [ ] Plots: success rate vs. clearance/uncertainty/per-object error; contact force; cycle time; perception error distributions; stage-wise failure breakdown; completion-check confusion (incl. debris); upright vs lying
+- [ ] Report (~3–5 pages): task, method, results, discussion — add perception, grasping, lying/sideways insertion and completion-check sections
+- [ ] Demo video with camera view: two-connector task (mixed orientations)
+- [x] Update the proposal's task definition to the extended task (instructor-facing) — done 2026-09-15, including the scope freeze
+- [ ] Copy final plots and videos out of the gitignored `results/`
 
 ---
 
@@ -366,10 +396,11 @@ some of its weight to seating if the instructor allows.*
 | Tier | Scope | Cost |
 |---|---|---|
 | **Plan A grid** | Expand to 3 clearances × 3 uncertainty levels × 50 trials per cell | **Done** (2026-09-15): clearance 3/2/1 mm × uncertainty ±1/±3/±5 mm × 50 seeds × μ 0.3/0.8 × 4 controllers = 3,600 trials → `results/plan_a_*`. Overall success: open-loop 56%, guarded 86%, impedance 78%, **spiral 99.1%** (lowest cell 92% at μ 0.8, 1 mm, ±3 mm; 6 timeouts, 2 force-cap violations in 900 spiral trials). Compute took ~19 h wall clock because the laptop slept on battery — plug in for long runs |
-| **Friction grasp** | Replace attach-on-grasp with a connector held only by finger friction | **Moved into the schedule as M6** (2026-09-15) |
+| **Friction grasp** | Replace attach-on-grasp with a connector held only by finger friction | Was scheduled as M6; **back to stretch at the scope freeze (2026-09-15)** — see M6 for its design and done criteria |
 | **Tilt (rotation) uncertainty** | Socket axis tilted a few degrees from its believed orientation | ~half a day. Yaw is now covered by perception for the square connector; tilt remains untested |
 | **Tier B** | Partially deformable connector: 2–3 link chain with joint compliance, so the plug lags/swings relative to gripper | ~1 week |
-| **Tier C** | Fully deformable cable (MuJoCo composite body) + tip state estimation | Research-scale; comparable to the Intrinsic AI-for-Industry challenge task. *Asset added 2026-09-15 (scenery only):* `AssemblyConfig.cable` / `view.py --cable` — MuJoCo `cable` composite (24 capsule segments, ball joints, elasticity plugin: bend 2 MPa, twist 1 MPa, 6 mm × 200 mm) clamped at the table's left edge and draped over it, outside the camera's view (0 cable pixels) so perception and benchmarks are unaffected; built from an MJCF snippet and attached to the MjSpec scene (composites exist only in MJCF) |
+| **Cable task (M7)** | The two keyed parts as the SC-style square and FC/ST-style round plugs of a Ø3 mm × ~150 mm fibre patch cable lying on the table; round end into its port first, then the square end, with the cable tethering the first port. Reuses the lying-part pipeline; new work: plug perception that ignores the black cable/boots, ~10 mm fingers and ~12 mm-deep ports, cable snag / first-plug-pulled-out metrics | Planned then **dropped at the scope freeze (2026-09-15) as too big**; est. 3–5 days. A prototype (free cable with round + square plugs on a curved layout) settled in ~0.5 s and ran faster than real time. LC-scale plugs (4.5 mm) were rejected even for this: ~13 px per part is below what shape identification needs, and real ~0.1 mm tolerances are below the validated contact model |
+| **Tier C** | Fully deformable cable (MuJoCo composite body) + tip state estimation | Research-scale; comparable to the Intrinsic AI-for-Industry challenge task. *Scenery asset only (2026-09-15, not used by any task):* `AssemblyConfig.cable` / `view.py --cable` — MuJoCo `cable` composite (24 capsule segments, ball joints, elasticity plugin: bend 2 MPa, twist 1 MPa, 6 mm × 200 mm) **dual-ended**: a square plug on each end (strain-relief boot + the square connector's 8.5 mm cross-section, amber body and blue marked tip, 30 mm long, matching the square socket); end A docked in a port block on the table's left edge (holds the cable), the cable drapes over the edge and end B hangs free; all outside the camera's view (0 cable pixels) so perception and benchmarks are unaffected; built from an MJCF snippet and attached to the MjSpec scene (composites exist only in MJCF) |
 | **LeRobot** | Use the classical controller as a scripted expert → generate demos → train ACT/diffusion policy → compare against classical on the same harness | ~15–25 hrs + GPU. **Post-submission, not week 6** |
 
 **Two zero-cost moves to keep the LeRobot door open now:**
@@ -563,7 +594,8 @@ per-milestone notes there have the full context.*
 
 ### 10.9 Open items and caveats
 - Socket **tilt** uncertainty is untested (stretch tier).
-- The full-pipeline grid with stress conditions (M5) and the friction grasp (M6) are not started.
+- All committed milestones (M1–M5) are done; remaining committed work is the writeup (week 8). The friction grasp (M6) and the cable task (M7) are stretch.
+- The M5 grid had no failures, so it doesn't show a failure boundary for per-object error; run ±4 mm if the report needs one.
 - M5 must inject insertion failures: the F/T and visual completion checks have never disagreed with ground truth on
   upright connectors because nothing failed.
 - The interactive viewer's live-control callback has only been tested headless (the GUI itself wasn't checked during development).

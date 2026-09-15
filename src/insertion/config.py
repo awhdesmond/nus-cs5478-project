@@ -274,6 +274,10 @@ class AssemblyConfig:
     image_width: int = 1280
     image_height: int = 960
 
+    # Debris in a socket (M5 failure injection): (kind, height [m]) of a block on that hole's floor, so its connector
+    # physically can't seat. None = clean sockets.
+    socket_debris: tuple[str, float] | None = None
+
     # Deformable cable (MuJoCo elastic `cable` composite): clamped at the table's left edge, just outside the camera's
     # view, and draped over the edge. Scenery for now (Tier C groundwork); off by default so perception and the
     # benchmarks are unaffected.
@@ -283,7 +287,12 @@ class AssemblyConfig:
     cable_segments: int = 24
     cable_bend_stiffness: float = 2e6  # [Pa] elasticity plugin "bend" (Young's modulus)
     cable_twist_stiffness: float = 1e6  # [Pa] elasticity plugin "twist" (shear modulus)
-    cable_anchor: tuple[float, float] = (-0.285, 0.50)  # [m] clamp centre on the table; camera sees x ≥ −0.25
+    cable_anchor: tuple[float, float] = (-0.300, 0.50)  # [m] where the cable leaves its port, at the table's left edge
+    # Square plugs on both ends: the square connector's cross-section and marked tip, long enough to seat in a socket
+    # (depth 20 mm) with the boot clear of the fixture top. End A is docked in a port block on the table's edge
+    # (x ≤ −0.254, outside the camera's view, which starts at x ≈ −0.248 at the block's height); end B hangs free.
+    cable_plug_length: float = 0.030  # [m]
+    cable_boot_length: float = 0.012  # [m] strain relief between cable and plug
 
     # Physics (as SceneConfig)
     timestep: float = 0.001

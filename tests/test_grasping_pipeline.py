@@ -167,3 +167,41 @@ def test_visual_seating_check_tells_seated_from_resting_on_the_chamfer(noise):
     assert seated and abs(height - 0.030) < 0.0015 and offset < 0.001
     seated, height, _ = visual_seating(after.connector("square"), before.socket("square"), cfg)
     assert not seated and height > 0.040
+
+
+def test_object_offsets_are_independent_per_object_and_fixed_per_run():
+    from insertion.perception_noise import ObjectOffsetEstimator
+
+    cfg = sample_layout(CFG, 1)
+    model = build_assembly_model(cfg)
+    data = mujoco.MjData(model)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
+    mujoco.mj_forward(model, data)
+    observation = OverheadCamera(model, cfg.image_width, cfg.image_height).capture(data)
+    clean = GeometricEstimator().estimate(observation)
+    noisy = ObjectOffsetEstimator(GeometricEstimator(), 0.002, np.random.default_rng(0))
+    first, second = noisy.estimate(observation), noisy.estimate(observation)
+    shifts = []
+    for kind in ("round", "square"):
+        for part, get in (("connector", lambda s, k: s.connector(k).top), ("socket", lambda s, k: s.socket(k).entrance)):
+            shift = get(first, kind) - get(clean, kind)
+            np.testing.assert_allclose(shift, get(second, kind) - get(clean, kind))  # same offset every capture
+            assert abs(shift[2]) < 1e-12 and np.all(np.abs(shift[:2]) <= 0.002)
+            shifts.append(tuple(np.round(shift[:2], 9)))
+    assert len(set(shifts)) == 4  # independent per object
+    passthrough = ObjectOffsetEstimator(GeometricEstimator(), 0.0, np.random.default_rng(0)).estimate(observation)
+    np.testing.assert_allclose(passthrough.connector("round").top, clean.connector("round").top)
+
+
+def test_debris_in_a_socket_is_caught_by_the_visual_check_not_the_force_check():
+    from dataclasses import replace
+
+    cfg = replace(sample_layout(CFG, 1), socket_debris=("square", 0.004))
+    result = AssemblyRun(cfg, seed=1, noise=DepthNoise()).run()
+    square = next(log for log in result.connectors if log.kind == "square")
+    assert not square.seated and not square.stayed_seated
+    assert square.inserted_belief  # pushing, stopped and within the F/T check's depth window: a false accept
+    assert not square.seated_visual and square.visual_height_mm > 33.0 and not square.verified
+    assert square.failure == "visual_check_failed" and square.failure_stage == "verification"
+    round_ = next(log for log in result.connectors if log.kind == "round")
+    assert round_.verified and round_.failure_stage == "" and round_.cycle_time > 0

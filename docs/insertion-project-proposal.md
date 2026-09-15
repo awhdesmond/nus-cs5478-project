@@ -2,7 +2,7 @@
 
 **Course:** Intelligent Robots — Algorithms and Systems
 **Project type:** Custom project (in lieu of the default Pick-Nav-Reach project)
-**Duration:** 8 weeks (scope extended after week 5; see §10)
+**Duration:** 8 weeks (scope extended after week 5 and final as of week 6; see §10)
 
 ---
 
@@ -22,8 +22,8 @@ A 6-DOF manipulator with a parallel-jaw gripper and a fixed overhead RGB-D camer
 
 - **Scene.** A round connector and a square connector are placed at random,
   non-overlapping positions and orientations in a pick area, each either standing upright
-  or lying on its side. A fixture holds two sockets:
-  a round hole and a square hole, each with **1–3 mm clearance**.
+  or lying on its side. Two sockets, a round hole and a square hole, sit at random
+  positions and orientations, each with **1–3 mm clearance**.
 - **Sequence.** Using the camera, the robot identifies the **round connector first**,
   grasps it, inserts it into the round socket and releases it; it then identifies the
   square connector, grasps it and inserts it into the square socket. A lying connector is
@@ -39,12 +39,10 @@ A 6-DOF manipulator with a parallel-jaw gripper and a fixed overhead RGB-D camer
   1 mm clearance, mirroring connector keying.
 - **No cable is modelled.** Deformable-cable simulation is a research problem in its own
   right (see §8); it would shift the project away from its algorithmic content.
-- **Grasping is built in two stages.** Grasp poses always come from antipodal grasp
-  synthesis on the camera's point cloud. The pipeline is first built with attach-on-grasp
-  (once both fingers contact a connector it is locked to the gripper; where the fingers
-  closed still sets the in-hand pose, so perception error carries through). It is then
-  upgraded to a friction grasp, where the connector is held only by finger friction and can
-  slip; attach-on-grasp remains the fallback.
+- **Attach-on-grasp.** Grasp poses come from antipodal grasp synthesis on the camera's
+  data, and are planned to be ones that would hold under friction. Once both fingers contact
+  a part it is locked to the gripper; where the fingers closed still sets the in-hand pose,
+  so perception error carries through to insertion. A friction grasp is a stretch goal (§8).
 
 **Success criterion.** Both connectors are seated to full depth in their correct sockets,
 within the cycle-time budget, without the sustained contact force (10 ms moving average)
@@ -55,10 +53,10 @@ exceeding a 30 N cap.
 ### 3.1 Algorithms
 
 1. **Perception and identification.** Classical computer vision on the overhead RGB-D
-   image: segment connectors and socket holes by depth and colour, classify each as round
-   or square from contour shape (circularity and polygon approximation), and estimate
-   position from the centroid and depth via the calibrated camera model, and yaw of square
-   parts from a minimum-area rectangle.
+   image: segment connectors and socket holes by depth and colour, classify each as
+   round or square by its overlap with ideal shapes (for a lying part, from its depth
+   cross-section) with a one-of-each scene prior, find a lying part's marked insertion end
+   from its colour band, and estimate positions and yaw via the calibrated camera model.
 
 2. **Inverse kinematics and trajectory generation.** Damped least-squares numerical IK with
    joint limits; quintic joint-space trajectories and trapezoidal Cartesian lines, with a
@@ -69,8 +67,9 @@ exceeding a 30 N cap.
    estimate surface normals, and sample finger contact pairs for the parallel-jaw gripper,
    keeping pairs whose contact line lies inside both friction cones (force closure) and
    that clear the table and the other connector. Then approach–close–lift–transport–release
-   sequencing, grip-force control for the friction grasp, and an in-hand pose estimate used
-   to place the connector tip at the socket.
+   sequencing, and an in-hand pose estimate used to place the connector tip at the socket.
+   A connector lying on its side is grasped across its width and turned in the hand to point
+   down, with the arm configuration chosen by a clearance check against perceived obstacles.
 
 4. **Compliant contact control.** A torque-level Cartesian impedance controller at the
    connector tip, with low lateral and rotational stiffness so the socket chamfer can guide
@@ -153,7 +152,7 @@ Assumes roughly 10–16 hours per week.
 | 3.5–4 | Search and alignment | Spiral search; end-to-end insertion at 1 mm clearance |
 | 5 | Evaluation and tuning | Insertion grids; failure modes diagnosed; spiral search vs. baseline |
 | 6–7 | Perception, grasping, two connectors | Scene with fixture and connectors; perception check; antipodal grasping with attach-on-grasp; pick and release; square insertion; lying connectors with in-hand reorientation; full pipeline grid |
-| 8 | Friction grasp; results and writeup | Friction grasp meets its slip and success criteria (or is reported as a partial result); plots, report, demo |
+| 8 | Results and writeup | Plots, report, demo videos |
 
 Weeks 1–5 are complete (§10).
 
@@ -168,32 +167,32 @@ Weeks 1–5 are complete (§10).
 | Picking or inserting one connector disturbs the other | Minimum spacing in the layout; approach from above; re-capture the image before the second pick |
 | Square connector jams from yaw error | Yaw alignment from perception, low rotational stiffness about the insertion axis, chamfered socket |
 | Round socket built from primitives gives poor contact | Validate with the existing contact sanity checks before use |
-| Friction grasp slips under insertion force | Grip force sized with margin over the insertion push; in-hand slip is measured; attach-on-grasp remains the fallback |
 | Hand collides with the fixture when inserting a lying connector sideways | Approach from the side away from the other socket; check reach and clearance of pre-insertion poses before moving |
 
 **Descoping order.** If the extension slips, scope is reduced in this order:
 
-1. Keep attach-on-grasp for the headline results; report the friction grasp as partial
-2. Upright connectors only (drop lying connectors and in-hand reorientation)
-3. Shrink the full-task grid (one clearance, one friction level)
-4. One connector per trial instead of two
-5. Replace perceived poses with noisy ground-truth poses (keeping identification by shape)
-6. Report the insertion-module results only
+1. Shrink the stress grid (one clearance, one friction level)
+2. Drop the per-object-error and debris stress conditions (the base two-connector grid, including lying
+   connectors, is already complete)
 
-**Protected scope.** The compliance controller, spiral search and the insertion-module
-results (already complete) are never descoped — together they are the minimum viable result.
+**Protected scope.** The insertion module and the two-connector task (both complete) are never
+descoped — together they are the minimum viable result.
 
 ## 8. Descoped Extensions
 
 These are explicitly *not* part of the committed scope. They would be attempted only if the
-core project is complete and validated with time remaining.
+committed work (including the writeup) is complete with time remaining.
 
+- **Friction grasp.** Replace attach-on-grasp with a part held only by finger friction, with
+  grip-force control and in-hand slip measured.
 - **Socket tilt uncertainty.** Socket axis tilted a few degrees from its perceived orientation.
 - **Partially deformable connector.** A short 2–3 link chain with joint compliance behind
   the plug, so the connector can lag and swing relative to the gripper.
-- **Fully deformable cable.** A MuJoCo composite cable with tip state estimation, since the
-  gripper pose would no longer determine the plug pose. Not achievable within this
-  project's time budget.
+- **Cable assembly.** The two keyed parts as the plugs of a fibre patch cable (SC-style square,
+  FC/ST-style round), inserting both ends into their ports with the cable tethering the first.
+- **Fully deformable cable with state estimation.** A MuJoCo composite cable whose shape is
+  estimated, since the gripper pose would no longer determine the plug pose. Not achievable
+  within this project's time budget.
 
 ## 9. Relationship to the Default Project
 
@@ -206,8 +205,8 @@ Its environment provides ground-truth object poses, point clouds and normals.
 |---|---|---|
 | Perception | Ground truth provided | Overhead RGB-D camera; segmentation, identification and pose estimation from images |
 | Grasp synthesis | Antipodal grasps from ground-truth point cloud and normals | Antipodal grasps from the camera's point cloud, with estimated normals |
-| Grasp physics | Friction grasp; hold and carry stability scored | Attach-on-grasp, then friction grasp; drops and in-hand slip measured |
-| Objects | YCB objects (irregular shapes) | Two keyed connectors (simple shapes); correct part–socket assignment |
+| Grasp physics | Friction grasp; hold and carry stability scored | Attach-on-grasp with antipodal grasp poses (friction grasp is a stretch goal) |
+| Objects | YCB objects (irregular shapes) | Two keyed connectors (simple shapes), upright or lying; correct part–socket assignment |
 | Motion | Motion planning and maze navigation | IK, trajectory generation and collision-avoiding approach; no mobile base |
 | Precision and contact | 10 cm placement; no force control | Millimetre-clearance insertion; compliant force control and contact-based search |
 
@@ -215,7 +214,7 @@ Both are pipelines of algorithmic modules evaluated across unseen seeds. This pr
 trades navigation and irregular-object grasping for real camera perception, part
 identification and contact-rich fine insertion, where the principal difficulty lies.
 
-## 10. Scope Update and Progress (end of week 5)
+## 10. Scope Update and Progress
 
 The original proposal covered compliant insertion of a single rigid connector from a
 randomised pre-insertion pose. That scope is complete:
@@ -233,3 +232,15 @@ Because the core was completed ahead of schedule, the project is extended with
 perception, identification and grasping of two keyed connectors (§2). This makes the
 pose uncertainty come from a real sensing pipeline rather than a synthetic offset, and
 adds the part-identification problem that keyed connectors pose in real assembly.
+
+**Progress (week 6).** The two-connector task is complete. Over 480 benchmark runs
+(connectors upright, lying or mixed; 1 and 3 mm clearance; two friction levels; ideal and
+realistic camera) every run seated both connectors in the correct sockets, including every
+lying connector turned in the hand. A camera check after each release confirms the
+insertion alongside the force-based check; with a small obstruction placed in a socket, the
+force check alone accepted all 40 blocked insertions and the camera check rejected all 40.
+A further 640-run grid adding independent ±2 mm per-object perception errors also seated
+both connectors in every run; spiral search was needed in up to 36% of upright insertions
+at 1 mm clearance under those errors (versus under 1% without them).
+
+**Scope is final:** the insertion module, the two-connector task and the writeup. Everything in §8 is outside the committed scope.

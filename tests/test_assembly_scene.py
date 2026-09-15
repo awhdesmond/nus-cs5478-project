@@ -162,6 +162,14 @@ def test_optional_cable_is_stable_and_out_of_the_camera_view():
     assert np.isfinite(sim.data.qpos).all()
     end = sim.data.body("cable_B_last").xpos
     assert end[0] < cfg.table_center[0] - cfg.table_half[0] and end[2] < cfg.table_height  # draped over the edge
+    plug_a, plug_b = model.body("cable_plug_a").id, model.body("cable_plug_b").id
+    assert model.body_parentid[plug_b] == model.body("cable_B_last").id
+    for name in ("cable_plug_a", "cable_plug_b"):
+        np.testing.assert_allclose(model.geom(name).size[1:], [cfg.square_half] * 2)  # both ends fit the square socket
+    tip_a = sim.data.site("cable_plug_a_tip").xpos
+    assert tip_a[0] > cfg.cable_anchor[0] and tip_a[2] > cfg.table_height  # end A docked on the table, pointing inward
+    assert sim.data.site("cable_plug_b_tip").xpos[2] < cfg.table_height  # end B hangs over the edge
+    cable_bodies += [plug_a, plug_b, model.body("cable_clamp").id]
     renderer = mujoco.Renderer(model, 240, 320)
     renderer.enable_segmentation_rendering()
     renderer.update_scene(sim.data, camera="overhead")

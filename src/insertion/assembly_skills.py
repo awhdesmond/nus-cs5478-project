@@ -32,6 +32,7 @@ from insertion.control.trajectory import LineTrajectory, QuinticTrajectory
 from insertion.grasping import GraspConfig, GraspProposal, propose_grasps
 from insertion.harness import InsertionTarget, Observation
 from insertion.perception import ConnectorEstimate, GeometricEstimator, SceneEstimate, SocketEstimate
+from insertion.perception_noise import ObjectOffsetEstimator
 from insertion.scene import UR5E_JOINTS
 from insertion.sensors import FTSensor
 
@@ -136,10 +137,38 @@ class ConnectorLog:
     wrong_end: bool = False  # ground truth: inserted unmarked end first
     sideways_yaw_deg: float = float("nan")  # lying: chosen insertion yaw (finger pointing direction)
     sideways_clearance_mm: float = float("nan")  # lying: planned worst arm–obstacle clearance
+    # Perception at the capture this connector's pick used (ground truth comparison, for scoring)
+    identified_correctly: bool = False  # the estimate labelled with this kind lies on the true connector of this kind
+    connector_xy_error_mm: float = float("nan")  # upright: top centre; lying: axis centre
+    socket_xy_error_mm: float = float("nan")  # entrance centre
+    relative_xy_error_mm: float = float("nan")  # |connector error − socket error|: what doesn't cancel on insertion
+    cycle_time: float = float("nan")  # [s] pick start → post-release capture and check (or the recapture after a failed pick)
     peak_force_10ms: float = 0.0  # [N] ground-truth connector contact force (excluding fingers)
     insert_time: float = float("nan")  # [s]
     search_info: dict = field(default_factory=dict)
     failure: str = ""
+
+    @property
+    def failure_stage(self) -> str:
+        """Pipeline stage the connector failed at ("" if it ended seated and verified)."""
+        if self.failure:
+            return FAILURE_STAGES.get(self.failure, "other")
+        if self.wrong_socket or self.wrong_end:
+            return "insertion"
+        if self.seated and not self.stayed_seated:
+            return "release"
+        if self.stayed_seated and not self.verified:
+            return "verification"  # physically fine, but the robot doesn't believe it
+        return ""
+
+
+FAILURE_STAGES = {
+    "not_identified": "perception", "tip_not_found": "perception", "socket_not_identified": "perception",
+    "no_grasp": "grasp", "grasp_gap_mismatch": "grasp", "not_lifted": "grasp",
+    "no_sideways_plan": "planning", "carry_path_blocked": "planning",
+    "insert_timeout": "insertion",
+    "visual_check_failed": "verification",
+}
 
 
 def visual_seating(connector: ConnectorEstimate | None, socket: SocketEstimate | None, cfg: AssemblyConfig,
@@ -186,8 +215,10 @@ class AssemblyRun:
         record: bool = False,
         grasp_cfg: GraspConfig | None = None,
         sim: AssemblySim | None = None,
+        object_error: float = 0.0,
     ):
-        """`sim`: reuse an existing simulation (e.g. one shown in a viewer), moved to this layout in place."""
+        """`sim`: reuse an existing simulation (e.g. one shown in a viewer), moved to this layout in place.
+        `object_error`: independent per-object perception offsets, uniform in ±object_error per horizontal axis [m]."""
         self.cfg, self.seed = cfg, seed
         self.motion = MotionConfig()
         if sim is None:
@@ -204,7 +235,10 @@ class AssemblyRun:
         self.plan_margin = 0.005  # [m] arm–obstacle clearance required by the sideways-insertion planner
         self.carry_height = 0.36  # [m] tcp height for lifting a lying connector before turning it sideways
         self.runner = SegmentRunner(self.sim.model, self.ik, JointPDConfig())
-        self.estimator = GeometricEstimator()
+        self.object_error = object_error
+        self.estimator = ObjectOffsetEstimator(GeometricEstimator(), object_error, np.random.default_rng([seed, 8]))
+        # Visual check xy margin: 1 mm, plus the worst connector-vs-socket offset the per-object error spec allows.
+        self.visual_xy_margin = 0.001 + 2 * math.sqrt(2) * object_error
         self.grasp_cfg = grasp_cfg or GraspConfig()
         self.insert_budget = insert_budget
         self.seat_force = 2.0  # [N] F/T force while pressing on the hole bottom
@@ -274,8 +308,27 @@ class AssemblyRun:
         self.result.captures.append((self.robot.time, observation, scene, []))
         return scene
 
+    def _score_perception(self, kind: str, scene: SceneEstimate) -> None:
+        """Ground-truth comparison of the estimates this pick uses (scoring only; the controller never sees it)."""
+        log = self._log(kind)
+        data = self.sim.data
+        estimate = scene.connector(kind)
+        if estimate is not None:
+            xy = estimate.centre[:2] if estimate.lying else estimate.top[:2]
+            nearest = min(CONNECTORS, key=lambda k: np.linalg.norm(data.body(f"{k}_connector").xpos[:2] - xy))
+            log.identified_correctly = nearest == kind
+            connector_error = xy - data.body(f"{kind}_connector").xpos[:2]
+            log.connector_xy_error_mm = float(np.linalg.norm(connector_error) * 1e3)
+        socket = scene.socket(kind)
+        if socket is not None:
+            socket_error = socket.entrance[:2] - data.site(f"{kind}_socket_entrance").xpos[:2]
+            log.socket_xy_error_mm = float(np.linalg.norm(socket_error) * 1e3)
+            if estimate is not None:
+                log.relative_xy_error_mm = float(np.linalg.norm(connector_error - socket_error) * 1e3)
+
     def pick(self, kind: str, scene: SceneEstimate) -> InHandEstimate | None:
         log = self._log(kind)
+        self._score_perception(kind, scene)
         estimate = scene.connector(kind)
         log.identified = estimate is not None
         log.lying = (self.cfg.round_pose if kind == "round" else self.cfg.square_pose).lying  # ground truth, for scoring
@@ -516,7 +569,7 @@ class AssemblyRun:
         """Visual insertion check on a capture taken after release; combined with the F/T check into `verified`."""
         log = self._log(kind)
         socket = self._insert_sockets.get(kind)
-        log.seated_visual, height, offset = visual_seating(scene.connector(kind), socket, self.cfg)
+        log.seated_visual, height, offset = visual_seating(scene.connector(kind), socket, self.cfg, xy_margin=self.visual_xy_margin)
         log.visual_height_mm, log.visual_offset_mm = height * 1e3, offset * 1e3
         log.verified = log.inserted_belief and log.seated_visual
         if log.inserted_belief and not log.seated_visual:
@@ -530,6 +583,7 @@ class AssemblyRun:
         self.robot.tare(q0, self.runner)
         scene = self.perceive()
         for kind in CONNECTORS:  # round first
+            t_start = self.robot.time
             in_hand = self.pick(kind, scene)
             inserted = in_hand is not None and self._log(kind).lifted
             if inserted:
@@ -542,6 +596,7 @@ class AssemblyRun:
             scene = self.perceive()  # verifies this insertion and is the scene for the next pick
             if inserted:
                 self.verify(kind, scene)
+            self._log(kind).cycle_time = self.robot.time - t_start
         self._play([], settle=0.5)
         for log in self.result.connectors:
             log.stayed_seated = self.sim.seated(log.kind)
