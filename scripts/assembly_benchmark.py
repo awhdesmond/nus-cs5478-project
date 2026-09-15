@@ -2,6 +2,7 @@
 
     uv run python scripts/assembly_benchmark.py                               # default grid, 20 layouts per cell
     uv run python scripts/assembly_benchmark.py --layouts 5 --clearances 0.003 --frictions 0.3 --conditions ideal
+    uv run python scripts/assembly_benchmark.py --fixed-sockets                # sockets at their default poses (M3/M4)
 
 Conditions: `ideal` (perfect camera) and `realistic` (depth σ 1 mm, RGB noise 3 levels, extrinsic calibration
 error up to ±2 mm per axis and 0.5°). Writes results/assembly_benchmark/connectors.csv (one row per connector per
@@ -29,8 +30,8 @@ CONDITIONS = {
 
 
 def _job(args):
-    seed, clearance, friction, condition = args
-    cfg = replace(sample_layout(AssemblyConfig(), seed), clearance=clearance, friction=friction)
+    seed, clearance, friction, condition, sockets = args
+    cfg = replace(sample_layout(AssemblyConfig(), seed, sockets=sockets), clearance=clearance, friction=friction)
     result = AssemblyRun(cfg, seed=seed, noise=CONDITIONS[condition]).run()
     rows = []
     for log in result.connectors:
@@ -49,10 +50,11 @@ def main():
     parser.add_argument("--clearances", type=float, nargs="+", default=[0.003, 0.001])
     parser.add_argument("--frictions", type=float, nargs="+", default=[0.3, 0.8])
     parser.add_argument("--conditions", nargs="+", default=list(CONDITIONS), choices=list(CONDITIONS))
+    parser.add_argument("--fixed-sockets", action="store_true", help="don't randomise socket poses")
     parser.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     args = parser.parse_args()
 
-    jobs = [(seed, c, f, cond) for cond, c, f in itertools.product(args.conditions, args.clearances, args.frictions) for seed in range(args.layouts)]
+    jobs = [(seed, c, f, cond, not args.fixed_sockets) for cond, c, f in itertools.product(args.conditions, args.clearances, args.frictions) for seed in range(args.layouts)]
     with ProcessPoolExecutor(args.workers) as pool:
         df = pd.DataFrame([row for rows in pool.map(_job, jobs) for row in rows])
     out = RESULTS_DIR / "assembly_benchmark"
@@ -70,6 +72,11 @@ def main():
         grasp_face_err_max_deg=("grasp_face_error_deg", "max"),
         seated=("seated", "mean"),
         stayed_seated=("stayed_seated", "mean"),
+        ft_belief=("inserted_belief", "mean"),
+        seated_visual=("seated_visual", "mean"),
+        verified=("verified", "mean"),
+        visual_height_mm_mean=("visual_height_mm", "mean"),
+        visual_offset_mm_max=("visual_offset_mm", "max"),
         wrong_socket=("wrong_socket", "sum"),
         searched=("search.searched", "mean"),
         insert_time_mean=("insert_time", "mean"),
@@ -80,6 +87,14 @@ def main():
     print(summary.to_string(index=False, float_format=lambda v: f"{v:.3g}"))
     print("\nBoth connectors seated at end (per run):")
     print(per_run.to_string(float_format=lambda v: f"{v:.2f}"))
+    # How well each completion check predicts the ground truth (stayed seated after release).
+    checks = {}
+    for check in ("inserted_belief", "seated_visual", "verified"):
+        predicted, truth = df[check].astype(bool), df.stayed_seated.astype(bool)
+        checks[check] = {"agree": (predicted == truth).mean(), "false_accept": int((predicted & ~truth).sum()),
+                         "false_reject": int((~predicted & truth).sum())}
+    print("\nCompletion checks vs ground truth (per connector):")
+    print(pd.DataFrame(checks).T.to_string(float_format=lambda v: f"{v:.3f}"))
     print("\nFailures:", df[df.failure != ""].groupby(keys + ["failure"]).size().to_dict())
     print(f"\n→ {out}")
 

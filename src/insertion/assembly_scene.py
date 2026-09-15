@@ -1,8 +1,9 @@
 """Two-connector assembly scene (weeks 6–7 extension).
 
 UR5e (torque motors) + parallel-jaw gripper with a wrist F/T sensor, a table, a fixture with a
-round (N-gon) and a square socket, a round and a square connector as free bodies, a fixed
-overhead RGB-D camera, and one inactive weld per connector for attach-on-grasp.
+round (N-gon) and a square socket (each its own block, at a sampled position and yaw), a round and a
+square connector as free bodies, a fixed overhead RGB-D camera, and one inactive weld per connector for
+attach-on-grasp.
 
 Both connectors share one colour, so perception has to tell them apart by shape.
 """
@@ -13,6 +14,7 @@ import mujoco
 import numpy as np
 
 from insertion.config import UR5E_SCENE_XML, AssemblyConfig, ConnectorPose
+from insertion.control.ik import JacobianIK
 from insertion.scene import (
     BOX,
     CYLINDER,
@@ -106,8 +108,11 @@ def add_table_and_fixture(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
         size=[hx, hy, cfg.table_height / 2], rgba=TABLE_RGBA, **contact_params(cfg),
     )
     hole_bottom_z = cfg.table_height + cfg.socket_base
-    for kind, xy in (("round", cfg.round_socket_xy), ("square", cfg.square_socket_xy)):
-        body = spec.worldbody.add_body(name=f"{kind}_socket", pos=[xy[0], xy[1], hole_bottom_z])
+    for kind, pose in (("round", cfg.round_socket_pose), ("square", cfg.square_socket_pose)):
+        body = spec.worldbody.add_body(
+            name=f"{kind}_socket", pos=[pose.x, pose.y, hole_bottom_z],
+            quat=[math.cos(pose.yaw / 2), 0, 0, math.sin(pose.yaw / 2)],
+        )
         if kind == "round":
             add_ngon_hole_geoms(body, socket_apothem(cfg, kind), cfg.round_sides, cfg, prefix=f"{kind}_socket")
         else:
@@ -163,25 +168,30 @@ def build_assembly_spec(cfg: AssemblyConfig) -> mujoco.MjSpec:
     add_table_and_fixture(spec, cfg)
     add_connectors(spec, cfg)
     add_camera(spec, cfg)
-    _set_home_keyframe(spec)
+    _set_home_keyframe(spec, cfg)
     return spec
 
 
-# Arm parked behind the base (home mirrored about the base, shoulder pan +π/2): nothing above the
-# workspace, so the overhead camera sees the table, fixture and connectors unobstructed.
-CAMERA_CLEAR_ARM = (1.5708, -1.5708, 1.5708, -1.5708, -1.5708, 0.0)
+def ready_arm(model: mujoco.MjModel, cfg: AssemblyConfig, q_home) -> np.ndarray:
+    """Arm joints for the `ready` pose: tcp at cfg.ready_tcp pointing down, same elbow-up branch as home."""
+    ik = JacobianIK(model, "tcp")
+    q, ok = ik.solve(np.asarray(q_home, dtype=float), np.asarray(cfg.ready_tcp), np.diag([1.0, -1.0, -1.0]), iters=300)
+    if not ok:
+        raise RuntimeError(f"IK failed for the ready pose {cfg.ready_tcp}")
+    return q
 
 
-def _set_home_keyframe(spec: mujoco.MjSpec) -> None:
+def _set_home_keyframe(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
     """Rebuild keyframes for the enlarged qpos (gripper open, connectors at their initial poses).
 
-    `home`: menagerie arm home, above the fixture. `camera_clear`: arm parked out of the camera's view.
+    `home`: menagerie arm home, above the fixture. `ready`: tool down above the table's near edge, outside the
+    overhead camera's view; runs start and take every image here.
     """
-    arm_home = list(spec.key("home").qpos)
+    arm_home = list(spec.key("home").qpos)[: len(UR5E_JOINTS)]
     for key in list(spec.keys):
         spec.delete(key)
     model = spec.compile()
-    for name, arm in (("home", arm_home), ("camera_clear", CAMERA_CLEAR_ARM)):
+    for name, arm in (("home", arm_home), ("ready", ready_arm(model, cfg, arm_home))):
         qpos = model.qpos0.copy()
         for joint, value in zip(UR5E_JOINTS, arm):
             qpos[model.joint(joint).qposadr[0]] = value
@@ -192,17 +202,31 @@ def build_assembly_model(cfg: AssemblyConfig) -> mujoco.MjModel:
     return build_assembly_spec(cfg).compile()
 
 
-def sample_layout(cfg: AssemblyConfig, seed: int, max_tries: int = 1000) -> AssemblyConfig:
-    """Random non-overlapping connector poses in the pick area; which connector goes where is random too."""
-    from dataclasses import replace
-
-    rng = np.random.default_rng([seed, 3])
-    cx, cy = cfg.pick_area_center
-    hx, hy = cfg.pick_area_half
+def _sample_pair(rng, center, half, spacing, max_tries, what) -> tuple[ConnectorPose, ConnectorPose]:
+    cx, cy = center
+    hx, hy = half
     for _ in range(max_tries):
         a = rng.uniform([cx - hx, cy - hy], [cx + hx, cy + hy])
         b = rng.uniform([cx - hx, cy - hy], [cx + hx, cy + hy])
-        if np.linalg.norm(a - b) >= cfg.min_connector_spacing:
+        if np.linalg.norm(a - b) >= spacing:
             yaws = rng.uniform(0, np.pi / 2, size=2)
-            return replace(cfg, round_pose=ConnectorPose(*a, yaws[0]), square_pose=ConnectorPose(*b, yaws[1]))
-    raise RuntimeError(f"no layout with spacing {cfg.min_connector_spacing} m in the pick area")
+            return ConnectorPose(*a, yaws[0]), ConnectorPose(*b, yaws[1])
+    raise RuntimeError(f"no {what} layout with spacing {spacing} m")
+
+
+def sample_layout(cfg: AssemblyConfig, seed: int, sockets: bool = True, max_tries: int = 1000) -> AssemblyConfig:
+    """Random non-overlapping poses: connectors in the pick area and (if `sockets`) sockets in the socket area.
+
+    Positions and yaws are independent per object, so which one sits where is random too. Sockets use their own
+    random stream, so a seed's connector layout is the same with or without socket randomisation.
+    """
+    from dataclasses import replace
+
+    rng = np.random.default_rng([seed, 3])
+    round_pose, square_pose = _sample_pair(rng, cfg.pick_area_center, cfg.pick_area_half, cfg.min_connector_spacing, max_tries, "connector")
+    cfg = replace(cfg, round_pose=round_pose, square_pose=square_pose)
+    if sockets:
+        rng = np.random.default_rng([seed, 6])
+        round_socket, square_socket = _sample_pair(rng, cfg.socket_area_center, cfg.socket_area_half, cfg.min_socket_spacing, max_tries, "socket")
+        cfg = replace(cfg, round_socket_pose=round_socket, square_socket_pose=square_socket)
+    return cfg

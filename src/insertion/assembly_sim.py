@@ -39,7 +39,7 @@ class AssemblySim(Sim):
         self.closing = False
         self.grip_target = 0.0
 
-    def reset(self, keyframe: str = "camera_clear") -> None:
+    def reset(self, keyframe: str = "ready") -> None:
         super().reset(keyframe)
         for weld in self.weld_ids.values():
             self.data.eq_active[weld] = 0

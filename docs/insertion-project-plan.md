@@ -210,19 +210,23 @@ The insertion-only benchmark and Plan A results stay as the "insertion module" r
 
 **Task.** Each trial has **both connectors** on the table, one round and one square, at random,
 non-overlapping poses in a pick area (random which is where). Up to M4 connectors stand upright; from M4b
-each connector is independently upright or lying on its side. A fixture holds **two sockets**: a round hole and a
-square hole. The robot must use the camera to find the **round connector first**, grasp it, insert it into the round
+each connector is independently upright or lying on its side. **Two sockets** — a round hole and a square hole,
+each in its own block — sit at random, non-overlapping positions and yaws in a socket area (from M4c; fixed before). The robot must use the camera to find the **round connector first**, grasp it, insert it into the round
 socket and release it; then find the square connector, grasp it and insert it into the square socket. No
 ground-truth poses reach the controller: connector and socket poses come from perception.
 
-**Sequence per trial:** capture → identify both connectors and both socket holes → pick round → insert round →
-release and retract → **re-capture** (the first pick or insertion may have nudged the square connector) → pick
-square → insert square → release and retract.
+**Sequence per trial** (from M4c): start at the `ready` pose (outside the camera's view) → capture → identify both
+connectors and both socket holes → pick round → insert round → release → retract to `ready` → **capture**, which
+both **verifies the round insertion visually** and gives the scene for the next pick (the first pick or insertion
+may have nudged the square connector) → pick square → insert square → release → retract to `ready` → capture and
+verify the square insertion.
 
 **Design decisions (2026-09-15)**
 | Choice | Decision | Why |
 |---|---|---|
 | Camera | **Fixed overhead RGB-D**, calibrated (intrinsics from `fovy`, extrinsics from the model) | Sees connector and both sockets in one shot; simplest pipeline. Image taken with the arm clear of the view |
+| Where images are taken | **`ready` pose outside the camera's view**, above the table's near edge (decided 2026-09-15; replaced a pose parked behind the base) | Occlusion-free for any layout on the table, so connector and socket positions can be randomised; ~1.4 s from the pick area or sockets instead of ~6 s. Tilting the arm aside per image was rejected: which way is "aside" depends on the layout |
+| Insertion complete | **F/T check during insertion AND a visual check after release** (decided 2026-09-15) | F/T: pushing, stopped, near the believed bottom — but that bottom carries perception error. Vision: the connector top's height above its socket (30 mm when seated vs ~49 mm on the chamfer) from one overhead image; calibration bias cancels. Single view suffices: the quantity is a height, seen top-down with nothing occluding; multi-view reserved for 6-DoF poses (M4b) |
 | Perception | **Classical CV** (OpenCV): depth/colour segmentation, contour shape analysis, back-projection | Explainable, no training data, easy to report |
 | Grasp synthesis | **Antipodal grasp proposals from the camera point cloud** (M3), decided 2026-09-15 | The standard condition for a parallel-jaw gripper (the default Pick-Nav-Reach project grades the same algorithm on ground-truth point clouds); derives the grasp from perception instead of hand-coding it per shape |
 | Grasp physics | **Attach on grasp** for M1–M5 (weld activated when both fingers contact the connector); **friction grasp in M6**, attach kept as fallback | Attach keeps the validated insertion physics while the pipeline is built; M6 matches the default project's friction-grasp physics (hold and carry stability) |
@@ -243,7 +247,7 @@ below the top) stay 12 mm above the socket when seated.
   *Done 2026-09-15* — `assembly_scene.py`, `assembly_sim.py`, `assembly_check.py`, `tests/test_assembly_scene.py` (16 tests), `scripts/assembly_demo.py`:
   - Hand-scripted ground-truth assembly (round then square): both grasped, inserted (tip within 0.15 mm / 0.03 mm of the axis at descent), released, still seated at the end; the waiting connector moved 0.003 mm.
   - Keying holds under a 30 N push, including the square's worst-case yaw (corners on the polygon vertices). Chamfer-lip penetration: 16-gon 0.18 mm vs square 0.19 mm (limit 0.5 mm). Round-hole ray profile matches the design at 4 faces and all 16 vertices.
-  - Camera: 1280×960, 25° fovy, 0.75 m above the table (~0.34 mm/px; connector tops ~1,250 px). A `camera_clear` keyframe (arm parked behind the base) leaves zero arm pixels in view; at `home` the arm covers 24% of the image.
+  - Camera: 1280×960, 25° fovy, 0.75 m above the table (~0.34 mm/px; connector tops ~1,250 px). A `camera_clear` keyframe (arm parked behind the base) left zero arm pixels in view; at `home` the arm covers 24% of the image. *(Replaced by `ready` in M4c.)*
   - All grasp poses over the pick area (4 yaws) and all insertion poses are reachable; min position-Jacobian σ 0.27.
   - Found and fixed: the weld's default anchor came from the joint equality's polycoef ([0, 1, 0]) and flung the connector 1 m on attach — weld data is now set explicitly.
 - [x] **M2 Perception.** RGB-D render → point back-projection; segment connector and socket holes; classify round vs square; estimate connector xy/yaw/height and socket-hole centres/yaw. `perception_check` over random layouts vs ground truth.
@@ -269,6 +273,13 @@ below the top) stay 12 mm above the socket when seated.
     - Completion by estimated tip height stopped short under calibration bias and let connectors drop in on release. Now mechanical: not searching, F/T > 2 N, stopped 0.3 s, within 5 mm of the believed bottom.
     - Controller F/T is now expressed in the tool-tip frame (the sensor sits at the gripper base) so force-guided centring stays correct.
   - **Demo:** `results/demos/pipeline_realistic_seed0.mp4` (3D view | live overhead camera | perception overlay with outlines, sockets and the chosen grasp).
+- [x] **M4c Ready pose, visual insertion check, randomised sockets.** *Added and done 2026-09-15.*
+  - *Ready pose:* `ready` keyframe = IK for the tcp at (−0.05, 0.28, 0.40), tool down, same elbow-up branch as `home`. Measured: 0 arm pixels (the arm first enters the image with the tcp at y ≈ 0.38); joint moves to the pick area / sockets 1.3 / 1.4 s (vs 6.7 / 5.8 s from `camera_clear`). Perception from `ready` vs `camera_clear` on 20 realistic layouts: 20/20 identified, estimates within 0.07 mm. The run starts there and returns there after every release.
+  - *Why not capture straight after retracting:* with the gripper 80 mm above the socket it just used, the square connector and socket are fully visible (next pick unaffected: estimates within 0.24 mm), but the connector just inserted is 62% visible and its socket isn't detected; after the square release the wrist hides the whole fixture.
+  - *Visual check* (`visual_seating`): connector top height above the socket top within 3 mm of 30 mm, and its xy within 2 mm of the socket centre. `verified` = F/T belief AND visual. On a hand-placed scene: seated 30.0 / 30.1 mm (ideal / realistic) vs 49.0 mm resting on the chamfer.
+  - *Randomised sockets:* socket centres in x ∈ [−0.19, −0.11], y ∈ [0.42, 0.58], yaw ∈ [0°, 90°), ≥ 60 mm apart (blocks can't overlap; the fingers inserting the second connector clear the first one standing 30 mm proud). Sockets use their own random stream, so a seed's connector layout is unchanged; `--fixed-sockets` reproduces M3/M4.
+  - *Found and fixed:* comparing the connector with the socket estimated in the **same** image failed on seated connectors (offset 2.35 mm, realistic): a connector standing in the hole hides part of the fixture top from the off-centre camera, and the detected opening shifts 0.7–1.7 mm radially (ideal camera). The check now uses the socket estimate the insertion used, taken with the hole empty.
+  - *Benchmark:* RESULTS PENDING.
 - [ ] **M4b Lying connectors (in-hand reorientation, no regrasp).** *Added 2026-09-15.* Each connector starts upright or lying on its side (seeded, independently). A lying connector is grasped from above across its width near one end, lifted, and rotated 90° about the gripper's closing axis so it points down; the hand then approaches the socket from the side, facing away from the other socket, and the M4 compliant insertion runs with the tool horizontal.
   - *Scene:* layout sampler adds orientation {upright, lying} with in-plane yaw; lying round connectors must not roll away (check rest stability; small friction/damping if needed).
   - *Perception:* detect lying connectors (footprint ≈ 50 × 10 mm), estimate long-axis yaw and both end positions, identify round vs square from the depth cross-section across the width (curved vs flat top), and report upright/lying.
@@ -459,8 +470,15 @@ per-milestone notes there have the full context.*
   centres at +0.5).
 - **Resolution budget:** a 10 mm part at ~0.86 mm/px (~12 px) is too small to tell circles from squares; 25° fovy
   at 1280×960 from 0.75 m gives ~0.34 mm/px (~40 px across a connector top).
-- **The arm occludes an overhead camera** (24% of the image at home): capture from a camera-clear pose, and
-  re-capture before each pick.
+- **The arm occludes an overhead camera** (24% of the image at home). Capture from a pose **outside the camera's
+  view frustum** (`ready`, above the table's near edge), not one that merely avoids today's layout: then no layout
+  on the table can be occluded, and it is close to the work (~1.4 s vs ~6 s for parking behind the base).
+  Re-capture before each pick.
+- **A part standing in a hole biases the hole's estimate:** an off-centre camera sees the part's side hide the
+  surrounding surface, shifting the detected opening 0.7–1.7 mm outward. Verify insertion against the hole
+  estimate from before insertion (the socket doesn't move).
+- **Verifying insertion visually needs one view, not several:** seated vs not is a height difference (30 vs ~49 mm)
+  measured top-down, and the part and socket heights share the camera's calibration bias.
 - **Map pixels onto the relevant horizontal plane** (connector top, fixture top) before measuring shape, so
   perspective doesn't distort footprints.
 - **Shape identification:** convex-hull rectangularity and circularity broke under depth noise (hulls inflate;

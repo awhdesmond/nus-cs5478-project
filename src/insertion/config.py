@@ -208,16 +208,28 @@ class AssemblyConfig:
     table_height: float = 0.17  # [m] table top; hole bottoms sit socket_base above it
     table_center: tuple[float, float] = (-0.05, 0.50)
     table_half: tuple[float, float] = (0.25, 0.15)
-    # Hole-bottom centres in world xy. PLACEHOLDER until checked for reach and camera view.
-    round_socket_xy: tuple[float, float] = (-0.19, 0.50)
-    square_socket_xy: tuple[float, float] = (-0.11, 0.50)
 
-    # Layout (overridden per trial by sample_layout)
+    # Layout (overridden per trial by sample_layout). Socket poses are hole-bottom centres and block yaw.
     round_pose: ConnectorPose = field(default_factory=lambda: ConnectorPose(0.05, 0.46, 0.0))
     square_pose: ConnectorPose = field(default_factory=lambda: ConnectorPose(0.10, 0.54, 0.3))
-    pick_area_center: tuple[float, float] = (0.07, 0.50)  # PLACEHOLDER
+    round_socket_pose: ConnectorPose = field(default_factory=lambda: ConnectorPose(-0.19, 0.50, 0.0))
+    square_socket_pose: ConnectorPose = field(default_factory=lambda: ConnectorPose(-0.11, 0.50, 0.0))
+    pick_area_center: tuple[float, float] = (0.07, 0.50)
     pick_area_half: tuple[float, float] = (0.06, 0.08)
     min_connector_spacing: float = 0.06  # [m] centre-to-centre, keeps fingers clear of the other connector
+    # Socket centres stay ≥ 25 mm (a yawed block's half-diagonal) plus calibration error inside the camera's view
+    # of the fixture top (x ∈ [−0.24, 0.18], y ∈ [0.34, 0.66]) and clear of the pick area.
+    socket_area_center: tuple[float, float] = (-0.15, 0.50)
+    socket_area_half: tuple[float, float] = (0.04, 0.08)
+    # Blocks (half-diagonal ≤ 25 mm) can't overlap, and the fingers inserting the second connector (±11 mm)
+    # stay clear of the first connector standing 30 mm out of its socket.
+    min_socket_spacing: float = 0.06  # [m]
+
+    # `ready` keyframe: tool pointing down above the table's near edge, between the base and the table. The whole
+    # arm is outside the camera's view for any layout on the table (0 arm pixels; the arm first enters the image
+    # with the tcp at y ≈ 0.38), and it is ~1.4 s of joint motion from the pick area or sockets (vs ~6 s from a pose
+    # parked behind the base).
+    ready_tcp: tuple[float, float, float] = (-0.05, 0.28, 0.40)
 
     # Gripper (parallel jaw, closes along its local y)
     finger_open_gap: float = 0.030  # [m] distance between finger inner faces when fully open

@@ -5,10 +5,11 @@ import numpy as np
 import pytest
 
 from insertion.assembly_scene import build_assembly_model, sample_layout
-from insertion.assembly_skills import AssemblyRun
+from insertion.assembly_skills import AssemblyRun, visual_seating
 from insertion.camera import DepthNoise, OverheadCamera
 from insertion.config import AssemblyConfig
 from insertion.grasping import GraspConfig, propose_grasps
+from insertion.perception import GeometricEstimator
 
 CFG = AssemblyConfig()
 STEP = 0.00034  # outline sampling ≈ camera resolution
@@ -98,8 +99,39 @@ def test_perception_driven_assembly_seats_both_connectors(condition):
         assert log.other_disturbed_mm < 0.5
         assert log.inserted_belief and log.seated and log.stayed_seated and not log.wrong_socket, log
         assert log.peak_force_10ms < 30.0
+        assert log.seated_visual and log.verified, log
     assert result.both_seated_at_end
     square = next(log for log in result.connectors if log.kind == "square")
     assert square.grasp_face_error_deg < 2.0
     if condition == "ideal":
         assert all(log.in_hand_tip_error_mm < 0.5 for log in result.connectors)
+
+
+def seated_scene(kind_states: dict, noise: DepthNoise, seed: int = 2):
+    """Two captures by one camera from the ready pose: the layout as sampled (holes empty), then with each connector
+    placed by hand "seated" in its socket or resting "on_chamfer"."""
+    cfg = sample_layout(CFG, seed)
+    model = build_assembly_model(cfg)
+    data = mujoco.MjData(model)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
+    mujoco.mj_forward(model, data)
+    camera = OverheadCamera(model, cfg.image_width, cfg.image_height, noise=noise, rng=np.random.default_rng(seed))
+    rng = np.random.default_rng(seed + 1)
+    before = GeometricEstimator().estimate(camera.capture(data, noise, rng))
+    for kind, state in kind_states.items():
+        bottom = data.site(f"{kind}_socket_bottom").xpos
+        lift = 0.0 if state == "seated" else CFG.socket_depth - CFG.socket_chamfer / 2
+        adr = model.joint(f"{kind}_connector").qposadr[0]
+        data.qpos[adr:adr + 3] = bottom + [0, 0, lift + CFG.connector_length / 2]
+        data.qpos[adr + 3:adr + 7] = data.body(f"{kind}_socket").xquat
+    mujoco.mj_forward(model, data)
+    return cfg, before, GeometricEstimator().estimate(camera.capture(data, noise, rng))
+
+
+@pytest.mark.parametrize("noise", [DepthNoise(), DepthNoise(sigma=0.001, rgb_sigma=3.0, calib_translation=0.002, calib_rotation_deg=0.5)])
+def test_visual_seating_check_tells_seated_from_resting_on_the_chamfer(noise):
+    cfg, before, after = seated_scene({"round": "seated", "square": "on_chamfer"}, noise)
+    seated, height, offset = visual_seating(after.connector("round"), before.socket("round"), cfg)
+    assert seated and abs(height - 0.030) < 0.0015 and offset < 0.001
+    seated, height, _ = visual_seating(after.connector("square"), before.socket("square"), cfg)
+    assert not seated and height > 0.040

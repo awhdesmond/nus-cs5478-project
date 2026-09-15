@@ -24,7 +24,7 @@ def grid_points(inside) -> np.ndarray:
 def test_camera_back_projection_matches_ray_casts():
     model = build_assembly_model(CFG)
     data = mujoco.MjData(model)
-    mujoco.mj_resetDataKeyframe(model, data, model.key("camera_clear").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     mujoco.mj_forward(model, data)
     obs = OverheadCamera(model, 320, 240).capture(data)
     calib = obs.calibration

@@ -119,7 +119,9 @@ def scripted_assembly(cfg: AssemblyConfig | None = None, record: bool = False) -
         tip_in_tool = tcp_rot.T @ (tip - tcp_pos)  # ground-truth in-hand offset
         conn_rot_in_tool = tcp_rot.T @ sim.data.body(f"{kind}_connector").xmat.reshape(3, 3)
         conn_yaw_now = float(np.arctan2(*(tcp_rot @ conn_rot_in_tool)[[1, 0], 0]))
-        target_conn_yaw = conn_yaw_now - wrap_quarter(conn_yaw_now) if kind == "square" else conn_yaw_now
+        socket_rot = sim.data.body(f"{kind}_socket").xmat.reshape(3, 3)
+        socket_yaw = float(np.arctan2(socket_rot[1, 0], socket_rot[0, 0]))
+        target_conn_yaw = conn_yaw_now - wrap_quarter(conn_yaw_now - socket_yaw) if kind == "square" else conn_yaw_now
         # Connector upright: its rotation is a pure yaw, so tool rot = R_conn_des · R_conn_in_tool⁻¹.
         target_tool_rot = rot_z(target_conn_yaw) @ conn_rot_in_tool.T
 

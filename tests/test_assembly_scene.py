@@ -6,7 +6,6 @@ import pytest
 
 from insertion.assembly_check import scripted_assembly, tool_down
 from insertion.assembly_scene import (
-    CAMERA_CLEAR_ARM,
     CONNECTORS,
     build_assembly_model,
     build_assembly_spec,
@@ -32,7 +31,7 @@ def model():
 
 def test_scene_has_expected_parts(model):
     assert model.nu == 7 and model.actuator(6).name == "gripper"
-    assert {model.key(i).name for i in range(model.nkey)} == {"home", "camera_clear"}
+    assert {model.key(i).name for i in range(model.nkey)} == {"home", "ready"}
     assert model.camera("overhead").id >= 0
     for kind in CONNECTORS:
         assert model.body(f"{kind}_connector").jntnum == 1
@@ -53,9 +52,20 @@ def test_nothing_moves_or_collides_at_rest(model):
     assert all("connector" in a + b and "table" in a + b for a, b in pairs), pairs
 
 
-def test_camera_sees_no_arm_from_the_camera_clear_pose(model):
+def test_ready_pose_is_tool_down_at_the_configured_tcp(model):
     data = mujoco.MjData(model)
-    mujoco.mj_resetDataKeyframe(model, data, model.key("camera_clear").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
+    mujoco.mj_forward(model, data)
+    np.testing.assert_allclose(data.site("tcp").xpos, CFG.ready_tcp, atol=1e-4)
+    np.testing.assert_allclose(data.site("tcp").xmat.reshape(3, 3), tool_down(0.0), atol=1e-3)
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2, 3])
+def test_camera_sees_no_arm_and_every_whole_object_from_the_ready_pose(seed):
+    cfg = sample_layout(CFG, seed)
+    model = build_assembly_model(cfg)
+    data = mujoco.MjData(model)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     mujoco.mj_forward(model, data)
     renderer = mujoco.Renderer(model, 240, 320)
     renderer.enable_segmentation_rendering()
@@ -63,9 +73,12 @@ def test_camera_sees_no_arm_from_the_camera_clear_pose(model):
     seg = renderer.render()[..., 0]
     arm = [g for g in range(model.ngeom) if model.body("base").id <= model.geom_bodyid[g] <= model.body("finger_right").id]
     assert not np.isin(seg, arm).any()
+    border = np.concatenate([seg[0], seg[-1], seg[:, 0], seg[:, -1]])
     for kind in CONNECTORS:
         assert (seg == model.geom(f"{kind}_connector").id).sum() > 0
-        assert any((seg == model.geom(f"{kind}_socket_base").id).flat)
+        socket_geoms = [g for g in range(model.ngeom) if model.geom_bodyid[g] == model.body(f"{kind}_socket").id]
+        assert np.isin(seg, socket_geoms).any()
+        assert not np.isin(border, socket_geoms + [model.geom(f"{kind}_connector").id]).any()  # not cut off
 
 
 def test_layout_sampler_is_seeded_spaced_and_in_bounds():
@@ -78,6 +91,13 @@ def test_layout_sampler_is_seeded_spaced_and_in_bounds():
         for pose in (r, s):
             assert abs(pose.x - CFG.pick_area_center[0]) <= CFG.pick_area_half[0]
             assert abs(pose.y - CFG.pick_area_center[1]) <= CFG.pick_area_half[1]
+        r, s = layout.round_socket_pose, layout.square_socket_pose
+        assert math.dist((r.x, r.y), (s.x, s.y)) >= CFG.min_socket_spacing
+        for pose in (r, s):
+            assert abs(pose.x - CFG.socket_area_center[0]) <= CFG.socket_area_half[0]
+            assert abs(pose.y - CFG.socket_area_center[1]) <= CFG.socket_area_half[1]
+    fixed = sample_layout(CFG, 4, sockets=False)
+    assert fixed.round_pose == a.round_pose and fixed.round_socket_pose == CFG.round_socket_pose
 
 
 # --- round (N-gon) socket geometry ---------------------------------------------------------------
@@ -146,14 +166,15 @@ def push_into_socket(socket: str, shape: str, half: float, yaw: float = 0.0, pus
     body.add_geom(mass=mass, **geom, **contact_params(CFG))
     m = spec.compile()
     d = mujoco.MjData(m)
-    for joint, value in zip(UR5E_JOINTS, CAMERA_CLEAR_ARM):
-        d.qpos[m.joint(joint).qposadr[0]] = value
+    arm_qpos = [m.joint(j).qposadr[0] for j in UR5E_JOINTS]
+    ready = base.key("ready").qpos[[base.joint(j).qposadr[0] for j in UR5E_JOINTS]]
+    d.qpos[arm_qpos] = ready
     arm_dofs = [m.joint(j).dofadr[0] for j in UR5E_JOINTS]
     probe_id = m.body("probe").id
     lowest = np.inf
     for _ in range(int(seconds / m.opt.timestep)):
         d.qvel[arm_dofs] = 0.0
-        d.qpos[[m.joint(j).qposadr[0] for j in UR5E_JOINTS]] = CAMERA_CLEAR_ARM
+        d.qpos[arm_qpos] = ready
         d.xfrc_applied[probe_id, 2] = -push
         mujoco.mj_step(m, d)
         lowest = min(lowest, d.body("probe").xpos[2] - half_len - bottom_z)

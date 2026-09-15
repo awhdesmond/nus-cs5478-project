@@ -1,6 +1,6 @@
 """M2 perception check: estimator output vs ground truth over random connector layouts.
 
-For each seed: sample a two-connector layout, render the overhead camera from the camera-clear arm
+For each seed: sample a two-connector layout, render the overhead camera from the ready arm
 pose (optionally with depth noise), run the estimator, and score identification and pose errors for
 both connectors and both sockets.
 """
@@ -22,6 +22,11 @@ def yaw_error_mod90(estimate: float, truth: float) -> float:
     return abs(diff)
 
 
+def socket_yaw(data: mujoco.MjData, kind: str) -> float:
+    rot = data.body(f"{kind}_socket").xmat.reshape(3, 3)
+    return float(np.arctan2(rot[1, 0], rot[0, 0]))
+
+
 @dataclass
 class PerceptionRow:
     seed: int
@@ -40,7 +45,7 @@ def check_layout(seed: int, noise: DepthNoise, estimator: PoseEstimator | None =
     cfg = sample_layout(base or AssemblyConfig(), seed)
     model = build_assembly_model(cfg)
     data = mujoco.MjData(model)
-    mujoco.mj_resetDataKeyframe(model, data, model.key("camera_clear").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     mujoco.mj_forward(model, data)
     camera = OverheadCamera(model, cfg.image_width, cfg.image_height)
     observation = camera.capture(data, noise, rng=np.random.default_rng([seed, 4]))
@@ -66,7 +71,7 @@ def check_layout(seed: int, noise: DepthNoise, estimator: PoseEstimator | None =
             seed, noise.sigma, "socket", kind, est is not None, len(scene.sockets),
             float(np.linalg.norm(est.entrance[:2] - true_entrance[:2])) if est else float("nan"),
             float(est.entrance[2] - true_entrance[2]) if est else float("nan"),
-            yaw_error_mod90(est.yaw, 0.0) if est and kind == "square" else float("nan"),
+            yaw_error_mod90(est.yaw, socket_yaw(data, kind)) if est and kind == "square" else float("nan"),
             est.fit.squareness if est else float("nan"),
         ))
     return rows

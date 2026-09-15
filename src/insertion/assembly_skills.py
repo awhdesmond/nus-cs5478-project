@@ -4,10 +4,12 @@
 and overhead camera images. Skills decide only from that. `AssemblyRun` sequences the skills and records
 ground-truth outcomes separately (via the underlying `AssemblySim`) for scoring.
 
-Sequence per connector: move to the camera-clear pose → capture and estimate → antipodal grasp from the
-perceived outline → approach, close, lift → in-hand estimate → spiral-search insertion into the perceived
-matching socket (compliant, with the tool-tip site set to the in-hand estimate) → release → retract.
-Round first, then square, re-capturing before the second pick.
+The run starts at the `ready` pose (tool down above the table's near edge, outside the camera's view) with one
+capture. Then per connector, round first: antipodal grasp from the perceived outline → approach, close, lift →
+in-hand estimate → spiral-search insertion into the perceived matching socket (compliant, with the tool-tip site
+set to the in-hand estimate) → release → retract to `ready` → capture. That capture both verifies the insertion
+visually (connector top at the seated height above its socket, centred on it) and is the scene the next pick
+uses.
 """
 
 import math
@@ -28,7 +30,7 @@ from insertion.control.scripted import plan_approach
 from insertion.control.trajectory import LineTrajectory, QuinticTrajectory
 from insertion.grasping import GraspConfig, GraspProposal, propose_grasps
 from insertion.harness import InsertionTarget, Observation
-from insertion.perception import GeometricEstimator, SceneEstimate
+from insertion.perception import ConnectorEstimate, GeometricEstimator, SceneEstimate, SocketEstimate
 from insertion.scene import UR5E_JOINTS
 from insertion.sensors import FTSensor
 
@@ -120,7 +122,11 @@ class ConnectorLog:
     lifted: bool = False  # ground truth: rose with the gripper
     other_disturbed_mm: float = float("nan")  # ground truth: the other connector's displacement during the pick
     in_hand_tip_error_mm: float = float("nan")  # estimate vs ground truth tip, after lift
-    inserted_belief: bool = False  # the controller believes it reached depth
+    inserted_belief: bool = False  # F/T check: the controller believes it reached the hole bottom
+    seated_visual: bool = False  # camera check after release: top at the seated height, centred on the socket
+    visual_height_mm: float = float("nan")  # perceived connector top above its socket's top surface
+    visual_offset_mm: float = float("nan")  # perceived connector top centre vs socket opening centre, xy
+    verified: bool = False  # both checks agree it is seated (what the robot reports as done)
     seated: bool = False  # ground truth, before release
     stayed_seated: bool = False  # ground truth, after release and retract
     wrong_socket: bool = False
@@ -128,6 +134,26 @@ class ConnectorLog:
     insert_time: float = float("nan")  # [s]
     search_info: dict = field(default_factory=dict)
     failure: str = ""
+
+
+def visual_seating(connector: ConnectorEstimate | None, socket: SocketEstimate | None, cfg: AssemblyConfig,
+                   height_tolerance: float = 0.003, xy_tolerance: float = 0.002) -> tuple[bool, float, float]:
+    """Is the connector seated in the socket, judged from an overhead capture? Returns (seated, height, offset) [m].
+
+    A seated connector's top stands connector_length − socket_depth (30 mm) above the fixture top; one resting on
+    the chamfer stands ~49 mm, one wedged part-way in somewhere between. The gap is many times the depth noise, and
+    the same camera's calibration bias largely cancels between the two estimates.
+
+    Pass the socket estimate from a capture with the hole still empty (the one the insertion used). With a
+    connector standing in it, the off-centre camera sees the connector's side hide part of the fixture top, and the
+    detected opening shifts 0.7–1.7 mm away from the image centre (ideal camera) — about the xy tolerance.
+    """
+    if connector is None or socket is None:
+        return False, float("nan"), float("nan")
+    height = float(connector.top[2] - socket.entrance[2])
+    offset = float(np.linalg.norm(connector.top[:2] - socket.entrance[:2]))
+    seated = abs(height - (cfg.connector_length - cfg.socket_depth)) <= height_tolerance and offset <= xy_tolerance
+    return seated, height, offset
 
 
 @dataclass
@@ -168,6 +194,7 @@ class AssemblyRun:
         self._force_window = np.zeros(10)
         self._force_i = 0
         self._active_kind: str | None = None
+        self._insert_sockets: dict[str, SocketEstimate] = {}  # socket estimates the insertions used (hole empty)
         self.robot.on_step.append(self._log_step)
 
     # --- ground-truth logging (outside the controller's view) ---------------------------------------
@@ -210,12 +237,13 @@ class AssemblyRun:
     def _tcp(self):
         return self.ik.fk(self.robot.q())
 
-    def move_to_camera_clear(self) -> None:
+    def move_to_ready(self) -> None:
+        """Up to a safe height, then a joint move to the `ready` pose (outside the camera's view)."""
         tcp, rot = self._tcp()
         if tcp[2] < 0.33:
             self._play([self._line(tcp, np.array([tcp[0], tcp[1], 0.33]), rot, speed=0.15)])
-        q_clear = self.sim.model.key("camera_clear").qpos[self.ik.qpos_adr]
-        self._play([JointSegment(QuinticTrajectory.with_limits(self.robot.q(), q_clear, self.motion.joint_vmax, self.motion.joint_amax))], settle=0.3)
+        q_ready = self.sim.model.key("ready").qpos[self.ik.qpos_adr]
+        self._play([JointSegment(QuinticTrajectory.with_limits(self.robot.q(), q_ready, self.motion.joint_vmax, self.motion.joint_amax))], settle=0.3)
 
     # --- skills ------------------------------------------------------------------------------------------------
 
@@ -304,6 +332,7 @@ class AssemblyRun:
         if socket is None:
             log.failure = "socket_not_identified"
             return
+        self._insert_sockets[kind] = socket
         tcp_local = self.sim.model.site_pos[self.robot.tcp_site].copy()
         self.robot.set_tool_tip(tcp_local + in_hand.tip_in_tool, in_hand.rot_in_tool)
 
@@ -359,22 +388,36 @@ class AssemblyRun:
         tcp_local = self.sim.model.site_pos[self.robot.tcp_site].copy()
         self.robot.set_tool_tip(tcp_local, np.eye(3))
 
+    def verify(self, kind: str, scene: SceneEstimate) -> None:
+        """Visual insertion check on a capture taken after release; combined with the F/T check into `verified`."""
+        log = self._log(kind)
+        socket = self._insert_sockets.get(kind)
+        log.seated_visual, height, offset = visual_seating(scene.connector(kind), socket, self.cfg)
+        log.visual_height_mm, log.visual_offset_mm = height * 1e3, offset * 1e3
+        log.verified = log.inserted_belief and log.seated_visual
+        if log.inserted_belief and not log.seated_visual:
+            log.failure = "visual_check_failed"
+
     def run(self) -> AssemblyResult:
         self.result.connectors = [ConnectorLog(kind=k) for k in CONNECTORS]
+        self.move_to_ready()  # already there after reset; settles and gives the PD a hold target
         q0 = self.robot.q()
         self.runner.hold_q = q0
         self.robot.tare(q0, self.runner)
+        scene = self.perceive()
         for kind in CONNECTORS:  # round first
-            self.move_to_camera_clear()
-            scene = self.perceive()
             in_hand = self.pick(kind, scene)
-            if in_hand is None or not self._log(kind).lifted:
+            inserted = in_hand is not None and self._log(kind).lifted
+            if inserted:
+                self.insert(kind, scene, in_hand)
+                self.release_and_retract(kind)
+            else:
                 self.robot.command_gripper(close=False)
                 self._play([], settle=0.3)
-                continue
-            self.insert(kind, scene, in_hand)
-            self.release_and_retract(kind)
-        self.move_to_camera_clear()
+            self.move_to_ready()
+            scene = self.perceive()  # verifies this insertion and is the scene for the next pick
+            if inserted:
+                self.verify(kind, scene)
         self._play([], settle=0.5)
         for log in self.result.connectors:
             log.stayed_seated = self.sim.seated(log.kind)
