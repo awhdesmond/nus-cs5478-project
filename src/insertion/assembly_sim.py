@@ -37,19 +37,22 @@ class AssemblySim(Sim):
         self.gripper_actuator = model.actuator("gripper").id
         self.travel = cfg.finger_open_gap / 2
         self.closing = False
+        self.grip_target = 0.0
 
     def reset(self, keyframe: str = "camera_clear") -> None:
         super().reset(keyframe)
         for weld in self.weld_ids.values():
             self.data.eq_active[weld] = 0
         self.closing = False
+        self.grip_target = 0.0
+        self.data.ctrl[self.gripper_actuator] = 0.0
 
     # --- gripper -----------------------------------------------------------------------------
 
     def command_gripper(self, close: bool) -> None:
-        """Close (to full travel; the connector stops the fingers) or open the gripper."""
+        """Close (to full travel; the connector stops the fingers) or open the gripper, at the finger speed limit."""
         self.closing = close
-        self.data.ctrl[self.gripper_actuator] = self.travel if close else 0.0
+        self.grip_target = self.travel if close else 0.0
         if not close:
             for weld in self.weld_ids.values():
                 self.data.eq_active[weld] = 0
@@ -66,6 +69,9 @@ class AssemblySim(Sim):
         return None
 
     def step(self, ctrl: np.ndarray) -> None:
+        current = self.data.ctrl[self.gripper_actuator]
+        max_change = self.cfg.finger_speed * self.model.opt.timestep
+        self.data.ctrl[self.gripper_actuator] = current + np.clip(self.grip_target - current, -max_change, max_change)
         super().step(ctrl)
         if self.closing and self.attached() is None:
             kind = self._pinched_connector()
@@ -114,6 +120,21 @@ class AssemblySim(Sim):
         bottom = self.data.site(f"{kind}_socket_bottom").xpos
         half = (self.cfg.round_radius if kind == "round" else self.cfg.square_half) + self.cfg.clearance / 2
         return bool(np.linalg.norm(tip[:2] - bottom[:2]) < half and tip[2] - bottom[2] <= depth_tol)
+
+    def connector_contact_force(self, kind: str) -> float:
+        """Magnitude of the total contact force on a connector from everything except the fingers [N]."""
+        geom = self.connector_geom_ids[kind]
+        fingers = set(self.finger_geom_ids)
+        total = np.zeros(3)
+        wrench = np.zeros(6)
+        for i in range(self.data.ncon):
+            contact = self.data.contact[i]
+            if geom not in (contact.geom1, contact.geom2) or ({contact.geom1, contact.geom2} & fingers):
+                continue
+            mujoco.mj_contactForce(self.model, self.data, i, wrench)
+            f_world = contact.frame.reshape(3, 3).T @ wrench[:3]
+            total += f_world if contact.geom2 == geom else -f_world
+        return float(np.linalg.norm(total))
 
     def connector_in_wrong_socket(self, kind: str) -> bool:
         other = "square" if kind == "round" else "round"

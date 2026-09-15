@@ -1,0 +1,105 @@
+import math
+
+import mujoco
+import numpy as np
+import pytest
+
+from insertion.assembly_scene import build_assembly_model, sample_layout
+from insertion.assembly_skills import AssemblyRun
+from insertion.camera import DepthNoise, OverheadCamera
+from insertion.config import AssemblyConfig
+from insertion.grasping import GraspConfig, propose_grasps
+
+CFG = AssemblyConfig()
+STEP = 0.00034  # outline sampling ≈ camera resolution
+
+
+def square_outline(half: float, yaw: float, centre=(0.1, 0.5)) -> np.ndarray:
+    ts = np.arange(-half, half, STEP)
+    sides = [np.stack([np.full_like(ts, half), ts], 1), np.stack([-ts, np.full_like(ts, half)], 1),
+             np.stack([np.full_like(ts, -half), -ts], 1), np.stack([ts, np.full_like(ts, -half)], 1)]
+    pts = np.concatenate(sides)
+    c, s = math.cos(yaw), math.sin(yaw)
+    return pts @ np.array([[c, -s], [s, c]]).T + centre
+
+
+def circle_outline(radius: float, centre=(0.1, 0.5)) -> np.ndarray:
+    angles = np.arange(0, 2 * math.pi, STEP / radius)
+    return np.stack([radius * np.cos(angles), radius * np.sin(angles)], 1) + centre
+
+
+@pytest.mark.parametrize("yaw_deg", [0.0, 20.0, 41.0])
+def test_square_grasps_close_across_flats(yaw_deg):
+    yaw = math.radians(yaw_deg)
+    proposals = propose_grasps(square_outline(CFG.square_half, yaw), 0.22, CFG)
+    assert proposals
+    for p in proposals[:3]:
+        face_error = abs((p.closing_angle - yaw + math.pi / 4) % (math.pi / 2) - math.pi / 4)
+        assert math.degrees(face_error) < 1.0
+        assert p.width == pytest.approx(2 * CFG.square_half, abs=0.0005)
+
+
+def test_square_corner_grasps_are_rejected():
+    proposals = propose_grasps(square_outline(CFG.square_half, 0.0), 0.22, CFG, GraspConfig(direction_step_deg=1.0))
+    angles = {round(math.degrees(p.closing_angle)) % 90 for p in proposals}
+    assert not any(30 <= a <= 60 for a in angles)
+
+
+def test_round_connector_accepts_many_diameters():
+    proposals = propose_grasps(circle_outline(CFG.round_radius), 0.22, CFG)
+    assert len(proposals) > 30
+    assert all(p.friction_margin_deg >= 0 for p in proposals)
+
+
+def test_too_wide_objects_are_rejected():
+    assert propose_grasps(circle_outline(0.02), 0.22, CFG) == []
+
+
+def test_finger_keepout_around_other_objects():
+    outline = circle_outline(CFG.round_radius, centre=(0.1, 0.5))
+    obstacle = np.array([0.1 + 0.021, 0.5])  # right where a finger closing along x would land
+    for p in propose_grasps(outline, 0.22, CFG, obstacles_xy=[obstacle]):
+        assert abs(math.cos(p.closing_angle)) < 0.95
+
+
+def test_tool_tip_site_orientation_changes_take_effect():
+    model = build_assembly_model(CFG)
+    data = mujoco.MjData(model)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    site = model.site("tool_tip").id
+    quat = np.array([math.cos(0.3), 0, 0, math.sin(0.3)])
+    model.site_quat[site] = quat
+    model.site_sameframe[site] = 0
+    mujoco.mj_kinematics(model, data)
+    gripper_rot = data.body("gripper").xmat.reshape(3, 3)
+    expected = np.zeros(9)
+    mujoco.mju_quat2Mat(expected, quat)
+    np.testing.assert_allclose(data.site("tool_tip").xmat.reshape(3, 3), gripper_rot @ expected.reshape(3, 3), atol=1e-9)
+
+
+def test_calibration_error_is_fixed_per_camera_and_applied():
+    model = build_assembly_model(CFG)
+    data = mujoco.MjData(model)
+    mujoco.mj_forward(model, data)
+    noise = DepthNoise(calib_translation=0.002, calib_rotation_deg=0.5)
+    camera = OverheadCamera(model, 64, 48, noise=noise, rng=np.random.default_rng(3))
+    a, b = camera.capture(data), camera.capture(data)
+    np.testing.assert_array_equal(a.calibration.position, b.calibration.position)
+    offset = a.calibration.position - data.cam("overhead").xpos
+    assert 0 < np.abs(offset).max() <= 0.002
+
+
+@pytest.mark.parametrize("condition", ["ideal", "realistic"])
+def test_perception_driven_assembly_seats_both_connectors(condition):
+    noise = DepthNoise() if condition == "ideal" else DepthNoise(sigma=0.001, rgb_sigma=3.0, calib_translation=0.002, calib_rotation_deg=0.5)
+    result = AssemblyRun(sample_layout(CFG, 5), seed=5, noise=noise).run()
+    for log in result.connectors:
+        assert log.identified and log.grasped and log.lifted, log
+        assert log.other_disturbed_mm < 0.5
+        assert log.inserted_belief and log.seated and log.stayed_seated and not log.wrong_socket, log
+        assert log.peak_force_10ms < 30.0
+    assert result.both_seated_at_end
+    square = next(log for log in result.connectors if log.kind == "square")
+    assert square.grasp_face_error_deg < 2.0
+    if condition == "ideal":
+        assert all(log.in_hand_tip_error_mm < 0.5 for log in result.connectors)

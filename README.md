@@ -30,6 +30,8 @@ src/insertion/
   camera.py              overhead RGB-D rendering, calibration, back-projection, noise model
   perception.py          PoseEstimator interface + GeometricEstimator (identify and localise connectors and sockets)
   perception_check.py    perception accuracy vs ground truth over random layouts
+  grasping.py            antipodal grasp proposals from the perceived connector outline
+  assembly_skills.py     perception-driven pick → insert → release skills (Robot interface without ground truth)
   controllers.py         controller registry (shared by evaluate.py and view.py)
   diagnose.py            spiral search failure diagnostics (phase log vs. ground-truth hole)
   stats.py               Wilson intervals, exact McNemar test
@@ -53,6 +55,8 @@ scripts/
   make_demos.py          record + render the demo videos → results/demos/
   assembly_demo.py       render the scripted two-connector assembly (angled + overhead camera views)
   perception_check.py    perception accuracy table over layouts × noise levels → results/perception_check/
+  assembly_benchmark.py  full pick-and-insert benchmark (layouts × clearance × friction × camera condition)
+  pipeline_demo.py       demo video: 3D view | live overhead camera | perception overlay
   view.py                live interactive viewer (--controller straight|guarded|impedance|spiral, --friction)
   smoke_test.py, fetch_assets.sh
 docs/

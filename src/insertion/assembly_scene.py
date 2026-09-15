@@ -77,10 +77,20 @@ def add_gripper(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
         )
     pad_depth = 0.008  # tcp (grasp contact centre) this far above the fingertips
     gripper.add_site(name="tcp", pos=[0, 0, cfg.palm_offset + cfg.finger_length - pad_depth], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
+    # Estimated tip of the held connector. Controllers move it (model.site_pos/quat) to their in-hand estimate,
+    # so IK, impedance control and tip observations all act on the believed tip. Sites don't affect physics.
+    # Compiled with a non-identity orientation (an upright connector held by a pointing-down gripper): a site
+    # compiled coincident with its body gets site_sameframe set, and MuJoCo then ignores later quat changes.
+    gripper.add_site(
+        name="tool_tip", pos=[0, 0, cfg.palm_offset + cfg.finger_length - pad_depth + cfg.connector_length - cfg.grasp_below_top],
+        quat=[0, 1, 0, 0], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP,
+    )
 
     spec.add_equality(
         type=mujoco.mjtEq.mjEQ_JOINT, name1="finger_right", name2="finger_left",
         objtype=mujoco.mjtObj.mjOBJ_JOINT, data=[0, 1, 0, 0, 0] + [0] * 6,
+        # Stiff so the fingers stay symmetric under grip force (the soft default let them differ by ~2 mm).
+        solref=[0.004, 1.0], solimp=[0.99, 0.999, 0.001, 0.5, 2.0],
     )
     spec.add_actuator(
         name="gripper", target="finger_left", trntype=mujoco.mjtTrn.mjTRN_JOINT,
@@ -129,6 +139,9 @@ def add_connectors(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
             # anchor(3) relpose(7) torquescale(1). Set explicitly: the spec's default data is the joint
             # equality's polycoef [0, 1, 0, ...], which would put the weld anchor 1 m off.
             data=[0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+            # Stiff: MuJoCo's default soft equality let a 5 N insertion push slide the gripper 4 mm down the
+            # connector (effectively in-hand slip), and the wrist F/T then saw only ~0.8 N of the push.
+            solref=[0.004, 1.0], solimp=[0.99, 0.999, 0.001, 0.5, 2.0],
         )
 
 

@@ -20,12 +20,15 @@ its own port, so the robot must identify which part goes where before it can ins
 A 6-DOF manipulator with a parallel-jaw gripper and a fixed overhead RGB-D camera assembles
 **two keyed connectors** into a fixture:
 
-- **Scene.** A round connector and a square connector stand upright at random,
-  non-overlapping positions and orientations in a pick area. A fixture holds two sockets:
+- **Scene.** A round connector and a square connector are placed at random,
+  non-overlapping positions and orientations in a pick area, each either standing upright
+  or lying on its side. A fixture holds two sockets:
   a round hole and a square hole, each with **1–3 mm clearance**.
 - **Sequence.** Using the camera, the robot identifies the **round connector first**,
   grasps it, inserts it into the round socket and releases it; it then identifies the
-  square connector, grasps it and inserts it into the square socket.
+  square connector, grasps it and inserts it into the square socket. A lying connector is
+  grasped near one end and rotated in the hand to point down before insertion, without
+  putting it down to regrasp.
 - **Uncertainty.** The robot never observes ground-truth poses. Connector and socket
   poses come from perception, so perception error (up to a few millimetres, plus
   simulated depth noise) is the source of pose uncertainty at insertion.
@@ -149,7 +152,7 @@ Assumes roughly 10–16 hours per week.
 | 2–3 | Compliance controller | Cartesian impedance validated in isolation; F/T contact detection |
 | 3.5–4 | Search and alignment | Spiral search; end-to-end insertion at 1 mm clearance |
 | 5 | Evaluation and tuning | Insertion grids; failure modes diagnosed; spiral search vs. baseline |
-| 6–7 | Perception, grasping, two connectors | Scene with fixture and connectors; perception check; antipodal grasping with attach-on-grasp; pick and release; square insertion; full pipeline grid |
+| 6–7 | Perception, grasping, two connectors | Scene with fixture and connectors; perception check; antipodal grasping with attach-on-grasp; pick and release; square insertion; lying connectors with in-hand reorientation; full pipeline grid |
 | 8 | Friction grasp; results and writeup | Friction grasp meets its slip and success criteria (or is reported as a partial result); plots, report, demo |
 
 Weeks 1–5 are complete (§10).
@@ -166,14 +169,16 @@ Weeks 1–5 are complete (§10).
 | Square connector jams from yaw error | Yaw alignment from perception, low rotational stiffness about the insertion axis, chamfered socket |
 | Round socket built from primitives gives poor contact | Validate with the existing contact sanity checks before use |
 | Friction grasp slips under insertion force | Grip force sized with margin over the insertion push; in-hand slip is measured; attach-on-grasp remains the fallback |
+| Hand collides with the fixture when inserting a lying connector sideways | Approach from the side away from the other socket; check reach and clearance of pre-insertion poses before moving |
 
 **Descoping order.** If the extension slips, scope is reduced in this order:
 
 1. Keep attach-on-grasp for the headline results; report the friction grasp as partial
-2. Shrink the full-task grid (one clearance, one friction level)
-3. One connector per trial instead of two
-4. Replace perceived poses with noisy ground-truth poses (keeping identification by shape)
-5. Report the insertion-module results only
+2. Upright connectors only (drop lying connectors and in-hand reorientation)
+3. Shrink the full-task grid (one clearance, one friction level)
+4. One connector per trial instead of two
+5. Replace perceived poses with noisy ground-truth poses (keeping identification by shape)
+6. Report the insertion-module results only
 
 **Protected scope.** The compliance controller, spiral search and the insertion-module
 results (already complete) are never descoped — together they are the minimum viable result.

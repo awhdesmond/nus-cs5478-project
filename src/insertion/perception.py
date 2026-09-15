@@ -56,6 +56,7 @@ class ConnectorEstimate:
     top: np.ndarray  # top-face centre, world [m]
     yaw: float
     fit: ShapeFit
+    outline_xy: np.ndarray = field(default_factory=lambda: np.zeros((0, 2)))  # ordered top-face boundary on the top plane [m]
 
 
 @dataclass
@@ -217,9 +218,16 @@ class GeometricEstimator:
             rows, cols = np.nonzero(face)
             xy = self._pixels_on_plane(np.stack([cols, rows], axis=1), top_z, calib)
             pixel_area = ((calib.position[2] - top_z) / calib.focal) ** 2
-            found.append((fit_footprint(xy, pixel_area, cfg), top_z))
-        fits = apply_one_of_each([fit for fit, _ in found])
-        return [ConnectorEstimate(fit.kind, np.array([*fit.centre_xy, z]), fit.yaw, fit) for fit, (_, z) in zip(fits, found)]
+            contours, _ = cv2.findContours(face.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            boundary = max(contours, key=cv2.contourArea)[:, 0, :]
+            # Pixel-centre boundary lies half a pixel inside the true edge; the outline keeps that small bias.
+            outline = self._pixels_on_plane(boundary, top_z, calib)
+            found.append((fit_footprint(xy, pixel_area, cfg), top_z, outline))
+        fits = apply_one_of_each([fit for fit, _, _ in found])
+        return [
+            ConnectorEstimate(fit.kind, np.array([*fit.centre_xy, z]), fit.yaw, fit, outline)
+            for fit, (_, z, outline) in zip(fits, found)
+        ]
 
     def _sockets(self, heights, table, observation) -> list[SocketEstimate]:
         cfg = self.cfg

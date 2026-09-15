@@ -48,7 +48,9 @@ class ImpedanceInsert:
         impedance: ImpedanceConfig | None = None,
         motion: MotionConfig | None = None,
         pd: JointPDConfig | None = None,
+        tip_site: str = "peg_tip",
     ):
+        self.tip_site = tip_site
         self.cfg = cfg or ImpedanceInsertConfig()
         self.impedance_cfg = impedance or ImpedanceConfig()
         self.motion = motion or MotionConfig()
@@ -56,8 +58,8 @@ class ImpedanceInsert:
 
     def reset(self, model: mujoco.MjModel, q0: np.ndarray, target: InsertionTarget, seed: int = 0) -> None:
         c, m = self.cfg, self.motion
-        self.rot = pointing_down()
-        ik = JacobianIK(model, "peg_tip")
+        self.rot = pointing_down() if target.tip_rot is None else np.asarray(target.tip_rot, dtype=float)
+        ik = JacobianIK(model, self.tip_site)
         entrance = np.asarray(target.believed_entrance, dtype=float)
         pre = entrance + [0.0, 0.0, m.approach_height]
         q_pre, approach = plan_approach(ik, np.asarray(q0), pre, self.rot, m, seed)
@@ -72,7 +74,7 @@ class ImpedanceInsert:
             LineTrajectory(above, below, c.touchdown_speed, m.cart_amax),
             LineTrajectory(below, goal, c.descend_speed, m.cart_amax),
         ])
-        self.impedance = CartesianImpedance(model, self.impedance_cfg)
+        self.impedance = CartesianImpedance(model, self.impedance_cfg, site=self.tip_site)
         self.impedance.set_damping_at(q_pre)
         self.path_time: float | None = None  # None until the approach finishes
         self.last_time = 0.0

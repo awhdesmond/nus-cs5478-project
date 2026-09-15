@@ -204,7 +204,7 @@ def test_attach_on_grasp_holds_without_a_jump_and_releases(model):
 
     pd = JointPDConfig()
     sim.command_gripper(close=True)
-    for _ in range(600):
+    for _ in range(1200):  # fingers close at the 20 mm/s speed limit
         sim.step(joint_pd_torque(sim, q_grasp, pd))
     assert sim.attached() == "round"
 
@@ -220,7 +220,7 @@ def test_attach_on_grasp_holds_without_a_jump_and_releases(model):
     np.testing.assert_allclose(conn_in_gripper(), before, atol=2e-4)
 
     sim.command_gripper(close=False)
-    for _ in range(500):
+    for _ in range(1200):
         sim.step(joint_pd_torque(sim, q_lift, pd))
     assert sim.attached() is None and sim.finger_gap() > CFG.finger_open_gap - 1e-3
 

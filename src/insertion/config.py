@@ -226,6 +226,9 @@ class AssemblyConfig:
     finger_thickness: float = 0.006  # [m] along the closing direction
     palm_offset: float = 0.030  # [m] flange to finger roots
     grip_force: float = 20.0  # [N] finger actuator force limit
+    # Closing speed limit, as on a real gripper. A step command slammed the fingers shut in ~27 ms: they bit
+    # ~0.6 mm into the connector unevenly, pushed it off-centre and tilted it in the hand.
+    finger_speed: float = 0.02  # [m/s] per finger
     finger_friction: float = 1.0
 
     # Camera (fixed overhead, looking straight down)

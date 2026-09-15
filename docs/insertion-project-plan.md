@@ -1,12 +1,16 @@
 # Vision-Guided Contact-Rich Connector Insertion — Final Project Plan
 
 **Course:** Intelligent Robots — Algorithms and Systems
-**Duration:** 6 weeks
+**Duration:** 8 weeks (6 originally; extended after week 5 — see weeks 6–7)
 **Available time:** ~10–16 hrs/week (2–3 weeknights + weekend blocks) → ~60–95 hrs total
 
 ---
 
 ## 1. Task
+
+*This section is the original (weeks 1–5) insertion task, which remains the "insertion module". The extended
+task — perceive, identify and pick two keyed connectors, insert each into its own socket — is defined under
+"Weeks 6–7". Lessons from both are collected in §10.*
 
 A 6-DOF manipulator inserts a **rigid wire terminal / connector** into a socket with
 **1–3 mm target clearance**, from a randomised pre-insertion pose with bounded
@@ -204,8 +208,9 @@ Final benchmark (20 seeds/cell, 10 ms scoring):
 *Added 2026-09-15. Turns the task into perceive → identify → pick → insert into the matching socket.
 The insertion-only benchmark and Plan A results stay as the "insertion module" results.*
 
-**Task.** Each trial has **both connectors** on the table, one round and one square, upright at random,
-non-overlapping poses in a pick area (random which is where). A fixture holds **two sockets**: a round hole and a
+**Task.** Each trial has **both connectors** on the table, one round and one square, at random,
+non-overlapping poses in a pick area (random which is where). Up to M4 connectors stand upright; from M4b
+each connector is independently upright or lying on its side. A fixture holds **two sockets**: a round hole and a
 square hole. The robot must use the camera to find the **round connector first**, grasp it, insert it into the round
 socket and release it; then find the square connector, grasp it and insert it into the square socket. No
 ground-truth poses reach the controller: connector and socket poses come from perception.
@@ -248,13 +253,29 @@ below the top) stay 12 mm above the socket when seated.
   - Results (40 layouts each; depth noise σ 0 / 1 / 2 mm, RGB noise 3 levels when depth noise is on): identification **100%** at all levels; position error 95th percentile ≤ 0.16 mm (connectors) and ≤ 0.52 mm (sockets); square connector yaw 95th percentile 1.0° / 1.4° / 1.4° (max 1.9°); square socket yaw exact.
   - What didn't work: contour circularity/convex-hull rectangularity misidentified 25% of sockets at σ = 2 mm (noise inflates hulls); depth-only yaw degraded to 1.5–3° p95 with noise. Compared on identical images: colour-outline yaw 0.47° p95 at every depth noise level vs depth minimum-area rectangle 0.37° / 1.48° / 3.15°.
   - Conventions verified against ray casts: MuJoCo's depth image is distance along the optical axis; image row 0 is the top of the view.
-- [ ] **M3 Antipodal grasping, pick and release.**
-  - *Antipodal grasp proposals:* back-project the connector's depth pixels to a point cloud, estimate surface normals (local PCA), sample finger contact pairs across the closing direction at the grasp height, and keep pairs where the contact line lies within both friction cones (angle to each normal ≤ atan(μ_assumed) with a safety margin). Reject pairs wider than the gripper opening or whose fingers would hit the table or the other connector; rank by friction-cone margin, then by closeness to the connector axis. Expected outcome: any diameter for the round connector, opposite flats for the square.
-  - *Pick and release:* approach / close / attach / lift from the best proposal; in-hand offset estimate (connector tip relative to the gripper, from perception at pick time); re-tare F/T after the grasp (carried mass). Release: open fingers, deactivate the weld, retract without dragging the seated connector back out. Pick order: round first, chosen by classification, not by position.
+- [x] **M3 Antipodal grasping, pick and release.** Antipodal grasp proposals from the perceived outline; approach / close / attach / lift; in-hand estimate; re-tare F/T after the grasp; release and retract. Round first, chosen by classification.
   **Done =** proposals are antipodal against ground-truth geometry (square: finger axis within 2° of the flat normals); ≥ 95% grasp success over random two-connector layouts; the other connector is not disturbed by the pick; released connectors stay seated.
-- [ ] **M4 Square insertion.** Generalise impedance insert + spiral search to a tool-tip site set from the in-hand estimate, with yaw alignment to the perceived socket; square peg in square hole, round peg in round hole.
+- [x] **M4 Square insertion.** Impedance insert + spiral search generalised to a movable `tool_tip` site set from the in-hand estimate, with a target tip orientation aligned to the perceived socket yaw; square peg in square hole, round peg in round hole.
   **Done =** insertion-only benchmark (perception-derived uncertainty) for both shapes at 3 mm and 1 mm, both frictions.
-- [ ] **M5 Full pipeline.** `PickAndInsert` controller (round then square) + harness task mode; metrics per connector and per trial: classification correct, round picked first, grasp success, correct socket, seated, still seated at the end, force cap (10 ms), cycle time per connector and total, perception errors vs ground truth. Grid: clearance {3, 1} mm × friction {0.3, 0.8} × depth noise {off, on} × 20–50 seeds (each seed = a random two-connector layout). Demo videos (trace panel + camera view).
+  *M3 + M4 done 2026-09-15* — `grasping.py`, `assembly_skills.py` (`Robot` interface without ground truth, `AssemblyRun` skill sequence), `scripts/assembly_benchmark.py`, `scripts/pipeline_demo.py`, `tests/test_grasping_pipeline.py`:
+  - **Benchmark** (20 layouts × clearance {3, 1} mm × friction {0.3, 0.8} × camera {ideal, realistic: depth σ 1 mm, RGB noise 3, extrinsic calibration error ±2 mm / 0.5°}): **160/160 assemblies seated both connectors in the correct sockets**. Identification, grasp and lift 100%; square grasp vs true face normal ≤ 1.17°; other connector moved ≤ 0.002 mm; still seated after release 100%; 0 wrong sockets; peak sustained force ≤ 6.3 N; in-hand tip error p95 0.10–0.13 mm (ideal) and ~4.2 mm (realistic).
+  - **Caveat:** the calibration error biases connectors and sockets the same way (one camera), so most of it cancels and spiral search was needed in only 5–10% of square insertions at 1 mm (realistic). M5 should add a condition with independent per-object errors to stress the search.
+  - **Grasp planner:** upright connectors are prisms, so side normals come from the top-face outline. Closing directions every 2°; contact patches within 0.4 mm of the extremes; normals from a line fit over each whole patch; friction-cone test (μ 0.3, 5° margin); patches < 3 mm rejected (corners); refinement to the patch normals. Local ±4-point outline normals gave 2.6° p95 error (pixel staircasing) — whole-patch fits gave 0.83° / 1.16° (clean / σ 1 mm).
+  - **In-hand estimate:** across-finger position and height from perception; along the closing axis from the finger joint positions at first touch; square axes aligned with the fingers.
+  - **Found and fixed:**
+    - `tool_tip` site orientation changes were silently ignored: MuJoCo sets `site_sameframe` for a site compiled coincident with its body. IK then pointed the gripper up and the wrist swept into the fixture. Now compiled with a non-identity orientation, and the flag is cleared on every update.
+    - The attach weld was soft: a 5 N insertion push slid the gripper 4 mm down the connector and the F/T saw only 0.8 N. Stiffened (solref 4 ms).
+    - Fingers slammed shut in 27 ms, bit 0.6 mm into the connector unevenly and pushed it 1 mm off-centre; finger coupling was soft (±2 mm). Now a 20 mm/s finger speed limit and a stiff coupling: in-hand error ≤ 0.1 mm on every axis.
+    - Completion by estimated tip height stopped short under calibration bias and let connectors drop in on release. Now mechanical: not searching, F/T > 2 N, stopped 0.3 s, within 5 mm of the believed bottom.
+    - Controller F/T is now expressed in the tool-tip frame (the sensor sits at the gripper base) so force-guided centring stays correct.
+  - **Demo:** `results/demos/pipeline_realistic_seed0.mp4` (3D view | live overhead camera | perception overlay with outlines, sockets and the chosen grasp).
+- [ ] **M4b Lying connectors (in-hand reorientation, no regrasp).** *Added 2026-09-15.* Each connector starts upright or lying on its side (seeded, independently). A lying connector is grasped from above across its width near one end, lifted, and rotated 90° about the gripper's closing axis so it points down; the hand then approaches the socket from the side, facing away from the other socket, and the M4 compliant insertion runs with the tool horizontal.
+  - *Scene:* layout sampler adds orientation {upright, lying} with in-plane yaw; lying round connectors must not roll away (check rest stability; small friction/damping if needed).
+  - *Perception:* detect lying connectors (footprint ≈ 50 × 10 mm), estimate long-axis yaw and both end positions, identify round vs square from the depth cross-section across the width (curved vs flat top), and report upright/lying.
+  - *Grasp:* grasp within the top ~15 mm of the connector (≥ insertion depth + finger clearance left below the fingers after rotation); antipodal proposals across the width; fingertips clear the table when pinching a lying round connector at its centreline.
+  - *Insertion:* sideways-tool pre-insertion poses; IK reach and collision checks for hand/wrist vs fixture and the other socket; in-hand tip estimate from the perceived end position.
+  **Done =** perception identifies orientation and shape at 100% and estimates the long axis within 2° and the end position within 1 mm (95th percentile) over random mixed layouts; ≥ 90% of lying connectors are grasped, reoriented and seated (3 mm clearance, μ = 0.3) with no hand–fixture collisions; upright results unchanged.
+- [ ] **M5 Full pipeline.** `PickAndInsert` controller (round then square) + harness task mode; metrics per connector and per trial: classification correct, round picked first, grasp success, correct socket, seated, still seated at the end, force cap (10 ms), cycle time per connector and total, perception errors vs ground truth. Grid: clearance {3, 1} mm × friction {0.3, 0.8} × depth noise {off, on} × orientation {all upright, mixed upright/lying} × 20–50 seeds (each seed = a random two-connector layout). Demo videos (trace panel + camera view).
   **Done =** end-to-end success (both connectors seated in the correct sockets) reported per cell; failure modes diagnosed by stage (perception / grasp / insertion / release) and by connector.
 - [ ] **M6 Friction grasp** (after M5; attach-on-grasp stays as the fallback). Remove the weld: the connector is held only by finger friction. Force-limited finger actuation (grip force set from connector mass, insertion push and μ, with margin), finger pad contact parameters validated like the socket contact check, and F/T thresholds re-checked with the gripper and connector in the load path. Log in-hand slip (connector tip displacement relative to the gripper) through lift, transport and insertion.
   **Done =** on the full-task grid, (a) ≥ 90% of grasps lift and transport without a drop, (b) in-hand slip during insertion < 0.5 mm in ≥ 90% of trials, and (c) end-to-end success within 10 percentage points of the attach-on-grasp result in every cell. If not met by the start of week 8, report friction grasp as a documented partial result and keep attach-on-grasp for the headline numbers.
@@ -272,6 +293,8 @@ below the top) stay 12 mm above the socket when seated.
 | Square peg jams at the corners from yaw error | Low rotational stiffness about z + chamfer; measure yaw tolerance in M4 |
 | F/T thresholds shift with gripper + connector mass | Tare at start and again after grasp |
 | Friction grasp slips under insertion force (up to ~6 N sustained) | Size grip force so the two-finger friction hold 2·μ·F_grip exceeds the insertion push with margin (at μ = 0.3 and ~6 N push: F_grip ≳ 10 N plus margin); M6 done-criteria include slip; fallback to attach-on-grasp |
+| Hand or wrist hits the fixture or the other socket during sideways insertion of a lying connector | Approach from the side facing away from the other socket; IK + collision check of pre-insertion poses before committing; 80 mm socket spacing can be widened |
+| Lying round connector rolls when bumped or pinched | Check rest stability in the scene; pinch at the centreline height; re-capture before picking |
 | Scope creep | Arbitrary pick order, wrist camera and tilt uncertainty are stretch only |
 
 ### Week 8 — Friction grasp (M6) and results and writeup
@@ -341,3 +364,161 @@ Both are good design regardless.
 - **Difficulty calibration:** roughly equivalent to the course's default Pick-Nav-Reach project, plus one harder skill — force-based fine insertion (mm tolerances, closed-loop compliance) replaces coarse navigation (10 cm tolerances, no force control).
 - **Prior art:** Intrinsic × Open Robotics "AI for Industry Challenge" ($180k, 7 months, teams up to 10) targets the full deformable-cable version of this task. Useful as (a) motivation in the writeup, (b) a methodology reference — UR5e + wrist F/T + wrist cameras, force feedback without ground-truth pose at eval, and (c) a possible source of cable/connector assets from their open participant toolkit (visual meshes only — see convex-hull note in §2). **TODO: verify the $180k / 7 months / teams-of-10 figures against a primary source and cite it before submission.**
 - **Session strategy:** deep debugging (compliance tuning) → weekend blocks. Low-context work (logging, plotting, trajectory code, report text) → weeknights. Momentum loss between short sessions is the main hidden cost at this pace.
+
+---
+
+## 10. Lessons learned and engineering notes
+
+*Collected 2026-09-15 across weeks 1–7. Numbers are from the runs recorded in the sections above; the
+per-milestone notes there have the full context.*
+
+### 10.1 MuJoCo gotchas (each cost real debugging time)
+- **Mesh collision = convex hull.** A mesh socket gets its hole filled. Build holes from box primitives (square
+  hole; round hole as a 16-gon of boxes, vertices at apothem/cos(π/N), +0.11 mm at N = 16).
+- **Contact parameters are mixed between the two geoms.** A stiff socket with a default-parameter peg gave
+  half-stiff contact. Put the same `solref`/`solimp` on *both* sides of a contact pair (`contact_params`).
+- **`solref` time constant must be ≥ 2 × timestep** (5 ms used at 1 ms). Halving the timestep to 0.5 ms changed
+  nothing measurable, so 1 ms stayed.
+- **Equality constraints default to soft.** The attach weld let a 5 N push slide the gripper 4 mm down the
+  connector; the finger coupling let the fingers differ by ~2 mm. Set `solref` ≈ 4 ms and high `solimp` on any
+  equality that should behave rigidly.
+- **Weld `data` defaults are wrong for welds when built with MjSpec.** The anchor inherited the joint equality's
+  polycoef [0, 1, 0, …] and flung the connector 1 m on attach. Set weld data explicitly:
+  anchor(3) relpose(7) torquescale(1). The relpose is **body2's pose in body1's frame** (verified on a toy model).
+- **`site_sameframe`.** A site compiled coincident with its body is flagged "same frame", and MuJoCo then ignores
+  runtime changes to its `site_quat`. The movable `tool_tip` site silently kept the gripper's orientation, IK
+  pointed the gripper up and the wrist swept into the fixture. Compile movable sites with a non-identity
+  orientation and clear `site_sameframe` when updating them.
+- **Adding joints invalidates keyframes** (qpos size). Rebuild: delete keys → compile → build full qpos from
+  `qpos0` → `add_key` → compile again.
+- **Menagerie actuators are position servos** (8 mrad sag at home). Replace with torque motors for impedance
+  control; set `ctrlrange` to the real torque limits (±150 Nm base, ±28 Nm wrist).
+- **Wrist F/T site sensors** report the force the parent exerts on the child subtree: includes the subtree's
+  weight and inertia (tare before contact, and again after grasping), and is the negative of the external contact
+  force (flip the sign for controllers). With a gripper, express it in the tool-tip frame before using its direction.
+- **`mj_contactForce`** returns the force in the contact frame, acting on geom2; frame rows are world axes.
+- **API changes in MuJoCo 3.13:** mass matrix is `data.M` (not `qM`); `mj_fullM(model, data, dst)`.
+- **Renderer:** the offscreen framebuffer defaults to 640 px wide — set `visual.global_.offwidth/offheight` for
+  larger images. The depth image is **distance along the optical axis** (not ray length); image row 0 is the top.
+  Sites render by default — put them in group 4 to keep them out of camera images. The "ARB_clip_control
+  unavailable" warning did not affect measured depth accuracy (table read exactly 0.17000 m); it writes
+  `MUJOCO_LOG.TXT` (gitignored).
+- **Managed vs passive viewer:** `mujoco.viewer.launch` works with plain Python on macOS; `launch_passive`
+  needs `mjpython`. A control callback (`mujoco.set_mjcb_control`) is how the managed viewer runs a controller live.
+
+### 10.2 Contact physics and validity of the results
+- **Penetration vs clearance** is the validity check that matters at 1 mm clearance (0.5 mm per side). Default
+  contact sank 1.16 mm under 30 N on a chamfer lip; tuned contact keeps it ≤ 0.21 mm (square and 16-gon sockets
+  alike, ~0.18–0.19 mm with a 2 kg effective mass).
+- **Impact spikes come from the arm's reflected inertia, not controller stiffness:** ≈ 2.7 N per mm/s of contact
+  speed with either impedance or joint PD (48 N at 20 mm/s, 5 N at 1 mm/s). Design rule: move fast in free space,
+  touch down at ≤ 2.5 mm/s, and govern falls onto lower surfaces (3 mm/s drop-speed limit in search).
+- **Force-cap scoring on the 10 ms moving average** (decided week 5): single 1 ms steps above 30 N occur when a
+  moving peg clips an edge and are sensitive to solver stiffness; the sustained force is what damages parts.
+  Raw peaks are still logged and reported.
+- **Friction dominates chamfer-guided insertion.** A peg pushed with force P slides at most
+  δ = P(1−μ)/(K_xy(1+μ)) down a 45° chamfer before a lateral spring K_xy stalls it; at μ = 0.8 the friction angle
+  (38.7°) nearly matches the chamfer, so it barely funnels. μ = 0.3 (brass/tin pins in plastic) is the main
+  setting; μ = 0.8 is the stress benchmark.
+- **MuJoCo soft friction creeps** under sustained lateral load (0.7 mm/s at 40 N, μ = 0.8; 0.2 mm/s at 25 N,
+  μ = 0.3) — relevant to anything that relies on static friction (search, friction grasp).
+- **Clearance alone doesn't make the task hard:** with zero pose error an open-loop insert tracked the hole axis to
+  0.08 mm and seated at 1 mm clearance without touching. Uncertainty is the driver — ratchet it early.
+
+### 10.3 Motion and control
+- **IK configuration families:** seed IK from the home configuration, not the current (perturbed) pose; seeding
+  from the start converged to flipped-wrist solutions whose joint sweeps hit the fixture.
+- **Joint-space moves need a safe path:** lift → joint move to a via pose above the target → straight line down.
+  Direct joint interpolation swept the wrist through the socket. With this approach 300/300 random starts
+  (±1 rad) reached the pre-insertion pose without collision.
+- **Place the task away from singularities** (elbow ≈ 2 rad, wrist 0.43 m off the base axis); check the
+  position-Jacobian σ_min along paths (0.27 minimum in the assembly scene).
+- **Joint PD is soft and anisotropic in Cartesian space** (~1.3 N/mm; pressing down pushed sideways at 77% of the
+  normal force). Cartesian impedance fixes it (0.1–0.2%).
+- **Impedance damping from task-space inertia** Λ = (J M⁻¹ Jᵀ)⁻¹ (4–8 kg translational, 0.1–0.3 kg·m²
+  rotational, nearly constant over the insertion workspace), D = 2ζ√(KΛ).
+- **Low rotational stiffness (≤ 0.5 Nm/rad) is needed** for contact to realign a peg: edge-contact torque is only
+  ~0.05 Nm per 10 N on a 5 mm-radius peg. A 4° tilt flattened to 0.01° at 0.5 Nm/rad, but stayed at 3.8° at 20.
+- **Leash every setpoint that can run ahead of a blocked tool** (axial 5 mm, lateral 3 mm). Without it the
+  stored spring force fires the peg into walls when it drops in (130 N) or drags it into a jam (~15 N).
+
+### 10.4 Contact-based search
+- **Pitch ≤ capture width.** With friction the chamfer doesn't widen the capture region, so pitch must be ≤ the
+  clearance (1.0 mm; 1.5 mm stepped over the ±0.5 mm direct-entry zone).
+- **Diagnose search with phase logs vs ground truth.** Failing trials spent ~49 of 50 s paused or stalled and only
+  1–4 s sweeping; that measurement led directly to the fixes: sweep lighter (2 N) and push harder only when paused
+  (5 N, anchored at contact height), re-anchor the spiral at the tip after a pause, leaky stall timer (a clamped
+  setpoint flickers stalled/free), hop over flat-top stalls and over chamfer spots where centring already failed.
+- **Force-guided centring** (move along the sensed lateral contact force, which on a chamfer points toward the
+  hole axis) unhooked pegs caught near hole corners: 1 mm/±5 mm success 35% → 95% on its own.
+- **Completion must be mechanical, not a height threshold,** once pose estimates carry calibration bias: not
+  searching, F/T > 2 N, stopped for 0.3 s, within 5 mm of the believed bottom.
+
+### 10.5 Perception
+- **Verify camera conventions against ray casts** before building on them (depth definition, row order, pixel
+  centres at +0.5).
+- **Resolution budget:** a 10 mm part at ~0.86 mm/px (~12 px) is too small to tell circles from squares; 25° fovy
+  at 1280×960 from 0.75 m gives ~0.34 mm/px (~40 px across a connector top).
+- **The arm occludes an overhead camera** (24% of the image at home): capture from a camera-clear pose, and
+  re-capture before each pick.
+- **Map pixels onto the relevant horizontal plane** (connector top, fixture top) before measuring shape, so
+  perspective doesn't distort footprints.
+- **Shape identification:** convex-hull rectangularity and circularity broke under depth noise (hulls inflate;
+  25% of sockets misidentified at σ = 2 mm). IoU against an equal-area circle vs square, plus the scene prior
+  (exactly one of each), gave 100% at every noise level tested.
+- **Fuse modalities by strength:** depth finds and localises parts in 3D; colour gives crisp outlines. Square yaw:
+  depth-only minimum-area rectangle 0.37° / 1.48° / 3.15° p95 at σ 0 / 1 / 2 mm vs colour outline 0.47° at all
+  levels. Add RGB noise too, or the colour channel looks unrealistically clean.
+- **Use the longest reliable feature:** square socket yaw from the block's ~43 mm outer edges (exact) rather than
+  its ~13 mm opening (2.6–2.9° p95 under noise).
+- **Tolerances should adapt to measured noise** (robust MAD of the table surface) instead of fixed thresholds.
+- **Brightness thresholds admit lit side faces** if too low (value ≥ 180 hurt yaw; ≥ 200 fixed it).
+- **Calibration error from a single camera largely cancels** between a part and its socket (both shift together),
+  so it barely stresses insertion. Independent per-object errors are needed to test search under perception error.
+
+### 10.6 Grasping and in-hand estimation
+- **Antipodal grasping works from the top-face outline** for upright prismatic parts (side normals = outline
+  normals). Estimate contact normals over the whole contact patch, not locally: local ±4-point normals had 2.6° p95
+  error from pixel staircasing; whole-patch line fits gave 0.83° / 1.16° (σ 0 / 1 mm). Reject short patches
+  (< 3 mm) to exclude corner contacts; refine the closing direction to the patch normals.
+- **Grippers need a closing speed limit.** A step command slammed the fingers shut in 27 ms, biting 0.6 mm unevenly
+  and pushing the part 1 mm off-centre and tilting it. 20 mm/s per finger fixed it.
+- **Read finger positions at first touch** (gap reaches the object width): later readings drift as pads squeeze in.
+  The pad midpoint from finger proprioception beats assuming the fingers centre the part.
+- **In-hand estimate** = across-finger position and height from perception, along-closing position from the
+  fingers, square axes aligned to the fingers: ≤ 0.1 mm error on every axis (ideal camera).
+- **Keep physics shortcuts honest:** attach-on-grasp welds only when both pads touch, and grasps are planned to be
+  antipodal, i.e. ones that would also hold under friction.
+
+### 10.7 Evaluation methodology
+- **Separate what controllers may see from ground truth** in code (`Observation` / `Robot` interfaces); ground
+  truth only in scoring and diagnostic logs.
+- **Seeds fix everything** (layout or socket offset, start pose), so controllers face identical trials and can be
+  compared pairwise (exact McNemar on discordant outcomes) with Wilson intervals on success rates. 3 trials per cell
+  is meaningless; 20 per cell was the minimum used, 50 for the Plan A grid.
+- **Compare efficiency on trials both controllers solved,** or harder trials bias the average.
+- **Report success before and after release** (`seated` vs `stayed_seated`): the gap exposed connectors that
+  dropped in on release rather than being inserted.
+- **Baselines should be honest:** the guarded-retry baseline samples ±5 mm regardless of the true uncertainty,
+  which is why its ±2 and ±5 mm cells score alike.
+
+### 10.8 Tooling and process
+- **Never edit code while a long grid runs:** each evaluation process imports the code when it starts, so later
+  controllers in a queued grid would pick up the edits. Use a git worktree or wait.
+- **Laptops sleep on battery:** the Plan A grid took ~19 h instead of ~1 h. Plug in, keep the lid open, and use
+  `caffeinate -i -s -w <pid>`.
+- **Long jobs outlive tool timeouts only if detached:** run grids with `nohup`, log to a file and watch the log,
+  rather than as a timed foreground/background command.
+- **Multiprocessing needs importable functions:** `ProcessPoolExecutor` can't pickle functions defined in
+  `python -c`; put jobs in a script with a module-level function.
+- **zsh doesn't word-split variables** (`$CMD args` fails); write commands out.
+- **Collection-time work in tests** (e.g. running simulations inside `@pytest.mark.parametrize`) slows every
+  `pytest -k` run.
+- **`results/` is gitignored,** so copy final plots and videos somewhere that gets submitted.
+
+### 10.9 Open items and caveats
+- Socket **tilt** uncertainty is untested (stretch tier).
+- Lying connectors (M4b), the full-pipeline harness grid (M5) and the friction grasp (M6) are not started.
+- The interactive viewer's live-control callback has only been tested headless (the GUI itself wasn't checked during development).
+- Proposal assumptions to confirm: 8-week duration and rubric weights.
+- Intrinsic challenge figures still unverified (§9).

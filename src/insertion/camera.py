@@ -63,14 +63,30 @@ class DepthNoise:
     sigma: float = 0.0  # [m] per-pixel Gaussian depth noise
     quantization: float = 0.0  # [m] depth resolution; 0 disables
     rgb_sigma: float = 0.0  # [intensity levels, 0–255] per-pixel, per-channel Gaussian colour noise
+    # Extrinsic calibration error: the calibration handed to perception is off from the true camera pose by a
+    # fixed (per camera instance) random offset, uniform in ±calib_translation per axis and a rotation of up to
+    # calib_rotation_deg about a random axis. Biases every estimate the same way, like a real hand-eye calibration.
+    calib_translation: float = 0.0  # [m]
+    calib_rotation_deg: float = 0.0
 
 
 class OverheadCamera:
-    def __init__(self, model: mujoco.MjModel, width: int, height: int, name: str = "overhead"):
+    def __init__(self, model: mujoco.MjModel, width: int, height: int, name: str = "overhead",
+                 noise: DepthNoise | None = None, rng: np.random.Generator | None = None):
         self.model = model
         self.name = name
         self.width, self.height = width, height
         self.renderer = mujoco.Renderer(model, height, width)
+        self.calib_offset = (np.zeros(3), np.eye(3))
+        if noise is not None and (noise.calib_translation > 0 or noise.calib_rotation_deg > 0):
+            rng = rng or np.random.default_rng()
+            axis = rng.normal(size=3)
+            axis /= np.linalg.norm(axis)
+            angle = np.radians(rng.uniform(-noise.calib_rotation_deg, noise.calib_rotation_deg))
+            quat = np.array([np.cos(angle / 2), *(np.sin(angle / 2) * axis)])
+            rot = np.zeros(9)
+            mujoco.mju_quat2Mat(rot, quat)
+            self.calib_offset = (rng.uniform(-noise.calib_translation, noise.calib_translation, size=3), rot.reshape(3, 3))
 
     def capture(self, data: mujoco.MjData, noise: DepthNoise | None = None, rng: np.random.Generator | None = None) -> CameraObservation:
         self.renderer.update_scene(data, camera=self.name)
@@ -88,6 +104,9 @@ class OverheadCamera:
             rng = rng or np.random.default_rng()
             rgb = np.clip(rgb.astype(np.float64) + rng.normal(0.0, noise.rgb_sigma, size=rgb.shape), 0, 255).astype(np.uint8)
         calibration = CameraCalibration.from_model(self.model, data, self.name, self.width, self.height)
+        offset, rot = self.calib_offset
+        calibration.position = calibration.position + offset
+        calibration.rotation = rot @ calibration.rotation
         return CameraObservation(rgb=rgb, depth=depth, calibration=calibration)
 
     def segmentation(self, data: mujoco.MjData) -> np.ndarray:

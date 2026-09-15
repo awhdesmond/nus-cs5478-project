@@ -29,6 +29,7 @@ from insertion.sim import Sim
 class InsertionTarget:
     believed_entrance: np.ndarray  # hole-top centre as the controller believes it, world [m]
     depth: float  # nominal insertion depth from entrance to hole bottom [m]
+    tip_rot: np.ndarray | None = None  # desired tip-site orientation when seated (None: peg pointing down)
 
 
 @dataclass
