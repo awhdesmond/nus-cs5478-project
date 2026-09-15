@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import mujoco
 import numpy as np
 
-from insertion.assembly_scene import CONNECTORS, FINGER_JOINTS
+from insertion.assembly_scene import CONNECTORS, FINGER_JOINTS, connector_body_pose
 from insertion.config import AssemblyConfig
 from insertion.sim import Sim
 
@@ -46,6 +46,25 @@ class AssemblySim(Sim):
         self.closing = False
         self.grip_target = 0.0
         self.data.ctrl[self.gripper_actuator] = 0.0
+
+    def apply_layout(self, cfg: AssemblyConfig) -> None:
+        """Move sockets and connectors to another layout in place (same model and data, e.g. for an open viewer).
+
+        Only poses change: geometry-defining fields (clearance, sizes) and contact parameters must match the config
+        the model was built from. Call after `reset`.
+        """
+        self.cfg = cfg
+        hole_bottom_z = cfg.table_height + cfg.socket_base
+        for kind in CONNECTORS:
+            socket = cfg.round_socket_pose if kind == "round" else cfg.square_socket_pose
+            body = self.model.body(f"{kind}_socket").id
+            self.model.body_pos[body] = [socket.x, socket.y, hole_bottom_z]
+            self.model.body_quat[body] = [np.cos(socket.yaw / 2), 0, 0, np.sin(socket.yaw / 2)]
+            pos, quat = connector_body_pose(cfg, kind, cfg.round_pose if kind == "round" else cfg.square_pose)
+            joint = self.model.joint(f"{kind}_connector")
+            self.data.qpos[joint.qposadr[0]:joint.qposadr[0] + 7] = np.concatenate([pos, quat])
+            self.data.qvel[joint.dofadr[0]:joint.dofadr[0] + 6] = 0.0
+        mujoco.mj_forward(self.model, self.data)
 
     # --- gripper -----------------------------------------------------------------------------
 
@@ -114,9 +133,10 @@ class AssemblySim(Sim):
         rot = site.xmat.reshape(3, 3)
         return ConnectorState(kind=kind, tip=site.xpos.copy(), axis=rot[:, 2].copy(), attached=self.attached() == kind)
 
-    def seated(self, kind: str, depth_tol: float = 0.002) -> bool:
-        """Connector tip within depth_tol of its own socket's hole bottom and inside the hole footprint."""
-        tip = self.data.site(f"{kind}_tip").xpos
+    def seated(self, kind: str, depth_tol: float = 0.002, end: str = "tip") -> bool:
+        """Connector end (`tip`: the marked insertion end) within depth_tol of its own socket's hole bottom and inside
+        the hole footprint."""
+        tip = self.data.site(f"{kind}_{end}").xpos
         bottom = self.data.site(f"{kind}_socket_bottom").xpos
         half = (self.cfg.round_radius if kind == "round" else self.cfg.square_half) + self.cfg.clearance / 2
         return bool(np.linalg.norm(tip[:2] - bottom[:2]) < half and tip[2] - bottom[2] <= depth_tol)
@@ -135,6 +155,10 @@ class AssemblySim(Sim):
             f_world = contact.frame.reshape(3, 3).T @ wrench[:3]
             total += f_world if contact.geom2 == geom else -f_world
         return float(np.linalg.norm(total))
+
+    def seated_wrong_end(self, kind: str) -> bool:
+        """Inserted unmarked end first."""
+        return self.seated(kind, end="top")
 
     def connector_in_wrong_socket(self, kind: str) -> bool:
         other = "square" if kind == "round" else "round"

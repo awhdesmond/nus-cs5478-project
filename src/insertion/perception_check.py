@@ -38,11 +38,17 @@ class PerceptionRow:
     xy_error: float  # [m]
     z_error: float  # [m]
     yaw_error: float  # [rad], square only (nan for round)
-    squareness: float  # IoU(square) − IoU(circle) of the fitted footprint
+    squareness: float  # IoU(square) − IoU(circle) of the fitted footprint (lying: cross-section score)
+    lying: bool = False  # true orientation (connectors)
+    orientation_correct: bool = True  # estimate's upright/lying matches
+    axis_error: float = float("nan")  # [rad] lying: long-axis direction error (mod 180°)
+    end_error: float = float("nan")  # [m] lying: worse of the two end positions (xy), marked end matched to marked end
+    tip_correct: bool = True  # lying: the marked end was found and is the true one
 
 
-def check_layout(seed: int, noise: DepthNoise, estimator: PoseEstimator | None = None, base: AssemblyConfig | None = None) -> list[PerceptionRow]:
-    cfg = sample_layout(base or AssemblyConfig(), seed)
+def check_layout(seed: int, noise: DepthNoise, estimator: PoseEstimator | None = None, base: AssemblyConfig | None = None,
+                 orientation: str = "upright") -> list[PerceptionRow]:
+    cfg = sample_layout(base or AssemblyConfig(), seed, orientation=orientation)
     model = build_assembly_model(cfg)
     data = mujoco.MjData(model)
     mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
@@ -54,16 +60,37 @@ def check_layout(seed: int, noise: DepthNoise, estimator: PoseEstimator | None =
     rows = []
     for kind in CONNECTORS:
         est = scene.connector(kind)
-        true_top = data.site(f"{kind}_top").xpos
-        rot = data.body(f"{kind}_connector").xmat.reshape(3, 3)
-        true_yaw = float(np.arctan2(rot[1, 0], rot[0, 0]))
-        rows.append(PerceptionRow(
-            seed, noise.sigma, "connector", kind, est is not None, len(scene.connectors),
-            float(np.linalg.norm(est.top[:2] - true_top[:2])) if est else float("nan"),
-            float(est.top[2] - true_top[2]) if est else float("nan"),
-            yaw_error_mod90(est.yaw, true_yaw) if est and kind == "square" else float("nan"),
-            est.fit.squareness if est else float("nan"),
-        ))
+        lying = (cfg.round_pose if kind == "round" else cfg.square_pose).lying
+        body = data.body(f"{kind}_connector")
+        rot = body.xmat.reshape(3, 3)
+        if not lying:
+            true_top = data.site(f"{kind}_top").xpos
+            true_yaw = float(np.arctan2(rot[1, 0], rot[0, 0]))
+            rows.append(PerceptionRow(
+                seed, noise.sigma, "connector", kind, est is not None, len(scene.connectors),
+                float(np.linalg.norm(est.top[:2] - true_top[:2])) if est else float("nan"),
+                float(est.top[2] - true_top[2]) if est else float("nan"),
+                yaw_error_mod90(est.yaw, true_yaw) if est and kind == "square" and not est.lying else float("nan"),
+                est.fit.squareness if est else float("nan"),
+                lying=False, orientation_correct=est is not None and not est.lying,
+            ))
+            continue
+        ends = [data.site(f"{kind}_tip").xpos[:2], data.site(f"{kind}_top").xpos[:2]]
+        true_axis = rot[:2, 2]
+        true_top_z = cfg.table_height + 2 * (cfg.round_radius if kind == "round" else cfg.square_half)
+        row = PerceptionRow(seed, noise.sigma, "connector", kind, est is not None, len(scene.connectors),
+                            float("nan"), float("nan"), float("nan"), est.fit.squareness if est else float("nan"),
+                            lying=True, orientation_correct=est is not None and est.lying)
+        if est is not None and est.lying:
+            row.xy_error = float(np.linalg.norm(est.centre[:2] - body.xpos[:2]))
+            row.z_error = float(est.top[2] - true_top_z)
+            row.axis_error = float(np.arccos(min(1.0, abs(float(est.axis_xy @ true_axis)))))
+            row.tip_correct = bool(est.tip_found and est.axis_xy @ true_axis > 0)
+            est_ends = [est.centre[:2] + s * est.axis_xy * est.length / 2 for s in (-1, 1)]  # [marked end, top]
+            row.end_error = max(np.linalg.norm(est_ends[i] - ends[i]) for i in (0, 1))
+        else:
+            row.tip_correct = False
+        rows.append(row)
     for kind in CONNECTORS:
         est = scene.socket(kind)
         true_entrance = data.site(f"{kind}_socket_entrance").xpos

@@ -1,11 +1,13 @@
 """Interactive viewer with live physics.
 
-Two-connector assembly (perception → pick → insert, round then square). Uses MuJoCo's passive viewer,
-which on macOS must be launched with `mjpython`:
+Two-connector assembly (perception → pick → insert, round then square). Loops over layouts (seed, seed + 1, …)
+in one window until you close it; connectors are upright or lying (marked insertion end in blue) at random by
+default. Uses MuJoCo's passive viewer, which on macOS must be launched with `mjpython`:
 
-    uv run mjpython scripts/view.py --scene assembly                               # realistic camera, 1 mm clearance
-    uv run mjpython scripts/view.py --scene assembly --seed 7 --condition ideal --clearance 0.003
-    uv run mjpython scripts/view.py --scene assembly --speed 0.5                   # half real time
+    uv run mjpython scripts/view.py --scene assembly                               # loop: mixed orientations, realistic camera, 1 mm
+    uv run mjpython scripts/view.py --scene assembly --orientation lying --speed 2 # all lying, twice real time
+    uv run mjpython scripts/view.py --scene assembly --seed 7 --once --condition ideal --clearance 0.003
+    uv run mjpython scripts/view.py --scene assembly --orientation upright         # the M3/M4 task
     uv run python   scripts/view.py --scene assembly --hold                        # just look at the scene
 
 Insertion-only scene (weeks 1–5 controllers; managed viewer, plain python works):
@@ -135,16 +137,26 @@ class NarratedRun(AssemblyRun):
     def perceive(self):
         self._say("capture overhead image and estimate poses")
         scene = super().perceive()
-        found = ", ".join(f"{c.kind} at ({c.top[0]:+.3f}, {c.top[1]:+.3f})" for c in scene.connectors)
+        found = ", ".join(f"{c.kind} {'lying' if c.lying else 'upright'} at ({c.top[0]:+.3f}, {c.top[1]:+.3f})" for c in scene.connectors)
         self._say(f"  connectors: {found or 'none'} | sockets: {', '.join(s.kind for s in scene.sockets) or 'none'}")
         return scene
 
     def pick(self, kind, scene):
-        self._say(f"pick the {kind} connector (antipodal grasp)")
+        estimate = scene.connector(kind)
+        how = "across its width, near the unmarked end" if estimate is not None and estimate.lying else "antipodal grasp"
+        self._say(f"pick the {kind} connector ({how})")
         in_hand = super().pick(kind, scene)
         log = self._log(kind)
         self._say(f"  grasped={log.grasped} lifted={bool(log.lifted)} in-hand tip error {log.in_hand_tip_error_mm:.2f} mm {log.failure}")
         return in_hand
+
+    def _turn_sideways(self, kind, scene, socket):
+        self._say(f"  plan a sideways insertion (clearance to perceived obstacles) and turn the hand")
+        yaw = super()._turn_sideways(kind, scene, socket)
+        log = self._log(kind)
+        if yaw is not None:
+            self._say(f"  fingers pointing {log.sideways_yaw_deg:.0f}°, planned clearance {log.sideways_clearance_mm:.1f} mm")
+        return yaw
 
     def insert(self, kind, scene, in_hand):
         self._say(f"insert into the {kind} socket (impedance + spiral search)")
@@ -169,16 +181,16 @@ class NarratedRun(AssemblyRun):
 
 
 def run_assembly(args) -> None:
-    cfg = replace(sample_layout(AssemblyConfig(), args.seed), clearance=args.clearance, friction=args.friction)
+    base = replace(AssemblyConfig(), clearance=args.clearance, friction=args.friction)
+    cfg = sample_layout(base, args.seed, orientation=args.orientation)
+    sim = AssemblySim(build_assembly_model(cfg), cfg)
+    sim.reset()
     if args.hold:
-        sim = AssemblySim(build_assembly_model(cfg), cfg)
-        sim.reset()
         run_managed(sim, make_hold_callback(sim))
         return
 
-    run = NarratedRun(cfg, seed=args.seed, noise=CONDITIONS[args.condition])
     try:
-        viewer = mujoco.viewer.launch_passive(run.sim.model, run.sim.data)
+        viewer = mujoco.viewer.launch_passive(sim.model, sim.data)
     except RuntimeError as err:
         if "mjpython" in str(err):
             sys.exit("On macOS the assembly viewer needs mjpython:\n  uv run mjpython scripts/view.py " + " ".join(sys.argv[1:]))
@@ -186,14 +198,31 @@ def run_assembly(args) -> None:
     with viewer:
         viewer.cam.lookat[:] = [-0.04, 0.50, 0.23]
         viewer.cam.distance, viewer.cam.azimuth, viewer.cam.elevation = 0.9, 145, -30
-        run.robot.on_step.append(ViewerPacer(viewer, run.sim, args.speed))
-        print(f"Assembly: seed {args.seed}, {args.condition} camera, {cfg.clearance * 1e3:.0f} mm clearance, friction {cfg.friction}")
-        try:
-            result = run.run()
-        except ViewerClosed:
-            print("Viewer closed.")
-            return
-        print("\nResult: " + "   ".join(f"{log.kind}: {'seated' if log.stayed_seated else 'FAILED ' + log.failure} (robot says {'done' if log.verified else 'not done'})" for log in result.connectors))
+        seed, tally = args.seed, []
+        while True:
+            # Same model and data every run (the viewer is attached to them); only the layout changes.
+            cfg = sample_layout(base, seed, orientation=args.orientation)
+            run = NarratedRun(cfg, seed=seed, noise=CONDITIONS[args.condition], sim=sim)
+            pacer = ViewerPacer(viewer, sim, args.speed)
+            run.robot.on_step.append(pacer)
+            lying = [kind for kind, pose in (("round", cfg.round_pose), ("square", cfg.square_pose)) if pose.lying]
+            print(f"\n=== Assembly seed {seed}: {args.condition} camera, {cfg.clearance * 1e3:.0f} mm clearance, friction {cfg.friction}, "
+                  f"lying: {', '.join(lying) or 'none'} ===")
+            try:
+                result = run.run()
+                run._play([], settle=args.pause)  # hold at the ready pose so the finished layout can be seen
+            except ViewerClosed:
+                print("Viewer closed.")
+                return
+            finally:
+                run.robot.camera.renderer.close()
+            tally.append(result.both_seated_at_end)
+            print("Result: " + "   ".join(f"{log.kind}: {'seated' if log.stayed_seated else 'FAILED ' + log.failure} "
+                                          f"(robot says {'done' if log.verified else 'not done'})" for log in result.connectors))
+            print(f"Both seated in {sum(tally)}/{len(tally)} runs so far.")
+            if args.once:
+                break
+            seed += 1
         print("Done. Close the viewer window to exit.")
         while viewer.is_running():
             viewer.sync()
@@ -208,6 +237,9 @@ def main():
     parser.add_argument("--clearance", type=float, default=None, help="total clearance [m] (insertion default 10 mm, assembly 1 mm)")
     # assembly
     parser.add_argument("--condition", choices=list(CONDITIONS), default="realistic", help="assembly: camera noise model")
+    parser.add_argument("--orientation", choices=["upright", "lying", "mixed"], default="mixed", help="assembly: connector orientations")
+    parser.add_argument("--once", action="store_true", help="assembly: stop after one run (default: loop over seeds)")
+    parser.add_argument("--pause", type=float, default=2.0, help="assembly: seconds to show each finished layout")
     parser.add_argument("--speed", type=float, default=1.0, help="assembly: playback speed relative to real time")
     parser.add_argument("--hold", action="store_true", help="assembly: just show the scene with the arm holding still")
     # insertion

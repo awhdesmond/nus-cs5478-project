@@ -5,7 +5,8 @@ round (N-gon) and a square socket (each its own block, at a sampled position and
 square connector as free bodies, a fixed overhead RGB-D camera, and one inactive weld per connector for
 attach-on-grasp.
 
-Both connectors share one colour, so perception has to tell them apart by shape.
+Both connectors share one colour, so perception has to tell them apart by shape. Each has a blue band on its
+insertion end (visual only: no contacts or mass), so a lying connector's insertion direction is perceivable.
 """
 
 import math
@@ -28,10 +29,15 @@ from insertion.scene import (
 
 CONNECTORS = ("round", "square")
 CONNECTOR_RGBA = [0.85, 0.65, 0.15, 1.0]
+TIP_BAND_RGBA = [0.15, 0.35, 0.90, 1.0]  # marks the insertion end
+TIP_BAND_PROUD = 0.0001  # [m] the visual band sits this far outside the connector surface (renders over it)
 GRIPPER_RGBA = [0.3, 0.3, 0.35, 1.0]
 FINGER_RGBA = [0.55, 0.55, 0.6, 1.0]
 TABLE_RGBA = [0.35, 0.37, 0.40, 1.0]
 HIDDEN_SITE_GROUP = 4  # sites stay out of camera images (the default renderer shows groups 0–2)
+PLANNING_GEOM_GROUP = 5  # planning-only obstacle geoms: not rendered, no contacts
+N_PLANNING_OBSTACLES = 6
+PAD_DEPTH = 0.008  # [m] tcp (grasp contact centre) this far above the fingertips
 FINGER_JOINTS = ("finger_left", "finger_right")
 
 
@@ -77,7 +83,7 @@ def add_gripper(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
             size=[cfg.finger_width / 2, cfg.finger_thickness / 2, cfg.finger_length / 2],
             rgba=FINGER_RGBA, mass=0.02, **params,
         )
-    pad_depth = 0.008  # tcp (grasp contact centre) this far above the fingertips
+    pad_depth = PAD_DEPTH
     gripper.add_site(name="tcp", pos=[0, 0, cfg.palm_offset + cfg.finger_length - pad_depth], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
     # Estimated tip of the held connector. Controllers move it (model.site_pos/quat) to their in-hand estimate,
     # so IK, impedance control and tip observations all act on the believed tip. Sites don't affect physics.
@@ -121,20 +127,50 @@ def add_table_and_fixture(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
         body.add_site(name=f"{kind}_socket_entrance", pos=[0, 0, cfg.socket_depth], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
 
 
+def connector_body_pose(cfg: AssemblyConfig, kind: str, pose: ConnectorPose) -> tuple[np.ndarray, np.ndarray]:
+    """Resting body position and quaternion for a connector pose (upright on its marked end, or lying).
+
+    The body's +z runs from the marked insertion end (`tip` site) to the top. Lying: +z points along
+    (cos yaw, sin yaw), so the marked end is at centre − (cos yaw, sin yaw)·L/2."""
+    q_yaw = np.array([math.cos(pose.yaw / 2), 0, 0, math.sin(pose.yaw / 2)])
+    if not pose.lying:
+        return np.array([pose.x, pose.y, cfg.table_height + cfg.connector_length / 2]), q_yaw
+    # Rotate +90° about y (connector +z → world +x; a square's local x face → down), then yaw.
+    quat = np.zeros(4)
+    mujoco.mju_mulQuat(quat, q_yaw, np.array([math.cos(math.pi / 4), 0, math.sin(math.pi / 4), 0]))
+    return np.array([pose.x, pose.y, cfg.table_height + connector_half_width(cfg, kind)]), quat
+
+
+def connector_axis_segment(cfg: AssemblyConfig, pose: ConnectorPose) -> tuple[np.ndarray, np.ndarray]:
+    """The connector's axis projected on the table (a point if upright): two xy end points [m]."""
+    c = np.array([pose.x, pose.y])
+    if not pose.lying:
+        return c, c
+    half = cfg.connector_length / 2 * np.array([math.cos(pose.yaw), math.sin(pose.yaw)])
+    return c - half, c + half
+
+
 def add_connectors(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
     L = cfg.connector_length
     for kind, pose in (("round", cfg.round_pose), ("square", cfg.square_pose)):
-        body = spec.worldbody.add_body(
-            name=f"{kind}_connector",
-            pos=[pose.x, pose.y, cfg.table_height + L / 2],
-            quat=[math.cos(pose.yaw / 2), 0, 0, math.sin(pose.yaw / 2)],
-        )
+        pos, quat = connector_body_pose(cfg, kind, pose)
+        body = spec.worldbody.add_body(name=f"{kind}_connector", pos=pos.tolist(), quat=quat.tolist())
         body.add_freejoint(name=f"{kind}_connector")
+        params = contact_params(cfg)
         if kind == "round":
             geom = dict(type=CYLINDER, size=[cfg.round_radius, L / 2])
+            params["friction"] = [cfg.friction, 0.005, cfg.round_rolling_friction]
+            params["condim"] = 6
         else:
             geom = dict(type=BOX, size=[cfg.square_half, cfg.square_half, L / 2])
-        body.add_geom(name=f"{kind}_connector", rgba=CONNECTOR_RGBA, **geom, **contact_params(cfg))
+        body.add_geom(name=f"{kind}_connector", rgba=CONNECTOR_RGBA, **geom, **params)
+        band = cfg.tip_band_length
+        if kind == "round":
+            band_geom = dict(type=CYLINDER, size=[cfg.round_radius + TIP_BAND_PROUD, band / 2 + TIP_BAND_PROUD])
+        else:
+            band_geom = dict(type=BOX, size=[cfg.square_half + TIP_BAND_PROUD] * 2 + [band / 2 + TIP_BAND_PROUD])
+        body.add_geom(name=f"{kind}_tip_band", pos=[0, 0, -L / 2 + band / 2], rgba=TIP_BAND_RGBA, contype=0,
+                      conaffinity=0, density=0.0, **band_geom)
         body.add_site(name=f"{kind}_tip", pos=[0, 0, -L / 2], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
         body.add_site(name=f"{kind}_top", pos=[0, 0, L / 2], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
         # Attach-on-grasp weld; relative pose is set at activation (see AssemblySim.attach).
@@ -157,6 +193,18 @@ def add_camera(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
     spec.visual.global_.offheight = max(spec.visual.global_.offheight, cfg.image_height)
 
 
+def add_planning_obstacles(spec: mujoco.MjSpec) -> None:
+    """Mocap boxes the controller places at *perceived* obstacle poses for its own clearance checks.
+
+    They never collide (contype/conaffinity 0) and aren't rendered, so they don't affect physics or images.
+    Geometry distances to them come from `mujoco.mj_geomDistance` on a separate MjData (see assembly_planning).
+    """
+    for i in range(N_PLANNING_OBSTACLES):
+        body = spec.worldbody.add_body(name=f"plan_obstacle_{i}", mocap=True, pos=[0, 0, -1])
+        body.add_geom(name=f"plan_obstacle_{i}", type=BOX, size=[0.01, 0.01, 0.01], contype=0, conaffinity=0,
+                      group=PLANNING_GEOM_GROUP, rgba=[1, 0, 0, 0.3], mass=0.0)
+
+
 def build_assembly_spec(cfg: AssemblyConfig) -> mujoco.MjSpec:
     spec = mujoco.MjSpec.from_file(str(UR5E_SCENE_XML))
     spec.option.timestep = cfg.timestep
@@ -168,6 +216,7 @@ def build_assembly_spec(cfg: AssemblyConfig) -> mujoco.MjSpec:
     add_table_and_fixture(spec, cfg)
     add_connectors(spec, cfg)
     add_camera(spec, cfg)
+    add_planning_obstacles(spec)
     _set_home_keyframe(spec, cfg)
     return spec
 
@@ -202,28 +251,66 @@ def build_assembly_model(cfg: AssemblyConfig) -> mujoco.MjModel:
     return build_assembly_spec(cfg).compile()
 
 
-def _sample_pair(rng, center, half, spacing, max_tries, what) -> tuple[ConnectorPose, ConnectorPose]:
+def segment_distance(a0, a1, b0, b1) -> float:
+    """Minimum distance between 2D segments a0–a1 and b0–b1 (points allowed)."""
+
+    def point_to_segment(p, s0, s1):
+        d = s1 - s0
+        t = 0.0 if not d.any() else float(np.clip(np.dot(p - s0, d) / np.dot(d, d), 0.0, 1.0))
+        return float(np.linalg.norm(p - (s0 + t * d)))
+
+    def crosses():
+        def orient(p, q, r):
+            return np.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]))
+        return orient(a0, a1, b0) * orient(a0, a1, b1) < 0 and orient(b0, b1, a0) * orient(b0, b1, a1) < 0
+
+    if crosses():
+        return 0.0
+    return min(point_to_segment(a0, b0, b1), point_to_segment(a1, b0, b1), point_to_segment(b0, a0, a1), point_to_segment(b1, a0, a1))
+
+
+def _sample_pair(rng, center, half, spacing, max_tries, what, lying=(False, False), cfg=None) -> tuple[ConnectorPose, ConnectorPose]:
+    """Two poses in the area, axes (or centres) ≥ `spacing` apart; lying connectors must lie wholly in the area."""
     cx, cy = center
     hx, hy = half
+    lo, hi = np.array([cx - hx, cy - hy]), np.array([cx + hx, cy + hy])
     for _ in range(max_tries):
-        a = rng.uniform([cx - hx, cy - hy], [cx + hx, cy + hy])
-        b = rng.uniform([cx - hx, cy - hy], [cx + hx, cy + hy])
-        if np.linalg.norm(a - b) >= spacing:
-            yaws = rng.uniform(0, np.pi / 2, size=2)
-            return ConnectorPose(*a, yaws[0]), ConnectorPose(*b, yaws[1])
+        a = rng.uniform(lo, hi)
+        b = rng.uniform(lo, hi)
+        # Lying: a full turn, so the marked end points anywhere. (All upright: the original draw, keeping old layouts.)
+        yaws = rng.uniform(0, np.pi / 2, size=2) if not any(lying) else rng.uniform(0, 2 * np.pi, size=2)
+        poses = ConnectorPose(*a, yaws[0], lying[0]), ConnectorPose(*b, yaws[1], lying[1])
+        if not any(lying):
+            if np.linalg.norm(a - b) >= spacing:
+                return poses
+            continue
+        segments = [connector_axis_segment(cfg, pose) for pose in poses]
+        inside = all(np.all(end >= lo) and np.all(end <= hi) for seg in segments for end in seg)
+        if inside and segment_distance(*segments[0], *segments[1]) >= spacing:
+            return poses
     raise RuntimeError(f"no {what} layout with spacing {spacing} m")
 
 
-def sample_layout(cfg: AssemblyConfig, seed: int, sockets: bool = True, max_tries: int = 1000) -> AssemblyConfig:
+ORIENTATIONS = ("upright", "lying", "mixed")
+
+
+def sample_layout(cfg: AssemblyConfig, seed: int, sockets: bool = True, orientation: str = "upright", max_tries: int = 1000) -> AssemblyConfig:
     """Random non-overlapping poses: connectors in the pick area and (if `sockets`) sockets in the socket area.
 
-    Positions and yaws are independent per object, so which one sits where is random too. Sockets use their own
-    random stream, so a seed's connector layout is the same with or without socket randomisation.
+    Positions and yaws are independent per object, so which one sits where is random too. `orientation`: all
+    connectors upright, all lying, or "mixed" (each independently upright or lying, 50/50). Sockets and the mixed
+    orientation draw use their own random streams, so a seed's upright connector layout is the same as before
+    either option existed.
     """
     from dataclasses import replace
 
+    if orientation not in ORIENTATIONS:
+        raise ValueError(f"orientation must be one of {ORIENTATIONS}")
+    lying = {"upright": (False, False), "lying": (True, True)}.get(orientation)
+    if lying is None:
+        lying = tuple(bool(v) for v in np.random.default_rng([seed, 7]).random(2) < 0.5)
     rng = np.random.default_rng([seed, 3])
-    round_pose, square_pose = _sample_pair(rng, cfg.pick_area_center, cfg.pick_area_half, cfg.min_connector_spacing, max_tries, "connector")
+    round_pose, square_pose = _sample_pair(rng, cfg.pick_area_center, cfg.pick_area_half, cfg.min_connector_spacing, max_tries, "connector", lying, cfg)
     cfg = replace(cfg, round_pose=round_pose, square_pose=square_pose)
     if sockets:
         rng = np.random.default_rng([seed, 6])

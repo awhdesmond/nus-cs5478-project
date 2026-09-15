@@ -30,14 +30,14 @@ CONDITIONS = {
 
 
 def _job(args):
-    seed, clearance, friction, condition, sockets = args
-    cfg = replace(sample_layout(AssemblyConfig(), seed, sockets=sockets), clearance=clearance, friction=friction)
+    seed, clearance, friction, condition, sockets, orientation = args
+    cfg = replace(sample_layout(AssemblyConfig(), seed, sockets=sockets, orientation=orientation), clearance=clearance, friction=friction)
     result = AssemblyRun(cfg, seed=seed, noise=CONDITIONS[condition]).run()
     rows = []
     for log in result.connectors:
         row = {k: v for k, v in asdict(log).items() if k not in ("grasp", "search_info")}
         row.update({f"search.{k}": v for k, v in log.search_info.items()})
-        row.update(seed=seed, clearance=clearance, friction=friction, condition=condition,
+        row.update(seed=seed, clearance=clearance, friction=friction, condition=condition, orientation=orientation,
                    both_seated_at_end=result.both_seated_at_end, run_sim_time=result.sim_time,
                    grasp_margin_deg=log.grasp.friction_margin_deg if log.grasp else np.nan)
         rows.append(row)
@@ -50,18 +50,20 @@ def main():
     parser.add_argument("--clearances", type=float, nargs="+", default=[0.003, 0.001])
     parser.add_argument("--frictions", type=float, nargs="+", default=[0.3, 0.8])
     parser.add_argument("--conditions", nargs="+", default=list(CONDITIONS), choices=list(CONDITIONS))
+    parser.add_argument("--orientations", nargs="+", default=["upright"], choices=["upright", "lying", "mixed"])
     parser.add_argument("--fixed-sockets", action="store_true", help="don't randomise socket poses")
     parser.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     args = parser.parse_args()
 
-    jobs = [(seed, c, f, cond, not args.fixed_sockets) for cond, c, f in itertools.product(args.conditions, args.clearances, args.frictions) for seed in range(args.layouts)]
+    jobs = [(seed, c, f, cond, not args.fixed_sockets, o)
+            for o, cond, c, f in itertools.product(args.orientations, args.conditions, args.clearances, args.frictions) for seed in range(args.layouts)]
     with ProcessPoolExecutor(args.workers) as pool:
         df = pd.DataFrame([row for rows in pool.map(_job, jobs) for row in rows])
     out = RESULTS_DIR / "assembly_benchmark"
     out.mkdir(parents=True, exist_ok=True)
     df.to_csv(out / "connectors.csv", index=False)
 
-    keys = ["condition", "clearance", "friction", "kind"]
+    keys = ["orientation", "condition", "clearance", "friction", "kind", "lying"]
     summary = df.groupby(keys).agg(
         runs=("seed", "size"),
         identified=("identified", "mean"),
@@ -78,11 +80,13 @@ def main():
         visual_height_mm_mean=("visual_height_mm", "mean"),
         visual_offset_mm_max=("visual_offset_mm", "max"),
         wrong_socket=("wrong_socket", "sum"),
+        wrong_end=("wrong_end", "sum"),
+        sideways_clearance_min_mm=("sideways_clearance_mm", "min"),
         searched=("search.searched", "mean"),
         insert_time_mean=("insert_time", "mean"),
         peak_force_10ms_max=("peak_force_10ms", "max"),
     ).reset_index()
-    per_run = df.groupby(["condition", "clearance", "friction", "seed"]).both_seated_at_end.first().groupby(["condition", "clearance", "friction"]).mean()
+    per_run = df.groupby(["orientation", "condition", "clearance", "friction", "seed"]).both_seated_at_end.first().groupby(["orientation", "condition", "clearance", "friction"]).mean()
     summary.to_csv(out / "summary.csv", index=False)
     print(summary.to_string(index=False, float_format=lambda v: f"{v:.3g}"))
     print("\nBoth connectors seated at end (per run):")

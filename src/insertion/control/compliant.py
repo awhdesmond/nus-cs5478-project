@@ -91,6 +91,8 @@ class ImpedanceInsert:
 
     def _descend_torque(self, obs: Observation, dt: float) -> np.ndarray:
         pos_des, vel_des = self.path.sample(self.path_time)
+        if self.cfg.push_after_path and self.path_time >= self.path.duration:
+            pos_des, vel_des = np.array([pos_des[0], pos_des[1], obs.tip_pos[2] - self.cfg.max_lead]), np.zeros(3)
         lag = obs.tip_pos[2] - pos_des[2]
         if lag > self.cfg.max_lead:
             pos_des = pos_des.copy()
@@ -155,7 +157,8 @@ class SpiralSearchInsert(ImpedanceInsert):
         in_contact = self.detector.update(obs.ft)
         tip = obs.tip_pos
 
-        if self.phase == self.DESCEND and in_contact and tip[2] > self.entrance[2] - c.hole_drop:
+        surface_band = c.hole_drop if c.surface_contact_depth is None else c.surface_contact_depth
+        if self.phase == self.DESCEND and in_contact and tip[2] > self.entrance[2] - surface_band:
             # Blocked at the surface or chamfer: start searching from the believed entrance. Begin paused
             # (soft) so an offset within the chamfer's capture range can slide in without spiralling.
             self.phase = self.SEARCH
@@ -172,6 +175,8 @@ class SpiralSearchInsert(ImpedanceInsert):
 
         if self.phase == self.INSERT:
             pos_des, vel_des = self.insert_path.sample(obs.time - self.insert_start)
+            if self.cfg.push_after_path and obs.time - self.insert_start >= self.insert_path.duration:
+                pos_des = np.array([pos_des[0], pos_des[1], tip[2] - self.cfg.max_lead])
             if tip[2] - pos_des[2] > self.cfg.max_lead:
                 pos_des = np.array([pos_des[0], pos_des[1], tip[2] - self.cfg.max_lead])
                 vel_des = None

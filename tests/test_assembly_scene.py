@@ -9,7 +9,9 @@ from insertion.assembly_scene import (
     CONNECTORS,
     build_assembly_model,
     build_assembly_spec,
+    connector_axis_segment,
     sample_layout,
+    segment_distance,
     socket_apothem,
 )
 from insertion.assembly_sim import AssemblySim
@@ -98,6 +100,50 @@ def test_layout_sampler_is_seeded_spaced_and_in_bounds():
             assert abs(pose.y - CFG.socket_area_center[1]) <= CFG.socket_area_half[1]
     fixed = sample_layout(CFG, 4, sockets=False)
     assert fixed.round_pose == a.round_pose and fixed.round_socket_pose == CFG.round_socket_pose
+
+
+@pytest.mark.parametrize("orientation", ["lying", "mixed"])
+def test_lying_layouts_are_seeded_spaced_and_inside_the_pick_area(orientation):
+    lo = np.array(CFG.pick_area_center) - CFG.pick_area_half
+    hi = np.array(CFG.pick_area_center) + CFG.pick_area_half
+    kinds = set()
+    for seed in range(40):
+        layout = sample_layout(CFG, seed, orientation=orientation)
+        assert layout == sample_layout(CFG, seed, orientation=orientation)
+        poses = (layout.round_pose, layout.square_pose)
+        kinds.add(tuple(p.lying for p in poses))
+        segments = [connector_axis_segment(CFG, p) for p in poses]
+        assert segment_distance(*segments[0], *segments[1]) >= CFG.min_connector_spacing - 1e-9
+        for seg in segments:
+            for end in seg:
+                assert np.all(end >= lo - 1e-9) and np.all(end <= hi + 1e-9)
+    assert kinds == ({(True, True)} if orientation == "lying" else {(True, True), (True, False), (False, True), (False, False)})
+    assert sample_layout(CFG, 3, orientation="upright").round_pose == sample_layout(CFG, 3).round_pose
+
+
+def test_segment_distance():
+    p = lambda *xy: np.array(xy, dtype=float)
+    assert segment_distance(p(0, 0), p(1, 0), p(0, 1), p(1, 1)) == pytest.approx(1.0)
+    assert segment_distance(p(0, 0), p(1, 1), p(0, 1), p(1, 0)) == 0.0  # crossing
+    assert segment_distance(p(0, 0), p(1, 0), p(2, 0), p(2, 0)) == pytest.approx(1.0)  # point
+    assert segment_distance(p(0, 0), p(0, 0), p(3, 4), p(3, 4)) == pytest.approx(5.0)
+
+
+@pytest.mark.parametrize("seed", [0, 1])
+def test_lying_connectors_rest_without_rolling(seed):
+    cfg = sample_layout(CFG, seed, orientation="lying")
+    sim = AssemblySim(build_assembly_model(cfg), cfg)
+    sim.reset()
+    start = {k: sim.data.body(f"{k}_connector").xpos.copy() for k in CONNECTORS}
+    q0 = sim.q()
+    for _ in range(3000):
+        sim.step(joint_pd_torque(sim, q0, JointPDConfig()))
+    for kind in CONNECTORS:
+        body = sim.data.body(f"{kind}_connector")
+        assert np.linalg.norm(body.xpos - start[kind]) < 2e-4
+        assert abs(body.xmat.reshape(3, 3)[2, 2]) < 1e-3  # axis still horizontal
+    square_rot = sim.data.body("square_connector").xmat.reshape(3, 3)
+    assert abs(abs(square_rot[2, 0]) - 1.0) < 1e-3  # lying on a face
 
 
 # --- round (N-gon) socket geometry ---------------------------------------------------------------

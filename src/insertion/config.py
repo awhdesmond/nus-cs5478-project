@@ -87,6 +87,11 @@ class ImpedanceInsertConfig:
     # so push force stays ≈ K_z·max_lead. Without it the setpoint winds up while the peg is held on the
     # chamfer, and the stored spring force fires the peg into the hole wall once it drops in (130 N spike).
     max_lead: float = 0.005  # [m]
+    # After the setpoint path ends, keep the setpoint max_lead below the tip (push ≈ K_z·max_lead) instead of holding
+    # it at the path goal. Needed when the tip's depth estimate is biased: a connector picked up lying has its
+    # along-axis perception error turned into depth error, and a goal the controller believes it has passed leaves
+    # only a weak spring push at the real hole bottom (1.5 N seen) — too little for mechanical seating detection.
+    push_after_path: bool = False
 
 
 @dataclass
@@ -108,6 +113,10 @@ class SpiralSearchConfig:
     search_radius: float = 0.0075  # [m] restart the spiral beyond this (covers a ±5 mm square)
     partial_drop: float = 0.0005  # [m] new drop since the spiral last resumed that pauses it to let the chamfer act
     hole_drop: float = 0.0025  # [m] tip below contact height that confirms the hole → insert (just past the 2 mm chamfer depth)
+    # A descent stall counts as surface/chamfer contact (→ search) only if the tip is within this of the believed
+    # entrance; None = hole_drop. Widen (e.g. half the hole depth) when the tip depth estimate is biased by several mm,
+    # or a connector resting on the fixture top looks "already in the hole" and search never starts.
+    surface_contact_depth: float | None = None  # [m]
     # Lateral leash: the spiral setpoint is clamped to within this of the tip and only advances while the tip
     # keeps up, capping sideways force at ≈ search_stiffness_xy·max_lateral_lead. Without it a peg that has
     # dropped into the top of the hole gets dragged into the wall at ~15 N, and wall friction then jams it.
@@ -173,11 +182,16 @@ class StartConfig:
 
 @dataclass
 class ConnectorPose:
-    """Planar pose of an upright connector on the table: centre xy [m] and yaw about +z [rad]."""
+    """Planar pose on the table: centre xy [m] and yaw about +z [rad].
+
+    Upright connector (or socket): yaw of its body about +z. Lying connector: on its side (square: on a face) with
+    its long axis horizontal along (cos yaw, sin yaw); the axis is at half the connector's width above the table.
+    """
 
     x: float
     y: float
     yaw: float = 0.0
+    lying: bool = False
 
 
 @dataclass
@@ -197,6 +211,9 @@ class AssemblyConfig:
     # 50 mm so a connector grasped 10 mm below its top leaves the fingertips 12 mm above the socket when seated.
     connector_length: float = 0.050  # [m]
     grasp_below_top: float = 0.010  # [m] tcp (finger pad centre) below the connector top
+    # The insertion end is marked with a coloured band (visual only), so a lying connector must go in marked end
+    # first. Upright connectors always stand on their marked end.
+    tip_band_length: float = 0.008  # [m]
     clearance: float = 0.001  # [m] total, both sockets
     round_sides: int = 16  # N-gon approximating the round hole
 
@@ -216,7 +233,10 @@ class AssemblyConfig:
     square_socket_pose: ConnectorPose = field(default_factory=lambda: ConnectorPose(-0.11, 0.50, 0.0))
     pick_area_center: tuple[float, float] = (0.07, 0.50)
     pick_area_half: tuple[float, float] = (0.06, 0.08)
-    min_connector_spacing: float = 0.06  # [m] centre-to-centre, keeps fingers clear of the other connector
+    min_connector_spacing: float = 0.06  # [m] between connector axes (centres if upright), keeps fingers clear
+    # A lying cylinder on a flat table rocks and rolls away in MuJoCo (up to 70 mm in 6 s) with sliding friction only.
+    # Rolling friction (condim 6) of 1 mm holds it within 0.04 mm over 6 s; about a real plastic connector's.
+    round_rolling_friction: float = 0.001  # [m]
     # Socket centres stay ≥ 25 mm (a yawed block's half-diagonal) plus calibration error inside the camera's view
     # of the fixture top (x ∈ [−0.24, 0.18], y ∈ [0.34, 0.66]) and clear of the pick area.
     socket_area_center: tuple[float, float] = (-0.15, 0.50)
@@ -242,6 +262,9 @@ class AssemblyConfig:
     # ~0.6 mm into the connector unevenly, pushed it off-centre and tilted it in the hand.
     finger_speed: float = 0.02  # [m/s] per finger
     finger_friction: float = 1.0
+    # Lying connectors are pinched across their width with the fingertips this far above the perceived table: the
+    # pads then reach below a cylinder's widest line (5 mm up) while tolerating ~3 mm of camera height bias.
+    lying_fingertip_clearance: float = 0.0035  # [m]
 
     # Camera (fixed overhead, looking straight down)
     # 0.75 m above the table with a 25° vertical field of view covers ~0.44 × 0.33 m (fixture + pick area)

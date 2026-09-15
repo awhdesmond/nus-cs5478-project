@@ -2,6 +2,7 @@
 
     uv run python scripts/pipeline_demo.py                                   # realistic camera, 1 mm clearance
     uv run python scripts/pipeline_demo.py --seed 7 --condition ideal --clearance 0.003
+    uv run python scripts/pipeline_demo.py --orientation lying                # connectors lying on their sides
 
 Panels: angled 3D view | live overhead camera | what perception saw at the last capture (detected outlines
 labelled round/square, matched sockets, and the chosen antipodal grasp's finger contact line).
@@ -68,11 +69,12 @@ def main():
     parser.add_argument("--condition", choices=list(CONDITIONS), default="realistic")
     parser.add_argument("--clearance", type=float, default=0.001)
     parser.add_argument("--friction", type=float, default=0.3)
+    parser.add_argument("--orientation", choices=["upright", "lying", "mixed"], default="upright")
     parser.add_argument("--speed", type=float, default=2.0)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
 
-    cfg = replace(sample_layout(AssemblyConfig(), args.seed), clearance=args.clearance, friction=args.friction)
+    cfg = replace(sample_layout(AssemblyConfig(), args.seed, orientation=args.orientation), clearance=args.clearance, friction=args.friction)
     result = AssemblyRun(cfg, seed=args.seed, noise=CONDITIONS[args.condition], record=True).run()
     for log in result.connectors:
         print(f"{log.kind}: identified={log.identified} grasped={log.grasped} seated={log.seated} stayed={log.stayed_seated} "
@@ -92,7 +94,8 @@ def main():
     small = ImageFont.load_default(size=16)
     overlays = [(t, perception_overlay(obs, scene, proposals, (w, h))) for t, obs, scene, proposals in result.captures]
 
-    out = args.out or RESULTS_DIR / "demos" / f"pipeline_{args.condition}_seed{args.seed}.mp4"
+    suffix = "" if args.orientation == "upright" else f"_{args.orientation}"
+    out = args.out or RESULTS_DIR / "demos" / f"pipeline_{args.condition}{suffix}_seed{args.seed}.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
     times = np.array([t for t, _ in result.trajectory])
     frame_times = np.arange(times[0], times[-1], args.speed / 30)

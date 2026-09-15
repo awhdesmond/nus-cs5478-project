@@ -11,7 +11,7 @@ uv sync                            # Python 3.12 venv + deps
 uv run python scripts/smoke_test.py
 uv run pytest
 uv run python scripts/view.py --controller spiral --clearance 0.001 --uncertainty 0.005 --seed 1   # live physics; Ctrl+right-drag to shove
-uv run mjpython scripts/view.py --scene assembly --seed 3              # watch the full perception → pick → insert pipeline live
+uv run mjpython scripts/view.py --scene assembly                      # watch the pipeline live, looping over layouts (upright + lying)
 ```
 
 ## Layout
@@ -26,9 +26,10 @@ src/insertion/
   contact_check.py       contact sanity scenarios and pass/fail thresholds
   reach_check.py         pre-insertion reach from perturbed starts
   compliance_check.py    impedance isolation checks: surface press, external push, tilted press
-  assembly_scene.py      two-connector scene: gripper, fixture (round 16-gon + square sockets), connectors, overhead camera
+  assembly_scene.py      two-connector scene: gripper, sockets (round 16-gon + square), connectors (upright/lying, marked tip), camera, layouts
   assembly_sim.py        gripper commands, attach-on-grasp welds, ground-truth connector/socket state
   assembly_check.py      hand-scripted ground-truth assembly (M1 scene check)
+  assembly_planning.py   perceived obstacles, arm clearance checks, sideways-insertion planning (lying connectors)
   camera.py              overhead RGB-D rendering, calibration, back-projection, noise model
   perception.py          PoseEstimator interface + GeometricEstimator (identify and localise connectors and sockets)
   perception_check.py    perception accuracy vs ground truth over random layouts

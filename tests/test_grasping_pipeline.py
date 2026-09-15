@@ -107,6 +107,38 @@ def test_perception_driven_assembly_seats_both_connectors(condition):
         assert all(log.in_hand_tip_error_mm < 0.5 for log in result.connectors)
 
 
+REALISTIC = DepthNoise(sigma=0.001, rgb_sigma=3.0, calib_translation=0.002, calib_rotation_deg=0.5)
+
+
+@pytest.mark.parametrize("orientation, noise, seed", [("lying", DepthNoise(), 0), ("mixed", REALISTIC, 4)])
+def test_lying_connectors_are_turned_sideways_and_inserted_marked_end_first(orientation, noise, seed):
+    cfg = sample_layout(CFG, seed, orientation=orientation)
+    assert any(pose.lying for pose in (cfg.round_pose, cfg.square_pose))
+    result = AssemblyRun(cfg, seed=seed, noise=noise).run()
+    for log in result.connectors:
+        assert log.identified and log.grasped and log.lifted, log
+        assert log.seated and log.stayed_seated and log.verified and not log.wrong_end and not log.wrong_socket, log
+        assert log.peak_force_10ms < 30.0
+        if log.lying:
+            assert log.sideways_clearance_mm >= 5.0
+    assert result.both_seated_at_end
+
+
+def test_marked_end_decides_which_way_a_lying_connector_points():
+    cfg = sample_layout(CFG, 0, orientation="lying")
+    model = build_assembly_model(cfg)
+    data = mujoco.MjData(model)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
+    mujoco.mj_forward(model, data)
+    scene = GeometricEstimator().estimate(OverheadCamera(model, cfg.image_width, cfg.image_height).capture(data))
+    for kind in ("round", "square"):
+        est = scene.connector(kind)
+        assert est.lying and est.tip_found
+        true_tip = data.site(f"{kind}_tip").xpos[:2]
+        est_tip = est.centre[:2] - est.axis_xy * est.length / 2
+        assert np.linalg.norm(est_tip - true_tip) < 0.001
+
+
 def seated_scene(kind_states: dict, noise: DepthNoise, seed: int = 2):
     """Two captures by one camera from the ready pose: the layout as sampled (holes empty), then with each connector
     placed by hand "seated" in its socket or resting "on_chamfer"."""
