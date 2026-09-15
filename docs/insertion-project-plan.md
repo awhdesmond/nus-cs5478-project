@@ -224,17 +224,30 @@ square → insert square → release and retract.
 | Gripper | Simple parallel-jaw gripper built from primitives (finger slide joints + position actuator) | Robust contact, fast; menagerie Robotiq 2F-85 can replace it visually later |
 | Pose uncertainty | Comes from **perception error** (plus optional depth noise), replacing the synthetic believed-entrance offset | More realistic; the synthetic mode stays for the insertion-only benchmark |
 
-**Geometry: each connector fits only its own socket.** Proposed with 1 mm clearance: square peg 8 mm side → square
-hole 9 mm; round peg Ø10 mm → round hole Ø11 mm. The round peg can't enter the square hole (10 > 9), and the square
-peg's 11.3 mm diagonal can't enter the round hole (> 11). At larger clearances the exclusivity breaks, so the
-harness scores "correct socket" explicitly rather than relying on fit. Round hole = N-gon of box primitives
-(N ≈ 16; faces within ~0.1 mm of a true circle) with per-face chamfer boxes; must pass the contact sanity check.
+**Geometry: each connector fits only its own socket.** At 1 mm clearance: square peg 8.5 mm side → square hole
+9.5 mm; round peg Ø10 mm → round hole Ø11 mm (16-gon). The round peg can't enter the square hole (10 > 9.5), and the
+square peg's 12.0 mm diagonal can't enter the round hole, whose widest point (the polygon vertices) is 11.22 mm.
+An 8 mm square (11.3 mm diagonal) was rejected in M1: with its corners on the polygon vertices the margin was
+0.05 mm, about contact-penetration size. At larger clearances the exclusivity breaks, so the harness scores
+"correct socket" explicitly rather than relying on fit. Connectors are 50 mm long so the fingers (grasping 10 mm
+below the top) stay 12 mm above the socket when seated.
 
 **Milestones**
-- [ ] **M1 Scene.** Table, fixture with round (N-gon) + square holes, round and square connectors as free bodies, overhead RGB-D camera, parallel gripper on the flange with the F/T sensor behind it, attach-on-grasp weld. Insertion-only scene still builds unchanged (flag). Contact sanity check passes for square-in-square and round-in-N-gon.
+- [x] **M1 Scene.** Table, fixture with round (N-gon) + square holes, round and square connectors as free bodies, overhead RGB-D camera, parallel gripper on the flange with the F/T sensor behind it, attach-on-grasp weld. Insertion-only scene still builds unchanged (flag). Contact sanity check passes for square-in-square and round-in-N-gon.
   **Done =** scene renders; gripper closes on either connector and the weld holds it; both pegs seat by hand-scripted motion.
-- [ ] **M2 Perception.** RGB-D render → point back-projection; segment connector and socket holes; classify round vs square (circularity + polygon vertex count); estimate connector xy/yaw/height and socket-hole centres/yaw. `perception_check` over random layouts vs ground truth.
+  *Done 2026-09-15* — `assembly_scene.py`, `assembly_sim.py`, `assembly_check.py`, `tests/test_assembly_scene.py` (16 tests), `scripts/assembly_demo.py`:
+  - Hand-scripted ground-truth assembly (round then square): both grasped, inserted (tip within 0.15 mm / 0.03 mm of the axis at descent), released, still seated at the end; the waiting connector moved 0.003 mm.
+  - Keying holds under a 30 N push, including the square's worst-case yaw (corners on the polygon vertices). Chamfer-lip penetration: 16-gon 0.18 mm vs square 0.19 mm (limit 0.5 mm). Round-hole ray profile matches the design at 4 faces and all 16 vertices.
+  - Camera: 1280×960, 25° fovy, 0.75 m above the table (~0.34 mm/px; connector tops ~1,250 px). A `camera_clear` keyframe (arm parked behind the base) leaves zero arm pixels in view; at `home` the arm covers 24% of the image.
+  - All grasp poses over the pick area (4 yaws) and all insertion poses are reachable; min position-Jacobian σ 0.27.
+  - Found and fixed: the weld's default anchor came from the joint equality's polycoef ([0, 1, 0]) and flung the connector 1 m on attach — weld data is now set explicitly.
+- [x] **M2 Perception.** RGB-D render → point back-projection; segment connector and socket holes; classify round vs square; estimate connector xy/yaw/height and socket-hole centres/yaw. `perception_check` over random layouts vs ground truth.
   **Done =** 100% classification; position error < 1 mm and square yaw error < 2° (95th percentile), with and without depth noise.
+  *Done 2026-09-15 (upright connectors)* — `camera.py`, `perception.py` (`PoseEstimator` interface + `GeometricEstimator`), `perception_check.py`, `scripts/perception_check.py`, `tests/test_perception.py`:
+  - Method: depth → world height map; connector tops = regions > 40 mm above the table, top face outlined in the **colour** image (falls back to the depth face); socket openings = holes in the fixture's top plane. Pixels are intersected with the relevant plane so shapes are metric. Identification by IoU against an equal-area circle vs square, plus a one-of-each prior when exactly two candidates are found. Square socket yaw from the block's outer edges.
+  - Results (40 layouts each; depth noise σ 0 / 1 / 2 mm, RGB noise 3 levels when depth noise is on): identification **100%** at all levels; position error 95th percentile ≤ 0.16 mm (connectors) and ≤ 0.52 mm (sockets); square connector yaw 95th percentile 1.0° / 1.4° / 1.4° (max 1.9°); square socket yaw exact.
+  - What didn't work: contour circularity/convex-hull rectangularity misidentified 25% of sockets at σ = 2 mm (noise inflates hulls); depth-only yaw degraded to 1.5–3° p95 with noise. Compared on identical images: colour-outline yaw 0.47° p95 at every depth noise level vs depth minimum-area rectangle 0.37° / 1.48° / 3.15°.
+  - Conventions verified against ray casts: MuJoCo's depth image is distance along the optical axis; image row 0 is the top of the view.
 - [ ] **M3 Antipodal grasping, pick and release.**
   - *Antipodal grasp proposals:* back-project the connector's depth pixels to a point cloud, estimate surface normals (local PCA), sample finger contact pairs across the closing direction at the grasp height, and keep pairs where the contact line lies within both friction cones (angle to each normal ≤ atan(μ_assumed) with a safety margin). Reject pairs wider than the gripper opening or whose fingers would hit the table or the other connector; rank by friction-cone margin, then by closeness to the connector axis. Expected outcome: any diameter for the round connector, opposite flats for the square.
   - *Pick and release:* approach / close / attach / lift from the best proposal; in-hand offset estimate (connector tip relative to the gripper, from perception at pick time); re-tare F/T after the grasp (carried mass). Release: open fingers, deactivate the weld, retract without dragging the seated connector back out. Pick order: round first, chosen by classification, not by position.

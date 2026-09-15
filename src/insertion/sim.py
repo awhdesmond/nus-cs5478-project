@@ -21,7 +21,8 @@ class Sim:
     def __init__(self, model: mujoco.MjModel):
         self.model = model
         self.data = mujoco.MjData(model)
-        self.peg_geom_id = model.geom("peg").id
+        # Insertion-only scene: the welded peg. The assembly scene has free connectors instead (see assembly_sim).
+        self.peg_geom_id = model.geom("peg").id if mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "peg") >= 0 else -1
         self._ft_force_adr = model.sensor("ft_force").adr[0]
         self._ft_torque_adr = model.sensor("ft_torque").adr[0]
         self._wrench = np.zeros(6)
@@ -38,7 +39,8 @@ class Sim:
         mujoco.mj_forward(self.model, self.data)
 
     def step(self, ctrl: np.ndarray) -> None:
-        self.data.ctrl[:] = ctrl
+        """Arm joint torques for actuators 0–5 (any further actuators, e.g. a gripper, keep their ctrl)."""
+        self.data.ctrl[: len(ctrl)] = ctrl
         mujoco.mj_step(self.model, self.data)
 
     def q(self) -> np.ndarray:

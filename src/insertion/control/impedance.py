@@ -16,7 +16,7 @@ import numpy as np
 
 from insertion.config import ImpedanceConfig
 from insertion.control.ik import orientation_error
-from insertion.scene import UR5E_JOINTS
+from insertion.scene import UR5E_JOINTS, arm_ctrlrange
 
 
 class CartesianImpedance:
@@ -90,5 +90,5 @@ class CartesianImpedance:
         wrench = spring + self.damping * (twist_des - twist)
 
         tau = jac.T @ wrench + self._bias[self.dof_adr] - self.cfg.joint_damping * qd
-        lo, hi = self.model.actuator_ctrlrange.T
+        lo, hi = arm_ctrlrange(self.model).T
         return np.clip(tau, lo, hi), wrench

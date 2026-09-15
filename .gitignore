@@ -15,3 +15,6 @@ results/*
 # OS / editor
 .DS_Store
 .vscode/
+
+# MuJoCo runtime log (OpenGL depth-precision warnings)
+MUJOCO_LOG.TXT

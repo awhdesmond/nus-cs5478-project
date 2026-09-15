@@ -24,6 +24,12 @@ src/insertion/
   contact_check.py       contact sanity scenarios and pass/fail thresholds
   reach_check.py         pre-insertion reach from perturbed starts
   compliance_check.py    impedance isolation checks: surface press, external push, tilted press
+  assembly_scene.py      two-connector scene: gripper, fixture (round 16-gon + square sockets), connectors, overhead camera
+  assembly_sim.py        gripper commands, attach-on-grasp welds, ground-truth connector/socket state
+  assembly_check.py      hand-scripted ground-truth assembly (M1 scene check)
+  camera.py              overhead RGB-D rendering, calibration, back-projection, noise model
+  perception.py          PoseEstimator interface + GeometricEstimator (identify and localise connectors and sockets)
+  perception_check.py    perception accuracy vs ground truth over random layouts
   controllers.py         controller registry (shared by evaluate.py and view.py)
   diagnose.py            spiral search failure diagnostics (phase log vs. ground-truth hole)
   stats.py               Wilson intervals, exact McNemar test
@@ -45,6 +51,8 @@ scripts/
   compliance_check.py    impedance isolation tables → results/compliance_check/
   replay.py              replay a recorded trial in the viewer or render an MP4 (with top-down tip trace)
   make_demos.py          record + render the demo videos → results/demos/
+  assembly_demo.py       render the scripted two-connector assembly (angled + overhead camera views)
+  perception_check.py    perception accuracy table over layouts × noise levels → results/perception_check/
   view.py                live interactive viewer (--controller straight|guarded|impedance|spiral, --friction)
   smoke_test.py, fetch_assets.sh
 docs/

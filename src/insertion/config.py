@@ -172,6 +172,79 @@ class StartConfig:
 
 
 @dataclass
+class ConnectorPose:
+    """Planar pose of an upright connector on the table: centre xy [m] and yaw about +z [rad]."""
+
+    x: float
+    y: float
+    yaw: float = 0.0
+
+
+@dataclass
+class AssemblyConfig:
+    """Two-connector assembly scene: table, round + square connectors, fixture with two sockets, camera, gripper.
+
+    Field names shared with SceneConfig (socket_*, friction, contact_*) keep the socket builders and
+    contact parameters reusable.
+    """
+
+    # Connectors, keyed so each fits only its own socket at 1 mm clearance: round Ø10 mm > square hole 9.5 mm;
+    # square diagonal 12.0 mm > round hole's widest point 11.22 mm (the 16-gon's vertices sit at apothem/cos(π/16)).
+    # An 8 mm square (11.3 mm diagonal) left only 0.05 mm — about contact-penetration size — when its corners
+    # line up with the polygon's vertices.
+    round_radius: float = 0.005  # [m]
+    square_half: float = 0.00425  # [m] half side
+    # 50 mm so a connector grasped 10 mm below its top leaves the fingertips 12 mm above the socket when seated.
+    connector_length: float = 0.050  # [m]
+    grasp_below_top: float = 0.010  # [m] tcp (finger pad centre) below the connector top
+    clearance: float = 0.001  # [m] total, both sockets
+    round_sides: int = 16  # N-gon approximating the round hole
+
+    # Sockets (same construction as the insertion-only socket)
+    socket_depth: float = 0.020
+    socket_wall: float = 0.012
+    socket_base: float = 0.010
+    socket_chamfer: float = 0.002
+    table_height: float = 0.17  # [m] table top; hole bottoms sit socket_base above it
+    table_center: tuple[float, float] = (-0.05, 0.50)
+    table_half: tuple[float, float] = (0.25, 0.15)
+    # Hole-bottom centres in world xy. PLACEHOLDER until checked for reach and camera view.
+    round_socket_xy: tuple[float, float] = (-0.19, 0.50)
+    square_socket_xy: tuple[float, float] = (-0.11, 0.50)
+
+    # Layout (overridden per trial by sample_layout)
+    round_pose: ConnectorPose = field(default_factory=lambda: ConnectorPose(0.05, 0.46, 0.0))
+    square_pose: ConnectorPose = field(default_factory=lambda: ConnectorPose(0.10, 0.54, 0.3))
+    pick_area_center: tuple[float, float] = (0.07, 0.50)  # PLACEHOLDER
+    pick_area_half: tuple[float, float] = (0.06, 0.08)
+    min_connector_spacing: float = 0.06  # [m] centre-to-centre, keeps fingers clear of the other connector
+
+    # Gripper (parallel jaw, closes along its local y)
+    finger_open_gap: float = 0.030  # [m] distance between finger inner faces when fully open
+    finger_length: float = 0.050  # [m]
+    finger_width: float = 0.016  # [m] along the gripper's x
+    finger_thickness: float = 0.006  # [m] along the closing direction
+    palm_offset: float = 0.030  # [m] flange to finger roots
+    grip_force: float = 20.0  # [N] finger actuator force limit
+    finger_friction: float = 1.0
+
+    # Camera (fixed overhead, looking straight down)
+    # 0.75 m above the table with a 25° vertical field of view covers ~0.44 × 0.33 m (fixture + pick area)
+    # at ~0.34 mm per pixel, so a 10 mm connector spans ~30 px.
+    camera_pos: tuple[float, float, float] = (-0.03, 0.50, 0.92)
+    camera_fovy: float = 25.0  # [deg]
+    image_width: int = 1280
+    image_height: int = 960
+
+    # Physics (as SceneConfig)
+    timestep: float = 0.001
+    friction: float = 0.3
+    elliptic_cone: bool = True
+    contact_solref: tuple[float, float] = (0.005, 1.0)
+    contact_solimp: tuple[float, float, float, float, float] = (0.95, 0.99, 0.001, 0.5, 2.0)
+
+
+@dataclass
 class TrialConfig:
     seed: int = 0
     start: StartConfig = field(default_factory=StartConfig)

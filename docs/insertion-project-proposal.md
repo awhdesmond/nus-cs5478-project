@@ -31,7 +31,7 @@ A 6-DOF manipulator with a parallel-jaw gripper and a fixed overhead RGB-D camer
   simulated depth noise) is the source of pose uncertainty at insertion.
 
 **Modelling decisions.**
-- **Connectors are rigid keyed pegs** (round Ø10 mm, square 8 mm) standing in for plug
+- **Connectors are rigid keyed pegs** (round Ø10 mm, square 8.5 mm, 50 mm long) standing in for plug
   housings. Sizes are chosen so each connector physically fits only its own socket at
   1 mm clearance, mirroring connector keying.
 - **No cable is modelled.** Deformable-cable simulation is a research problem in its own

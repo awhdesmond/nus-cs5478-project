@@ -8,6 +8,7 @@ import mujoco
 import numpy as np
 
 from insertion.config import JointPDConfig
+from insertion.scene import arm_ctrlrange
 from insertion.sim import Sim
 
 
@@ -33,7 +34,7 @@ def joint_pd_torque(
     """PD hold/track using the simulator's own state (harness-side use)."""
     if qd_des is None:
         qd_des = np.zeros_like(q_des)
-    return pd_torque(sim.q(), sim.qd(), q_des, qd_des, sim.gravity_comp(), cfg, sim.model.actuator_ctrlrange)
+    return pd_torque(sim.q(), sim.qd(), q_des, qd_des, sim.gravity_comp(), cfg, arm_ctrlrange(sim.model))
 
 
 def bias_torque(model: mujoco.MjModel, data: mujoco.MjData, qpos_adr, dof_adr, q, qd) -> np.ndarray:

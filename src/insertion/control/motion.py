@@ -13,6 +13,7 @@ from insertion.config import JointPDConfig
 from insertion.control.ik import JacobianIK
 from insertion.control.joint_pd import bias_torque, pd_torque
 from insertion.control.trajectory import LineTrajectory, QuinticTrajectory
+from insertion.scene import arm_ctrlrange
 
 
 class JointSegment:
@@ -84,4 +85,4 @@ class SegmentRunner:
 
     def torque(self, q: np.ndarray, qd: np.ndarray, q_des: np.ndarray, qd_des: np.ndarray) -> np.ndarray:
         bias = bias_torque(self.model, self.ik.data, self.ik.qpos_adr, self.ik.dof_adr, q, qd)
-        return pd_torque(q, qd, q_des, qd_des, bias, self.pd, self.model.actuator_ctrlrange)
+        return pd_torque(q, qd, q_des, qd_des, bias, self.pd, arm_ctrlrange(self.model))
