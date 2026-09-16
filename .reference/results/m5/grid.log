@@ -1,0 +1,796 @@
+640 runs, 6 workers → /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/m5
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+[1/640] seed   0 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[2/640] seed   1 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[3/640] seed   3 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[4/640] seed   2 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[5/640] seed   5 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[6/640] seed   4 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[7/640] seed   7 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[8/640] seed   6 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[9/640] seed   8 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[10/640] seed  11 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[11/640] seed   9 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[12/640] seed  10 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[13/640] seed  13 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[14/640] seed  12 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[15/640] seed  14 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[16/640] seed  15 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[17/640] seed  16 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[18/640] seed  17 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[19/640] seed  18 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[20/640] seed   0 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[21/640] seed  19 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[22/640] seed   1 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[23/640] seed   2 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[24/640] seed   3 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[25/640] seed   4 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[26/640] seed   5 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[27/640] seed   6 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[28/640] seed   7 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[29/640] seed   8 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[30/640] seed   9 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[31/640] seed  10 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[32/640] seed  11 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[33/640] seed  14 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[34/640] seed  12 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[35/640] seed  13 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[36/640] seed  15 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[37/640] seed  16 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[38/640] seed  17 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[39/640] seed   0 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[40/640] seed   1 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[41/640] seed  18 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[42/640] seed  19 orientation=upright condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[43/640] seed   2 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[44/640] seed   3 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[45/640] seed   4 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[46/640] seed   5 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[47/640] seed   7 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[48/640] seed   6 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[49/640] seed   8 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[50/640] seed   9 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[51/640] seed  11 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[52/640] seed  10 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[53/640] seed  13 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[54/640] seed  12 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[55/640] seed  14 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[56/640] seed  15 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[57/640] seed  16 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[58/640] seed  17 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[59/640] seed  18 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[60/640] seed  19 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[61/640] seed   0 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[62/640] seed   1 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[63/640] seed   2 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[64/640] seed   3 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[65/640] seed   4 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[66/640] seed   5 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[67/640] seed   6 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[68/640] seed   7 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[69/640] seed   8 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[70/640] seed   9 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[71/640] seed  10 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[72/640] seed  11 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[73/640] seed  12 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[74/640] seed  13 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[75/640] seed  14 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[76/640] seed  15 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[77/640] seed  16 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[78/640] seed  17 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[79/640] seed  18 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[80/640] seed  19 orientation=upright condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[81/640] seed   0 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[82/640] seed   1 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[83/640] seed   2 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[84/640] seed   3 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[85/640] seed   4 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[86/640] seed   5 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[87/640] seed   6 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[88/640] seed   7 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[89/640] seed   8 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[90/640] seed   9 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[91/640] seed  10 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[92/640] seed  11 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[93/640] seed  12 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[94/640] seed  13 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[95/640] seed  14 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[96/640] seed  15 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[97/640] seed  16 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[98/640] seed  17 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[99/640] seed  18 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[100/640] seed  19 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[101/640] seed   1 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[102/640] seed   0 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[103/640] seed   2 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[104/640] seed   3 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[105/640] seed   4 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[106/640] seed   5 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[107/640] seed   6 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[108/640] seed   7 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[109/640] seed   8 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[110/640] seed  10 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[111/640] seed   9 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[112/640] seed  11 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[113/640] seed  13 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[114/640] seed  12 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[115/640] seed  14 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[116/640] seed  16 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[117/640] seed  15 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[118/640] seed  17 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[119/640] seed  19 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[120/640] seed  18 orientation=upright condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[121/640] seed   0 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[122/640] seed   1 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[123/640] seed   2 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[124/640] seed   3 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[125/640] seed   4 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[126/640] seed   5 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[127/640] seed   6 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[128/640] seed   7 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[129/640] seed   8 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[130/640] seed   9 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[131/640] seed  10 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[132/640] seed  11 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[133/640] seed  12 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[134/640] seed  13 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[135/640] seed  14 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[136/640] seed  15 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[137/640] seed  16 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[138/640] seed  17 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[139/640] seed  18 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[140/640] seed  19 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[141/640] seed   0 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[142/640] seed   1 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[143/640] seed   2 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[144/640] seed   3 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[145/640] seed   4 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[146/640] seed   5 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[147/640] seed   6 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[148/640] seed   7 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[149/640] seed   8 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[150/640] seed   9 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[151/640] seed  10 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[152/640] seed  11 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[153/640] seed  12 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[154/640] seed  13 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[155/640] seed  14 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[156/640] seed  15 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[157/640] seed  16 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[158/640] seed  17 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[159/640] seed  18 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[160/640] seed  19 orientation=upright condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[161/640] seed   0 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[162/640] seed   1 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[163/640] seed   2 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[164/640] seed   3 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[165/640] seed   4 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[166/640] seed   5 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[167/640] seed   6 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[168/640] seed   7 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[169/640] seed   8 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[170/640] seed   9 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[171/640] seed  10 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[172/640] seed  11 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[173/640] seed  12 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[174/640] seed  13 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[175/640] seed  14 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[176/640] seed  15 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[177/640] seed  16 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[178/640] seed  17 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[179/640] seed  18 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[180/640] seed  19 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[181/640] seed   0 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[182/640] seed   1 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[183/640] seed   2 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[184/640] seed   3 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[185/640] seed   4 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[186/640] seed   5 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[187/640] seed   6 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[188/640] seed   7 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[189/640] seed   8 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[190/640] seed   9 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[191/640] seed  10 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[192/640] seed  11 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[193/640] seed  12 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[194/640] seed  13 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[195/640] seed  14 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[196/640] seed  15 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[197/640] seed  16 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[198/640] seed  17 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[199/640] seed  18 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[200/640] seed  19 orientation=upright condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[201/640] seed   0 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[202/640] seed   1 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[203/640] seed   2 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[204/640] seed   3 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[205/640] seed   4 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[206/640] seed   5 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[207/640] seed   6 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[208/640] seed   7 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[209/640] seed   8 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[210/640] seed   9 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[211/640] seed  10 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[212/640] seed  11 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[213/640] seed  12 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[214/640] seed  13 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[215/640] seed  14 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[216/640] seed  15 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[217/640] seed  16 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[218/640] seed  17 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[219/640] seed  18 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[220/640] seed  19 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[221/640] seed   0 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[222/640] seed   1 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[223/640] seed   2 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[224/640] seed   3 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[225/640] seed   4 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[226/640] seed   5 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[227/640] seed   6 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[228/640] seed   7 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[229/640] seed   8 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[230/640] seed   9 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[231/640] seed  10 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[232/640] seed  11 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[233/640] seed  12 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[234/640] seed  13 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[235/640] seed  14 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[236/640] seed  15 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[237/640] seed  16 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[238/640] seed  17 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[239/640] seed  18 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[240/640] seed  19 orientation=upright condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[241/640] seed   0 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[242/640] seed   1 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[243/640] seed   2 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[244/640] seed   3 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[245/640] seed   4 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[246/640] seed   5 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[247/640] seed   6 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[248/640] seed   7 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[249/640] seed   8 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[250/640] seed   9 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[251/640] seed  10 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[252/640] seed  11 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[253/640] seed  12 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[254/640] seed  13 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[255/640] seed  14 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[256/640] seed  15 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[257/640] seed  16 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[258/640] seed  17 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[259/640] seed  18 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[260/640] seed  19 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[261/640] seed   0 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[262/640] seed   1 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[263/640] seed   2 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[264/640] seed   3 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[265/640] seed   4 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[266/640] seed   5 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[267/640] seed   6 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[268/640] seed   7 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[269/640] seed   8 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[270/640] seed   9 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[271/640] seed  10 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[272/640] seed  11 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[273/640] seed  12 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[274/640] seed  13 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[275/640] seed  14 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[276/640] seed  15 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[277/640] seed  16 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[278/640] seed  17 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[279/640] seed  18 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[280/640] seed  19 orientation=upright condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[281/640] seed   0 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[282/640] seed   1 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[283/640] seed   2 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[284/640] seed   3 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[285/640] seed   4 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[286/640] seed   5 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[287/640] seed   6 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[288/640] seed   7 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[289/640] seed   8 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[290/640] seed   9 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[291/640] seed  10 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[292/640] seed  12 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[293/640] seed  11 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[294/640] seed  13 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[295/640] seed  14 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[296/640] seed  15 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[297/640] seed  16 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[298/640] seed  17 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[299/640] seed  18 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[300/640] seed  19 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[301/640] seed   0 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[302/640] seed   1 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[303/640] seed   2 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[304/640] seed   3 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[305/640] seed   4 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[306/640] seed   5 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[307/640] seed   6 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[308/640] seed   7 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[309/640] seed   8 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[310/640] seed  10 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[311/640] seed   9 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[312/640] seed  11 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[313/640] seed  12 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[314/640] seed  13 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[315/640] seed  14 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[316/640] seed  16 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[317/640] seed  15 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[318/640] seed  17 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[319/640] seed  18 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[320/640] seed  19 orientation=upright condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[321/640] seed   0 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[322/640] seed   1 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[323/640] seed   2 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[324/640] seed   3 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[325/640] seed   4 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[326/640] seed   5 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[327/640] seed   6 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[328/640] seed   9 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[329/640] seed  10 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[330/640] seed   7 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[331/640] seed   8 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[332/640] seed  11 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[333/640] seed  13 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[334/640] seed  12 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[335/640] seed  16 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[336/640] seed  14 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[337/640] seed  15 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[338/640] seed  17 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[339/640] seed  18 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[340/640] seed   0 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[341/640] seed  19 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[342/640] seed   1 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[343/640] seed   2 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[344/640] seed   3 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[345/640] seed   4 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[346/640] seed   5 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[347/640] seed   9 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[348/640] seed   6 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[349/640] seed   7 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[350/640] seed   8 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[351/640] seed  10 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[352/640] seed  11 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[353/640] seed  12 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[354/640] seed  13 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[355/640] seed  14 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[356/640] seed  15 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[357/640] seed  16 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[358/640] seed  17 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[359/640] seed  18 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[360/640] seed   0 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[361/640] seed  19 orientation=mixed condition=ideal clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[362/640] seed   2 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[363/640] seed   1 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[364/640] seed   3 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[365/640] seed   4 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[366/640] seed   5 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[367/640] seed   9 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[368/640] seed   6 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[369/640] seed   7 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[370/640] seed   8 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[371/640] seed  10 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[372/640] seed  11 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[373/640] seed  13 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[374/640] seed  16 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[375/640] seed  12 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[376/640] seed  14 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[377/640] seed  15 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[378/640] seed  17 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[379/640] seed  18 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[380/640] seed   0 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[381/640] seed  19 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[382/640] seed   1 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[383/640] seed   2 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[384/640] seed   3 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[385/640] seed   4 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[386/640] seed   5 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[387/640] seed   9 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[388/640] seed   6 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[389/640] seed   7 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[390/640] seed   8 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[391/640] seed  10 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[392/640] seed  11 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[393/640] seed  13 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[394/640] seed  12 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[395/640] seed  14 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[396/640] seed  15 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[397/640] seed  16 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[398/640] seed  17 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[399/640] seed  18 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[400/640] seed   0 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[401/640] seed  19 orientation=mixed condition=ideal clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[402/640] seed   2 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[403/640] seed   1 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[404/640] seed   3 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[405/640] seed   4 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[406/640] seed   5 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[407/640] seed   9 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[408/640] seed   6 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[409/640] seed   7 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[410/640] seed   8 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[411/640] seed  10 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[412/640] seed  11 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[413/640] seed  13 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[414/640] seed  12 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[415/640] seed  14 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[416/640] seed  16 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[417/640] seed  15 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[418/640] seed  17 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[419/640] seed  18 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[420/640] seed   0 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[421/640] seed  19 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[422/640] seed   1 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[423/640] seed   2 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[424/640] seed   3 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[425/640] seed   4 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[426/640] seed   5 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[427/640] seed   6 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[428/640] seed   7 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[429/640] seed   9 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[430/640] seed   8 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[431/640] seed  10 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[432/640] seed  11 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[433/640] seed  13 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[434/640] seed  12 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[435/640] seed  14 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[436/640] seed  15 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[437/640] seed  16 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[438/640] seed  17 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[439/640] seed  18 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[440/640] seed   0 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[441/640] seed  19 orientation=mixed condition=ideal clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[442/640] seed   2 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[443/640] seed   1 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[444/640] seed   3 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[445/640] seed   4 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[446/640] seed   5 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[447/640] seed   9 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[448/640] seed   7 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[449/640] seed   6 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[450/640] seed   8 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[451/640] seed  10 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[452/640] seed  11 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[453/640] seed  12 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[454/640] seed  13 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[455/640] seed  14 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[456/640] seed  16 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[457/640] seed  15 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[458/640] seed  17 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[459/640] seed  18 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[460/640] seed  19 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[461/640] seed   0 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[462/640] seed   1 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[463/640] seed   2 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[464/640] seed   3 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[465/640] seed   4 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[466/640] seed   5 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[467/640] seed   7 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[468/640] seed   6 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[469/640] seed   9 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[470/640] seed   8 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[471/640] seed  10 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[472/640] seed  11 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[473/640] seed  13 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[474/640] seed  12 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[475/640] seed  14 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[476/640] seed  15 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[477/640] seed  16 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[478/640] seed  17 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[479/640] seed  18 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[480/640] seed   0 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[481/640] seed   1 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[482/640] seed  19 orientation=mixed condition=ideal clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[483/640] seed   2 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[484/640] seed   3 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[485/640] seed   4 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[486/640] seed   5 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[487/640] seed   7 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[488/640] seed   6 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[489/640] seed   9 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[490/640] seed   8 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[491/640] seed  10 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[492/640] seed  11 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[493/640] seed  13 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[494/640] seed  14 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[495/640] seed  12 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[496/640] seed  16 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[497/640] seed  15 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[498/640] seed  17 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[499/640] seed  18 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[500/640] seed   0 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[501/640] seed  19 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.0 debris=0.0: ok
+[502/640] seed   1 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[503/640] seed   2 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[504/640] seed   3 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[505/640] seed   4 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[506/640] seed   5 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[507/640] seed   9 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[508/640] seed   6 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[509/640] seed   7 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[510/640] seed  10 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[511/640] seed   8 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[512/640] seed  11 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[513/640] seed  13 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[514/640] seed  14 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[515/640] seed  12 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[516/640] seed  16 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[517/640] seed  15 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[518/640] seed  17 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[519/640] seed  18 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[520/640] seed   0 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[521/640] seed  19 orientation=mixed condition=realistic clearance=0.003 friction=0.3 object_error=0.002 debris=0.0: ok
+[522/640] seed   1 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[523/640] seed   3 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[524/640] seed   4 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[525/640] seed   5 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[526/640] seed   2 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[527/640] seed   6 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[528/640] seed   7 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[529/640] seed   9 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[530/640] seed   8 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[531/640] seed  10 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[532/640] seed  11 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[533/640] seed  12 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[534/640] seed  13 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[535/640] seed  16 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[536/640] seed  14 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[537/640] seed  15 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[538/640] seed  17 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[539/640] seed  18 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[540/640] seed  19 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.0 debris=0.0: ok
+[541/640] seed   1 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[542/640] seed   0 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[543/640] seed   3 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[544/640] seed   2 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[545/640] seed   4 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[546/640] seed   5 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[547/640] seed   9 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[548/640] seed   6 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[549/640] seed   7 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[550/640] seed  10 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[551/640] seed   8 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[552/640] seed  11 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[553/640] seed  12 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[554/640] seed  13 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[555/640] seed  14 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[556/640] seed  16 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[557/640] seed  15 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[558/640] seed  17 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[559/640] seed  18 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[560/640] seed   1 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[561/640] seed   0 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[562/640] seed  19 orientation=mixed condition=realistic clearance=0.003 friction=0.8 object_error=0.002 debris=0.0: ok
+[563/640] seed   3 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[564/640] seed   2 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[565/640] seed   4 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[566/640] seed   5 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[567/640] seed   9 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[568/640] seed   7 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[569/640] seed   6 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[570/640] seed  10 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[571/640] seed   8 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[572/640] seed  11 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[573/640] seed  14 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[574/640] seed  12 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[575/640] seed  13 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[576/640] seed  16 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[577/640] seed  15 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[578/640] seed  17 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[579/640] seed  18 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[580/640] seed  19 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.0 debris=0.0: ok
+[581/640] seed   0 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[582/640] seed   1 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[583/640] seed   2 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[584/640] seed   3 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[585/640] seed   4 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[586/640] seed   5 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[587/640] seed   6 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[588/640] seed   7 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[589/640] seed   9 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[590/640] seed  10 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[591/640] seed   8 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[592/640] seed  11 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[593/640] seed  12 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[594/640] seed  14 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[595/640] seed  13 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[596/640] seed  15 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[597/640] seed  16 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[598/640] seed  17 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[599/640] seed  18 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[600/640] seed   0 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[601/640] seed  19 orientation=mixed condition=realistic clearance=0.001 friction=0.3 object_error=0.002 debris=0.0: ok
+[602/640] seed   1 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[603/640] seed   3 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[604/640] seed   2 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[605/640] seed   4 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[606/640] seed   5 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[607/640] seed   9 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[608/640] seed   6 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[609/640] seed   7 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[610/640] seed  10 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[611/640] seed   8 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[612/640] seed  11 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[613/640] seed  14 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[614/640] seed  12 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[615/640] seed  13 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[616/640] seed  16 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[617/640] seed  15 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[618/640] seed  17 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[619/640] seed  18 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[620/640] seed  19 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.0 debris=0.0: ok
+[621/640] seed   1 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[622/640] seed   0 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[623/640] seed   3 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[624/640] seed   2 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[625/640] seed   4 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[626/640] seed   5 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[627/640] seed   9 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[628/640] seed   7 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[629/640] seed   6 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[630/640] seed  10 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[631/640] seed   8 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[632/640] seed  11 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[633/640] seed  12 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[634/640] seed  14 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[635/640] seed  13 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[636/640] seed  16 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[637/640] seed  15 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[638/640] seed  17 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[639/640] seed  18 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+[640/640] seed  19 orientation=mixed condition=realistic clearance=0.001 friction=0.8 object_error=0.002 debris=0.0: ok
+orientation condition  clearance  friction  object_error  debris   kind  lying  runs  identified_correctly  grasped  lifted  seated  stayed_seated  ft_belief  seated_visual  verified  wrong_socket  wrong_end  searched  relative_err_p95_mm  in_hand_err_p95_mm  grasp_face_err_max_deg  other_disturbed_max_mm  sideways_clearance_min_mm  insert_time_mean  cycle_time_mean  cycle_time_max  peak_force_10ms_max
+      mixed     ideal      0.001       0.3             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                0.109               0.101                     NaN                 1.9e-07                        NaN              12.3             24.5            24.9                 5.04
+      mixed     ideal      0.001       0.3             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0         0                0.353               0.195                     NaN                2.21e-07                         10              9.29             31.6            34.4                 6.89
+      mixed     ideal      0.001       0.3             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.113              0.0899                   0.887                0.000973                        NaN              12.5             25.2            27.6                 4.95
+      mixed     ideal      0.001       0.3             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0         0                0.312               0.216                  0.0918                0.000909                         10              9.37             31.2            35.2                 6.71
+      mixed     ideal      0.001       0.3         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0       0.5                 3.04                1.92                     NaN                 1.9e-07                        NaN              12.8               25            26.7                  5.1
+      mixed     ideal      0.001       0.3         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0    0.0833                 2.98                2.25                     NaN                2.21e-07                         10              9.13             31.1            33.5                 17.2
+      mixed     ideal      0.001       0.3         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0     0.429                    3                2.04                   0.887                 0.00071                        NaN              12.8             25.5            27.6                 4.88
+      mixed     ideal      0.001       0.3         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.231                 3.15                2.23                  0.0918                0.000933                         10               9.4             31.2            35.4                 7.37
+      mixed     ideal      0.001       0.8             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                0.106               0.102                     NaN                 1.9e-07                        NaN              12.3             24.5            24.9                 5.04
+      mixed     ideal      0.001       0.8             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0         0                0.353               0.306                     NaN                2.21e-07                         10              9.28             31.6            34.5                 6.93
+      mixed     ideal      0.001       0.8             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.113               0.122                   0.887                  0.0011                        NaN              12.5             25.2            27.6                  4.5
+      mixed     ideal      0.001       0.8             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0         0                0.312               0.218                  0.0919                 0.00103                         10              9.34             31.1            35.1                 6.71
+      mixed     ideal      0.001       0.8         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0       0.5                 3.04                1.93                     NaN                 1.9e-07                        NaN              12.9             25.1            27.4                 5.07
+      mixed     ideal      0.001       0.8         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0    0.0833                 2.98                2.25                     NaN                2.21e-07                       9.99              9.15             31.1            33.5                 5.43
+      mixed     ideal      0.001       0.8         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0     0.429                    3                2.03                   0.887                 0.00139                        NaN              12.8             25.5            27.7                 4.84
+      mixed     ideal      0.001       0.8         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.231                 3.15                2.17                  0.0919                 0.00115                       9.99              9.41             31.2            35.4                 7.37
+      mixed     ideal      0.003       0.3             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                0.117               0.101                     NaN                 1.9e-07                        NaN              12.3             24.5            24.9                 4.99
+      mixed     ideal      0.003       0.3             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0         0                 0.35               0.195                     NaN                2.21e-07                         10              9.29             31.6            34.5                 6.85
+      mixed     ideal      0.003       0.3             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.123              0.0899                   0.887                 0.00092                        NaN              12.5             25.2            27.6                 4.88
+      mixed     ideal      0.003       0.3             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0         0                0.319               0.216                  0.0918                0.000672                         10              9.37             31.2            35.2                 6.71
+      mixed     ideal      0.003       0.3         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0     0.125                 3.04                1.92                     NaN                 1.9e-07                        NaN              12.3             24.6            24.8                  5.1
+      mixed     ideal      0.003       0.3         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0    0.0833                 2.98                2.25                     NaN                2.21e-07                         10              9.14             31.1            33.4                 5.17
+      mixed     ideal      0.003       0.3         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                    3                2.04                   0.887                 0.00112                        NaN              12.5             25.2            27.6                 4.58
+      mixed     ideal      0.003       0.3         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0         0                 3.15                2.23                  0.0918                0.000913                         10              9.34             31.2              35                 7.38
+      mixed     ideal      0.003       0.8             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                0.114               0.102                     NaN                 1.9e-07                        NaN              12.3             24.5            24.9                 4.92
+      mixed     ideal      0.003       0.8             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0         0                0.347               0.306                     NaN                2.21e-07                         10              9.29             31.6            34.5                 6.96
+      mixed     ideal      0.003       0.8             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.123               0.122                   0.887                 0.00082                        NaN              12.5             25.2            27.6                 4.52
+      mixed     ideal      0.003       0.8             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0         0                0.319               0.218                  0.0919                 0.00102                         10              9.34             31.1            35.1                 6.71
+      mixed     ideal      0.003       0.8         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0     0.125                 3.04                1.93                     NaN                 1.9e-07                        NaN              12.3             24.6            24.9                 5.08
+      mixed     ideal      0.003       0.8         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0         0                 2.98                2.25                     NaN                2.21e-07                       9.99              9.09             31.1            33.5                 5.19
+      mixed     ideal      0.003       0.8         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                    3                2.03                   0.887                 0.00159                        NaN              12.5             25.2            27.6                 4.67
+      mixed     ideal      0.003       0.8         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0         0                 3.15                2.17                  0.0919                 0.00123                       9.99              9.35             31.1              35                 7.38
+      mixed realistic      0.001       0.3             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                 1.44                4.65                     NaN                 1.9e-07                        NaN              12.6             24.9            25.9                 6.43
+      mixed realistic      0.001       0.3             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.667                0.907                3.91                     NaN                2.21e-07                       9.25              11.4               34            38.6                 7.18
+      mixed realistic      0.001       0.3             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.509                4.63                   0.995                 0.00136                        NaN              12.9             25.6            27.7                 6.05
+      mixed realistic      0.001       0.3             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.462                 1.04                3.95                   0.346                0.000882                       9.22              10.3             32.1            35.7                 7.38
+      mixed realistic      0.001       0.3         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0     0.125                 2.98                4.48                     NaN                 1.9e-07                        NaN                13             25.3            27.3                 6.52
+      mixed realistic      0.001       0.3         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.583                 3.13                4.93                     NaN                2.21e-07                       9.26              11.6               34            39.5                 9.65
+      mixed realistic      0.001       0.3         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0     0.286                  2.9                5.73                   0.995                0.000575                        NaN              13.4             26.2            29.2                 6.02
+      mixed realistic      0.001       0.3         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.692                 3.15                4.76                   0.346                0.000902                       9.22              10.7             32.5            38.5                 7.38
+      mixed realistic      0.001       0.8             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0     0.125                 1.44                 4.8                     NaN                 1.9e-07                        NaN              12.6             24.9              26                  6.6
+      mixed realistic      0.001       0.8             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.667                0.907                3.87                     NaN                2.21e-07                       9.25              11.8             34.4            41.3                   14
+      mixed realistic      0.001       0.8             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.509                4.66                   0.995                 0.00135                        NaN              12.9             25.6            27.7                 6.03
+      mixed realistic      0.001       0.8             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.615                 1.04                3.96                   0.346                 0.00127                       9.22              10.7             32.5            35.7                 7.37
+      mixed realistic      0.001       0.8         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0     0.125                 2.98                4.54                     NaN                 1.9e-07                        NaN              13.1             25.4            27.8                 6.48
+      mixed realistic      0.001       0.8         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.583                 3.13                4.99                     NaN                2.21e-07                       9.26              11.7               34            39.6                 13.4
+      mixed realistic      0.001       0.8         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0     0.286                  2.9                5.77                   0.995                 0.00113                        NaN              13.5             26.2            29.1                 6.03
+      mixed realistic      0.001       0.8         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.692                 3.15                4.76                   0.346                0.000771                       9.22              10.3             32.1            38.8                 7.38
+      mixed realistic      0.003       0.3             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                 1.33                4.65                     NaN                 1.9e-07                        NaN              12.2             24.5            24.9                 5.03
+      mixed realistic      0.003       0.3             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.583                0.898                3.91                     NaN                2.21e-07                       9.26              10.5             33.1            36.5                 7.14
+      mixed realistic      0.003       0.3             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.521                4.63                   0.995                0.000684                        NaN              12.5             25.2            27.7                 4.57
+      mixed realistic      0.003       0.3             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.308                0.973                3.95                   0.346                0.000873                       9.22              9.66             31.4            35.1                 7.38
+      mixed realistic      0.003       0.3         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                 2.99                4.48                     NaN                 1.9e-07                        NaN              12.3             24.6            25.4                 6.34
+      mixed realistic      0.003       0.3         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.583                 3.17                4.93                     NaN                2.21e-07                       9.26              10.7               33            36.5                 11.2
+      mixed realistic      0.003       0.3         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                 3.12                5.73                   0.995                0.000715                        NaN              12.5             25.2            27.7                 4.55
+      mixed realistic      0.003       0.3         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.385                  3.1                4.76                   0.346                 0.00121                       9.21               9.9             31.7            35.8                 7.37
+      mixed realistic      0.003       0.8             0       0  round  False     8                     1        1       1       1              1          1              1         1             0          0         0                 1.33                 4.8                     NaN                 1.9e-07                        NaN              12.2             24.5            24.9                 4.78
+      mixed realistic      0.003       0.8             0       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.583                0.899                3.87                     NaN                2.21e-07                       9.26              13.4             35.9            68.1                 10.3
+      mixed realistic      0.003       0.8             0       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                0.521                4.66                   0.995                 0.00116                        NaN              12.5             25.2            27.7                 5.09
+      mixed realistic      0.003       0.8             0       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.462                0.973                3.96                   0.346                 0.00118                       9.21              9.82             31.6            35.6                 7.37
+      mixed realistic      0.003       0.8         0.002       0  round  False     8                     1        1       1       1              1          1              1         1             0          0     0.125                 2.99                4.54                     NaN                 1.9e-07                        NaN              12.3             24.6              25                 5.08
+      mixed realistic      0.003       0.8         0.002       0  round   True    12                     1        1       1       1              1          1              1         1             0          0     0.583                 3.17                4.99                     NaN                2.21e-07                       9.26              10.6               33            36.6                 14.6
+      mixed realistic      0.003       0.8         0.002       0 square  False     7                     1        1       1       1              1          1              1         1             0          0         0                 3.12                5.77                   0.995                 0.00113                        NaN              12.5             25.2            27.7                 4.91
+      mixed realistic      0.003       0.8         0.002       0 square   True    13                     1        1       1       1              1          1              1         1             0          0     0.308                  3.1                4.76                   0.346                 0.00106                       9.21              9.84             31.6            35.8                 7.37
+    upright     ideal      0.001       0.3             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                  0.1              0.0992                     NaN                1.96e-07                        NaN              12.3             24.6            25.4                 5.26
+    upright     ideal      0.001       0.3             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.138               0.133                   0.976                0.000859                        NaN              12.5             25.1            27.6                    5
+    upright     ideal      0.001       0.3         0.002       0  round  False    20                     1        1       1       1              1          1              1         1             0          0      0.45                 3.33                2.18                     NaN                1.96e-07                        NaN              12.8             25.1            27.4                 5.75
+    upright     ideal      0.001       0.3         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0       0.4                 3.04                2.02                   0.976                 0.00071                        NaN              12.8             25.4            27.9                  5.9
+    upright     ideal      0.001       0.8             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0               0.0945              0.0994                     NaN                1.96e-07                        NaN              12.3             24.6            25.4                 5.16
+    upright     ideal      0.001       0.8             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.138                0.14                   0.976                  0.0013                        NaN              12.5             25.1            27.6                 4.63
+    upright     ideal      0.001       0.8         0.002       0  round  False    20                     1        1       1       1              1          1              1         1             0          0       0.5                 3.33                2.18                     NaN                1.96e-07                        NaN              12.9             25.2            27.5                 5.78
+    upright     ideal      0.001       0.8         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0      0.45                 3.04                2.08                   0.976                 0.00119                        NaN              12.8             25.4            27.7                 4.87
+    upright     ideal      0.003       0.3             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.113              0.0992                     NaN                1.96e-07                        NaN              12.3             24.6            25.3                 4.99
+    upright     ideal      0.003       0.3             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.144               0.133                   0.976                 0.00093                        NaN              12.5             25.1            27.6                 4.51
+    upright     ideal      0.003       0.3         0.002       0  round  False    20                     1        1       1       1              1          1              1         1             0          0       0.1                 3.33                2.18                     NaN                1.96e-07                        NaN              12.3             24.7            25.3                 5.12
+    upright     ideal      0.003       0.3         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                 3.04                2.02                   0.976                 0.00112                        NaN              12.5             25.1            27.6                 4.62
+    upright     ideal      0.003       0.8             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.107              0.0994                     NaN                1.96e-07                        NaN              12.3             24.6            25.3                 5.01
+    upright     ideal      0.003       0.8             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.144                0.14                   0.976                 0.00121                        NaN              12.5             25.1            27.6                 4.49
+    upright     ideal      0.003       0.8         0.002       0  round  False    20                     1        1       1       1              1          1              1         1             0          0      0.15                 3.33                2.18                     NaN                1.96e-07                        NaN              12.4             24.7            25.5                 4.87
+    upright     ideal      0.003       0.8         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                 3.04                2.08                   0.976                 0.00112                        NaN              12.5             25.1            27.6                 4.67
+    upright realistic      0.001       0.3             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                 1.14                4.33                     NaN                 1.9e-07                        NaN              12.5             24.8              26                 6.45
+    upright realistic      0.001       0.3             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.751                4.43                    1.17                0.000975                        NaN              12.7             25.3            27.7                 6.22
+    upright realistic      0.001       0.3         0.002       0  round  False    20                     1        1       1       1              1          1              1         1             0          0       0.3                 3.37                 4.7                     NaN                 1.9e-07                        NaN                13             25.3            27.3                  6.4
+    upright realistic      0.001       0.3         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0       0.2                 2.94                4.86                    1.17                 0.00109                        NaN              13.2             25.8            29.2                 6.25
+    upright realistic      0.001       0.8             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                 1.14                4.39                     NaN                 1.9e-07                        NaN              12.6             24.9            26.2                 6.48
+    upright realistic      0.001       0.8             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.751                4.43                    1.17                  0.0014                        NaN              12.7             25.3            27.7                 6.22
+    upright realistic      0.001       0.8         0.002       0  round  False    20                     1        1       1    0.95              1          1              1         1             0          0       0.3                 3.37                4.89                     NaN                 1.9e-07                        NaN              13.2             25.5            28.6                  6.5
+    upright realistic      0.001       0.8         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0       0.2                 2.94                4.86                    1.17                 0.00145                        NaN              13.3             25.9            29.3                 6.25
+    upright realistic      0.003       0.3             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                 1.05                4.33                     NaN                 1.9e-07                        NaN              12.2             24.5              25                  5.1
+    upright realistic      0.003       0.3             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.732                4.43                    1.17                0.000849                        NaN              12.6             25.2            27.7                 6.24
+    upright realistic      0.003       0.3         0.002       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                 3.43                 4.7                     NaN                 1.9e-07                        NaN              12.3             24.6            25.9                 6.41
+    upright realistic      0.003       0.3         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0      0.05                 2.97                4.86                    1.17                 0.00102                        NaN              12.6             25.2              28                 5.62
+    upright realistic      0.003       0.8             0       0  round  False    20                     1        1       1       1              1          1              1         1             0          0         0                 1.05                4.39                     NaN                 1.9e-07                        NaN              12.2             24.5              25                 4.92
+    upright realistic      0.003       0.8             0       0 square  False    20                     1        1       1       1              1          1              1         1             0          0         0                0.732                4.43                    1.17                 0.00122                        NaN              12.6             25.2            27.7                 6.24
+    upright realistic      0.003       0.8         0.002       0  round  False    20                     1        1       1       1              1          1              1         1             0          0      0.05                 3.43                4.89                     NaN                 1.9e-07                        NaN              12.4             24.7            25.9                 6.54
+    upright realistic      0.003       0.8         0.002       0 square  False    20                     1        1       1       1              1          1              1         1             0          0      0.05                 2.97                4.86                    1.17                 0.00158                        NaN              12.6             25.2              28                 5.69
+
+Both connectors seated at end (per run):
+                                                              runs  both_seated  run_time_mean
+orientation condition clearance friction object_error debris                                  
+mixed       ideal     0.001     0.3      0.000        0.0       20            1           58.9
+                                         0.002        0.0       20            1           58.8
+                                0.8      0.000        0.0       20            1           58.8
+                                         0.002        0.0       20            1           58.9
+                      0.003     0.3      0.000        0.0       20            1           58.9
+                                         0.002        0.0       20            1           58.5
+                                0.8      0.000        0.0       20            1           58.8
+                                         0.002        0.0       20            1           58.5
+            realistic 0.001     0.3      0.000        0.0       20            1           61.1
+                                         0.002        0.0       20            1           61.8
+                                0.8      0.000        0.0       20            1           61.6
+                                         0.002        0.0       20            1           61.5
+                      0.003     0.3      0.000        0.0       20            1           59.8
+                                         0.002        0.0       20            1           60.1
+                                0.8      0.000        0.0       20            1           61.7
+                                         0.002        0.0       20            1             60
+upright     ideal     0.001     0.3      0.000        0.0       20            1           50.7
+                                         0.002        0.0       20            1           51.5
+                                0.8      0.000        0.0       20            1           50.7
+                                         0.002        0.0       20            1           51.6
+                      0.003     0.3      0.000        0.0       20            1           50.7
+                                         0.002        0.0       20            1           50.7
+                                0.8      0.000        0.0       20            1           50.7
+                                         0.002        0.0       20            1           50.8
+            realistic 0.001     0.3      0.000        0.0       20            1             51
+                                         0.002        0.0       20            1           52.1
+                                0.8      0.000        0.0       20            1           51.1
+                                         0.002        0.0       20            1           52.3
+                      0.003     0.3      0.000        0.0       20            1           50.7
+                                         0.002        0.0       20            1           50.7
+                                0.8      0.000        0.0       20            1           50.6
+                                         0.002        0.0       20            1           50.8
+
+Completion checks vs ground truth (per connector):
+                 agree  false_accept  false_reject  connectors
+inserted_belief  1.000         0.000         0.000    1280.000
+seated_visual    1.000         0.000         0.000    1280.000
+verified         1.000         0.000         0.000    1280.000
+
+Failures by stage: none
+
+→ /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/m5

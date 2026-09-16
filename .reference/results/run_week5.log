@@ -1,0 +1,13 @@
+160 trials → /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/benchmark_impedance
+BENCHMARK DONE impedance 22:39:58
+160 trials → /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/benchmark_spiral
+BENCHMARK DONE spiral 22:40:46
+900 trials → /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/plan_a_straight
+PLAN_A DONE straight 02:36:08
+900 trials → /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/plan_a_guarded
+PLAN_A DONE guarded 13:44:25
+900 trials → /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/plan_a_impedance
+PLAN_A DONE impedance 17:46:12
+900 trials → /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/plan_a_spiral
+PLAN_A DONE spiral 17:49:13
+ALL DONE 17:49:13

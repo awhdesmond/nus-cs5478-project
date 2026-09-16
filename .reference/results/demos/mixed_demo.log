@@ -1,0 +1,6 @@
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+round: identified=True grasped=True seated=True stayed=True in-hand error 3.38 mm, insert 13.3 s, searched=False
+square: identified=True grasped=True seated=True stayed=True in-hand error 3.07 mm, insert 9.0 s, searched=False
+both seated at end: True
+→ /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/demos/pipeline_realistic_mixed_seed4.mp4

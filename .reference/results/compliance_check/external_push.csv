@@ -1,0 +1,3 @@
+controller,push_force,displacement,expected_displacement,residual_after_release,peak_rotation_deg
+impedance,3.0,0.009991101188495787,0.01,2.683232576390902e-06,0.6904765935095466
+pd,3.0,0.0024658618841358207,,1.1675123711092767e-08,0.32275649681882473

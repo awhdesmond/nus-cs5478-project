@@ -1,0 +1,56 @@
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+WARNING: ARB_clip_control unavailable while mjDEPTH_ZEROFAR requested, depth accuracy will be limited
+
+condition  clearance  friction   kind  runs  identified  grasped  lifted  other_disturbed_max_mm  in_hand_err_p95_mm  grasp_face_err_max_deg  seated  stayed_seated  ft_belief  seated_visual  verified  visual_height_mm_mean  visual_offset_mm_max  wrong_socket  searched  insert_time_mean  peak_force_10ms_max
+    ideal      0.001       0.3  round    20           1        1       1                 1.9e-07                 0.1                     NaN       1              1          1              1         1                     30                 0.228             0         0              12.3                 5.21
+    ideal      0.001       0.3 square    20           1        1       1                 0.00112               0.109                    1.14       1              1          1              1         1                     30                 0.366             0         0              12.6                    5
+    ideal      0.001       0.8  round    20           1        1       1                 1.9e-07                 0.1                     NaN       1              1          1              1         1                     30                 0.228             0         0              12.3                 5.08
+    ideal      0.001       0.8 square    20           1        1       1                 0.00136               0.129                    1.14       1              1          1              1         1                     30                   0.3             0         0              12.6                 4.58
+    ideal      0.003       0.3  round    20           1        1       1                 1.9e-07                 0.1                     NaN       1              1          1              1         1                     30                 0.286             0         0              12.2                 5.09
+    ideal      0.003       0.3 square    20           1        1       1                 0.00158               0.109                    1.14       1              1          1              1         1                     30                  0.44             0         0              12.6                 4.89
+    ideal      0.003       0.8  round    20           1        1       1                 1.9e-07                 0.1                     NaN       1              1          1              1         1                     30                 0.281             0         0              12.2                 5.06
+    ideal      0.003       0.8 square    20           1        1       1                0.000903               0.129                    1.14       1              1          1              1         1                     30                 0.402             0         0              12.6                 4.55
+realistic      0.001       0.3  round    20           1        1       1                 1.9e-07                4.28                     NaN       1              1          1              1         1                     30                 0.737             0         0              12.5                 6.37
+realistic      0.001       0.3 square    20           1        1       1                 0.00135                4.46                    1.17       1              1          1              1         1                     30                  1.01             0         0              12.7                 6.13
+realistic      0.001       0.8  round    20           1        1       1                 1.9e-07                4.28                     NaN       1              1          1              1         1                     30                 0.733             0         0              12.5                 6.45
+realistic      0.001       0.8 square    20           1        1       1                 0.00106                4.47                    1.17       1              1          1              1         1                     30                  1.01             0         0              12.7                 6.11
+realistic      0.003       0.3  round    20           1        1       1                 1.9e-07                4.28                     NaN       1              1          1              1         1                     30                  1.57             0         0              12.2                  5.1
+realistic      0.003       0.3 square    20           1        1       1                  0.0013                4.46                    1.17       1              1          1              1         1                     30                  1.95             0         0              12.6                 4.59
+realistic      0.003       0.8  round    20           1        1       1                 1.9e-07                4.28                     NaN       1              1          1              1         1                     30                  1.56             0         0              12.2                 5.15
+realistic      0.003       0.8 square    20           1        1       1                 0.00137                4.47                    1.17       1              1          1              1         1                     30                  1.94             0         0              12.6                 4.82
+
+Both connectors seated at end (per run):
+condition  clearance  friction
+ideal      0.001      0.3        1.00
+                      0.8        1.00
+           0.003      0.3        1.00
+                      0.8        1.00
+realistic  0.001      0.3        1.00
+                      0.8        1.00
+           0.003      0.3        1.00
+                      0.8        1.00
+
+Completion checks vs ground truth (per connector):
+                 agree  false_accept  false_reject
+inserted_belief  1.000         0.000         0.000
+seated_visual    1.000         0.000         0.000
+verified         1.000         0.000         0.000
+
+Failures: {}
+
+→ /Users/awhdes/Documents/NUS_Masters/CS5478 Intelligent Robots/project/results/assembly_benchmark
