@@ -14,6 +14,8 @@ uv run python scripts/view.py --controller spiral --clearance 0.001 --uncertaint
 uv run mjpython scripts/view.py --scene assembly                      # watch the pipeline live, looping over layouts (upright + lying)
 ```
 
+Report, plan and proposal live in `docs/`; report figures in `docs/figures/` and demo videos in `docs/demos/`.
+
 ## Layout
 
 ```
@@ -60,6 +62,7 @@ scripts/
   perception_check.py    perception accuracy table over layouts × noise levels → results/perception_check/
   assembly_benchmark.py  full pick-and-insert benchmark (layouts × clearance × friction × camera condition)
   pipeline_demo.py       demo video: 3D view | live overhead camera | perception overlay
+  plots.py               report figures from the result CSVs → docs/figures/
   view.py                live interactive viewer (insertion: --controller …; --scene assembly: full pipeline, needs mjpython on macOS)
   smoke_test.py, fetch_assets.sh
 docs/

@@ -11,6 +11,8 @@ third_party/
 results/*
 !results/.gitkeep
 *.mp4
+# ...except the final demo videos, which travel with the report
+!docs/demos/*.mp4
 
 # OS / editor
 .DS_Store

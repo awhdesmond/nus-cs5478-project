@@ -348,11 +348,11 @@ below the top) stay 12 mm above the socket when seated.
 
 ### Week 8 — Results and writeup
 Remaining committed work, in order: M5 results → the items below.
-- [ ] Plots: success rate vs. clearance/uncertainty/per-object error; contact force; cycle time; perception error distributions; stage-wise failure breakdown; completion-check confusion (incl. debris); upright vs lying
-- [ ] Report (~3–5 pages): task, method, results, discussion — add perception, grasping, lying/sideways insertion and completion-check sections
-- [ ] Demo video with camera view: two-connector task (mixed orientations)
+- [x] Plots — done 2026-09-16, `scripts/plots.py` → `docs/figures/` (committed alongside the report, since `results/` is gitignored): scene + fixture; impedance isolation (spring saturation, impact vs touchdown speed); controller success vs uncertainty; paired cycle time; force/tip-depth trace (impedance stalls, spiral seats); search usage + non-cancelling perception error; full-task cycle time and peak force; perception error by depth noise; completion checks with debris. Palette validated with the data-viz palette checker (4 series, light surface); every series is also direct-labelled
+- [x] Report — done 2026-09-16: abstract; full-task setup (§2.1–2.2); method §3.7 perception, §3.8 grasp synthesis + in-hand estimate, §3.9 turning a lying connector upright (incl. the depth-band failures), §3.10 the two completion checks; full-task evaluation protocol (§4); results §5.3–5.6 with all nine figures; discussion rewritten as prose; limitations updated; references added. Remaining TODOs are deliberate: the Intrinsic challenge citation, a primary spiral-search citation, and the rubric weights
+- [x] Demo videos — done 2026-09-16, copied to `docs/demos/` (gitignore now keeps `*.mp4` out except there): `pipeline_realistic_mixed_seed4.mp4` (one upright and one lying connector, realistic camera, 1 mm clearance) and `pipeline_realistic_lying_seed0.mp4` (both lying). Panels: 3D view | live overhead camera | perception at the last capture
 - [x] Update the proposal's task definition to the extended task (instructor-facing) — done 2026-09-15, including the scope freeze
-- [ ] Copy final plots and videos out of the gitignored `results/`
+- [x] Copy final plots and videos out of the gitignored `results/` — figures in `docs/figures/`, videos in `docs/demos/`
 
 ---
 
@@ -594,7 +594,7 @@ per-milestone notes there have the full context.*
 
 ### 10.9 Open items and caveats
 - Socket **tilt** uncertainty is untested (stretch tier).
-- All committed milestones (M1–M5) are done; remaining committed work is the writeup (week 8). The friction grasp (M6) and the cable task (M7) are stretch.
+- All committed milestones (M1–M5) and the week-8 writeup (figures, report sections, demos) are done. Open report TODOs are deliberate: the Intrinsic challenge citation and a primary spiral-search citation (both need verifying against primary sources), and the rubric weights. The friction grasp (M6) and the cable task (M7) are stretch.
 - The M5 grid had no failures, so it doesn't show a failure boundary for per-object error; run ±4 mm if the report needs one.
 - M5 must inject insertion failures: the F/T and visual completion checks have never disagreed with ground truth on
   upright connectors because nothing failed.
