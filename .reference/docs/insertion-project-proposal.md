@@ -96,10 +96,21 @@ exceeding a 30 N cap.
 Trials run across unseen random seeds, in the spirit of the default project's per-seed
 scoring. Each seed fixes a connector layout and the robot's start pose.
 
-**Full-task grid:** clearance {3, 1} mm × friction {0.3, 0.8} × depth noise {off, on},
-20–50 seeds per condition. **Insertion-module grid** (insertion only, synthetic pose
-uncertainty): clearance {3, 2, 1} mm × uncertainty {±1, ±3, ±5} mm × friction {0.3, 0.8},
-50 seeds per condition.
+**Full-task grid:** connector orientation {all upright, all lying, mixed} × camera {ideal,
+realistic} × clearance {3, 1} mm × friction {0.3, 0.8} × 20 seeds per condition. A robustness
+condition adds an **independent per-object pose error** (±2 mm per object) on top of the camera
+noise: a single camera's calibration error is largely common to a connector and its socket, so it
+cancels at insertion and barely exercises the search, whereas independent errors — or reorienting a
+part, which turns an error that used to cancel into one that does not — do. A failure-injection
+condition places a small obstruction in one socket so the completion checks can be scored against a
+known-bad insertion. **Insertion-module grid** (insertion only, synthetic pose uncertainty):
+clearance {3, 2, 1} mm × uncertainty {±1, ±3, ±5} mm × friction {0.3, 0.8}, 50 seeds per condition.
+
+**Metrics and statistics.** Success rate with 95 % Wilson intervals; controllers compared pairwise
+on identical seeds with an exact McNemar test, and cycle time compared only on trials both solved;
+peak sustained contact force (10 ms average, single-step peaks reported separately); perception
+error against ground truth, including the part-minus-socket error that does not cancel; and a
+stage-wise failure breakdown (perception / grasp / planning / insertion / release / verification).
 
 ### Task success — 50%
 
@@ -194,14 +205,7 @@ committed work (including the writeup) is complete with time remaining.
   estimated, since the gripper pose would no longer determine the plug pose. Not achievable
   within this project's time budget.
 
-## 9. Relationship to the Default Project
-
-The default Pick-Nav-Reach project (PyBullet, Fetch robot) asks students to generate
-antipodal grasps from the object's point cloud and normals, plan motions to pick a YCB
-object with a friction grasp, navigate a maze, and bring the object within 10 cm of a goal.
-Its environment provides ground-truth object poses, point clouds and normals.
-
-| | Default project | This project |
+## 9. Relationship to the Default Pr| | Default project | This project |
 |---|---|---|
 | Perception | Ground truth provided | Overhead RGB-D camera; segmentation, identification and pose estimation from images |
 | Grasp synthesis | Antipodal grasps from ground-truth point cloud and normals | Antipodal grasps from the camera's point cloud, with estimated normals |
@@ -212,35 +216,10 @@ Its environment provides ground-truth object poses, point clouds and normals.
 
 Both are pipelines of algorithmic modules evaluated across unseen seeds. This project
 trades navigation and irregular-object grasping for real camera perception, part
-identification and contact-rich fine insertion, where the principal difficulty lies.
+identification and contact-rich fine insertion, where the principal difficulty lies.oject
 
-## 10. Scope Update and Progress
+The default Pick-Nav-Reach project (PyBullet, Fetch robot) asks students to generate
+antipodal grasps from the object's point cloud and normals, plan motions to pick a YCB
+object with a friction grasp, navigate a maze, and bring the object within 10 cm of a goal.
+Its environment provides ground-truth object poses, point clouds and normals.
 
-The original proposal covered compliant insertion of a single rigid connector from a
-randomised pre-insertion pose. That scope is complete:
-
-- **Insertion module.** A torque-level impedance controller with contact-triggered spiral
-  search and force-guided centring. On the insertion-module grid (900 trials per controller,
-  50 seeds per condition) it succeeds in 99.1 % of trials, against 86.1 % for
-  guarded move with retry, 78.1 % for impedance control without search and 56.4 % for
-  open-loop insertion.
-- **Paired comparison** (160 trials, same seeds): spiral search solved every trial;
-  37 trials were solved only by spiral search and none only by the baseline
-  (exact McNemar p ≈ 1.5 × 10⁻¹¹). At 1 mm clearance it was also 1.5–2.5× faster.
-
-Because the core was completed ahead of schedule, the project is extended with
-perception, identification and grasping of two keyed connectors (§2). This makes the
-pose uncertainty come from a real sensing pipeline rather than a synthetic offset, and
-adds the part-identification problem that keyed connectors pose in real assembly.
-
-**Progress (week 6).** The two-connector task is complete. Over 480 benchmark runs
-(connectors upright, lying or mixed; 1 and 3 mm clearance; two friction levels; ideal and
-realistic camera) every run seated both connectors in the correct sockets, including every
-lying connector turned in the hand. A camera check after each release confirms the
-insertion alongside the force-based check; with a small obstruction placed in a socket, the
-force check alone accepted all 40 blocked insertions and the camera check rejected all 40.
-A further 640-run grid adding independent ±2 mm per-object perception errors also seated
-both connectors in every run; spiral search was needed in up to 36% of upright insertions
-at 1 mm clearance under those errors (versus under 1% without them).
-
-**Scope is final:** the insertion module, the two-connector task and the writeup. Everything in §8 is outside the committed scope.

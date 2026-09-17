@@ -358,7 +358,13 @@ Remaining committed work, in order: M5 results → the items below.
 
 ## 7. Evaluation rubric
 
-Baseline grid: 2 clearance levels × 2 uncertainty levels × 20 trials (unseen seeds) per cell.
+*This rubric is the insertion module's (weeks 1–5). The extended task's rubric — task success 50 %,
+perception 10 %, robustness 25 %, efficiency 15 % — is in the proposal §4.*
+
+Grids actually run: insertion module 3 clearances × 3 uncertainty levels × 2 friction levels × 50 seeds
+× 4 controllers (Plan A, 3,600 trials); full task 3 orientations × 2 cameras × 2 clearances × 2 friction
+levels × 20 layouts (480 runs), plus a stress grid adding independent per-object pose error {0, ±2 mm}
+(640 runs) and a 40-run failure-injection condition (debris in one socket).
 
 **Insertion success — 60%**
 
