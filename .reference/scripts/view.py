@@ -11,15 +11,6 @@ default. Uses MuJoCo's passive viewer, which on macOS must be launched with `mjp
     uv run mjpython scripts/view.py --scene assembly --cable                       # add the deformable cable (scenery)
     uv run python   scripts/view.py --scene assembly --hold --cable                # just look at the scene; poke the cable
 
-Insertion-only scene (weeks 1–5 controllers; managed viewer, plain python works):
-
-    uv run python scripts/view.py                                            # hold the home pose
-    uv run python scripts/view.py --controller straight                      # open-loop insert
-    uv run python scripts/view.py --controller spiral --clearance 0.001 --uncertainty 0.005 --seed 1
-    uv run python scripts/view.py --controller guarded --joint-noise 1.0     # start from a perturbed pose
-    uv run python scripts/view.py --controller impedance --clearance 0.001 --uncertainty 0.002 --seed 1
-                                                                              # watch the chamfer guide a compliant peg in
-
 The top-right corner shows the overhead camera live and, below it, what perception made of the last capture
 (detected outlines labelled round/square, socket centres, the chosen grasp); `--no-camera` hides both.
 

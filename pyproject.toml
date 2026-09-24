@@ -21,7 +21,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/insertion"]
+packages = ["src/sim", "src/perception", "src/motion", "src/process", "src/harness", "src/skills"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]

@@ -7,7 +7,6 @@ CS5478 Intelligent Robots project. See [docs/insertion-project-plan.md](docs/ins
 ```bash
 ./scripts/fetch_assets.sh          # UR5e model from mujoco_menagerie (pinned commit) → third_party/
 uv sync                            # Python 3.12 venv + deps
-./scripts/fix_mjpython.sh          # macOS: lets `uv run mjpython` find libpython (for the assembly viewer)
 uv run python scripts/smoke_test.py
 uv run pytest
 uv run python scripts/view.py --controller spiral --clearance 0.001 --uncertainty 0.005 --seed 1   # live physics; Ctrl+right-drag to shove

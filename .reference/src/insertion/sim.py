@@ -21,11 +21,13 @@ class Sim:
     def __init__(self, model: mujoco.MjModel):
         self.model = model
         self.data = mujoco.MjData(model)
+
         # Insertion-only scene: the welded peg. The assembly scene has free connectors instead (see assembly_sim).
         self.peg_geom_id = model.geom("peg").id if mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "peg") >= 0 else -1
         self._ft_force_adr = model.sensor("ft_force").adr[0]
         self._ft_torque_adr = model.sensor("ft_torque").adr[0]
         self._wrench = np.zeros(6)
+
         # Look up arm joint addresses by name so extra bodies (e.g. test objects) can't shift them.
         self.qpos_adr = np.array([model.joint(j).qposadr[0] for j in UR5E_JOINTS])
         self.dof_adr = np.array([model.joint(j).dofadr[0] for j in UR5E_JOINTS])

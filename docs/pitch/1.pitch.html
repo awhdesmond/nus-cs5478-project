@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connector Insertion Pitch</title>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --accent: #2f6f5e;
+    --card: #ffffff; --line: #deded8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  .slide { display: none; height: 100vh; padding: 6vh 7vw; flex-direction: column; }
+  .slide.active { display: flex; }
+  .kicker { color: var(--accent); font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; font-size: 1.6vw; margin-bottom: 1.5vh; }
+  h1 { font-size: 4.2vw; line-height: 1.1; margin-bottom: 3vh; }
+  h2 { font-size: 3.2vw; line-height: 1.15; margin-bottom: 3vh; }
+  p, li { font-size: 2vw; line-height: 1.45; }
+  .muted { color: var(--muted); }
+  ul { list-style: none; }
+  ul li { padding-left: 1.6vw; position: relative; margin-bottom: 1.2vh; }
+  ul li::before { content: ""; position: absolute; left: 0; top: .6em;
+    width: .6vw; height: .6vw; background: var(--accent); border-radius: 50%; }
+  .row { display: flex; gap: 3vw; flex: 1; min-height: 0; }
+  .col { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  video, img { width: 100%; flex: 1; min-height: 0; object-fit: contain;
+    background: #000; border-radius: 8px; }
+  img { background: var(--card); border: 1px solid var(--line); }
+  .cap { font-size: 1.5vw; margin-top: 1vh; text-align: center; }
+  .bad { color: #b3412e; font-weight: 600; }
+  .good { color: var(--accent); font-weight: 600; }
+  .pipe { display: flex; align-items: stretch; gap: 1vw; margin: 3vh 0; }
+  .step { flex: 1; background: var(--card); border: 1px solid var(--line);
+    border-top: 4px solid var(--accent); border-radius: 8px; padding: 2vh 1.2vw; }
+  .step b { display: block; font-size: 1.9vw; margin-bottom: 1vh; }
+  .step span { font-size: 1.45vw; color: var(--muted); line-height: 1.35; display: block; }
+  .step .algo { display: block; font-style: normal; font-size: 1.3vw; font-weight: 600;
+    color: var(--accent); background: #e8f0ec; border-radius: 4px;
+    padding: .6vh .6vw; margin-bottom: 1.2vh; line-height: 1.3; }
+  .arrow { align-self: center; font-size: 2.5vw; color: var(--muted); }
+  .tl { display: grid; grid-template-columns: repeat(6, 1fr); gap: .6vw; margin-top: 2vh; }
+  .tl div { background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+    padding: 1.2vh .8vw; font-size: 1.35vw; line-height: 1.3; }
+  .tl b { display: block; color: var(--accent); font-size: 1.3vw; }
+  .lit { display: grid; grid-template-columns: 1fr 1fr; gap: 2vh 2vw; margin-top: 1vh; }
+  .lit div { background: var(--card); border: 1px solid var(--line);
+    border-left: 4px solid var(--accent); border-radius: 8px; padding: 2vh 1.5vw; }
+  .lit b { display: block; font-size: 1.9vw; margin-bottom: .6vh; }
+  .lit i { display: block; font-size: 1.45vw; color: var(--muted); line-height: 1.35; margin-bottom: 1vh; }
+  .lit span { font-size: 1.6vw; color: var(--accent); font-weight: 600; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3vw; margin-top: 2vh; }
+  .two > div { background: var(--card); border: 1px solid var(--line);
+    border-top: 4px solid var(--accent); border-radius: 8px; padding: 3vh 2vw; }
+  .two p { font-size: 1.9vw; margin-bottom: 1.5vh; }
+  .label { color: var(--accent); font-weight: 700; font-size: 1.5vw;
+    text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1.5vh; }
+  .foot { position: fixed; bottom: 2vh; right: 3vw; font-size: 1.2vw; color: var(--muted); }
+  .print-only { display: none; }
+  @page { size: 13.333in 7.5in; margin: 0; }
+  @media print {
+    html, body { height: auto; }
+    .slide { display: flex !important; height: 7.5in; page-break-after: always; break-after: page; }
+    .slide:last-of-type { page-break-after: auto; break-after: auto; }
+    .foot, video { display: none; }
+    .print-only { display: block; background: #000; border: 0; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. Motivation and problem (0:30) -->
+<section class="slide">
+  <div class="kicker">CS5478 Project Proposal</div>
+  <h1>Vision-Guided, Contact-Rich Connector Insertion with Impedance Control</h1>
+  <div class="two">
+    <div>
+      <div class="label">Motivation</div>
+      <p>Plugging connectors into ports is still one of the <b>least automated</b> steps in electronics assembly.</p>
+      <p>Demand for servers and data centres is rising, and automating it would cut lead time and raise throughput.</p>
+    </div>
+    <div>
+      <div class="label">Problem</div>
+      <p>Using a robot arm and an overhead camera, <b>identify, grasp and insert two different connectors</b> into their matching ports on a board.</p>
+      <p>Each connector fits only its own port, with just <b>1–3 mm</b> of clearance.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Why it's hard (0:40) -->
+<section class="slide">
+  <div class="kicker">Why it's hard</div>
+  <h2>Perception and grasp errors (a few mm) can exceed the clearance (1–3 mm)</h2>
+  <div class="row">
+    <div class="col">
+      <video src="../.reference/results/jam_demo/demo.mp4" muted loop playsinline></video>
+      <img class="print-only" src="posters/jam.jpg" alt="Still from the jam clip">
+      <div class="cap"><span class="bad">Stiff position control:</span> lands on the rim and jams</div>
+    </div>
+    <div class="col">
+      <video src="../.reference/results/demos/spiral_mu03_seed8.mp4" data-rate="2" muted loop playsinline></video>
+      <img class="print-only" src="posters/spiral.jpg" alt="Still from the spiral clip">
+      <div class="cap"><span class="good">Impedance control + spiral search:</span> finds the port and inserts</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Approach (0:50) -->
+<section class="slide">
+  <div class="kicker">Our approach</div>
+  <div class="pipe">
+    <div class="step"><b>Perceive</b><em class="algo">Colour + depth segmentation, classical pose estimation</em><span>Overhead RGB-D camera finds the board and both parts, and identifies which goes where</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>Grasp</b><em class="algo">Antipodal grasp from the top-face outline</em><span>Grip across opposite sides; turn lying pegs upright in the hand</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>Move</b><em class="algo">Damped least-squares IK, quintic trajectories</em><span>Inverse kinematics and smooth trajectories to above the port</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>Insert</b><em class="algo">Cartesian impedance control, force-triggered spiral search</em><span>Impedance control: stiff downward, soft sideways. Spiral search with a wrist force sensor if it misses</span></div>
+  </div>
+</section>
+
+<!-- 4. Relevant literature (0:25) -->
+<section class="slide">
+  <div class="kicker">Relevant literature</div>
+  <div class="lit">
+    <div><b>Hogan, 1984</b><i>Impedance Control: An Approach to Manipulation</i><span>&rarr; our impedance controller for insertion</span></div>
+    <div><b>Chhatpar &amp; Branicky, 2001</b><i>Search Strategies for Peg-in-Hole Assemblies with Position Uncertainty</i><span>&rarr; our force-triggered spiral search</span></div>
+    <div><b>Nguyen, 1988</b><i>Constructing Force-Closure Grasps</i><span>&rarr; our antipodal grasp planner</span></div>
+    <div><b>Kimble et al., 2020</b><i>Benchmarking Protocols for Evaluating Small Parts Robotic Assembly Systems (NIST)</i><span>&rarr; our task design and metrics</span></div>
+  </div>
+</section>
+
+<!-- 5. Task and evaluation (0:40) -->
+<section class="slide">
+  <div class="kicker">Task and evaluation</div>
+  <div class="row">
+    <div class="col" style="flex:1.1">
+      <img src="../.reference/docs/figures/f1_scene.png" alt="MuJoCo scene with UR5e arm, board and connectors">
+      <div class="cap muted">Prototype scene</div>
+    </div>
+    <div class="col" style="justify-content:center">
+      <h2 style="font-size:2.6vw">Two parts, one randomly placed board</h2>
+      <ul>
+        <li>Round peg and square peg</li>
+        <li><b>Success:</b> both seated, &le; 60 s each, &le; 30 N</li>
+        <li>Clearance 1&ndash;3 mm, pose error up to 5 mm</li>
+        <li>Port friction 0.3 and 0.8, camera noise on/off</li>
+        <li>Many seeded trials per condition</li>
+        <li><b>Metrics:</b> success rate, contact force, cycle time, perception error, which stage failed</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Plan (0:20) -->
+<section class="slide">
+  <div class="kicker">Plan</div>
+  <div class="row">
+    <div class="col" style="flex:1.3">
+      <video src="../.reference/docs/demos/pipeline_realistic_mixed_seed4.mp4" data-rate="2" muted loop playsinline></video>
+      <img class="print-only" src="posters/pipeline.jpg" alt="Still from the pipeline clip">
+      <div class="cap muted">Prototype</div>
+    </div>
+    <div class="col" style="justify-content:center">
+      <h2 style="font-size:2.6vw">Two keyed parts, one randomised board, six weeks</h2>
+    </div>
+  </div>
+  <div class="tl">
+    <div><b>Week 1</b>Scene</div>
+    <div><b>Week 2</b>Perception, IK</div>
+    <div><b>Week 3</b>Grasping</div>
+    <div><b>Week 4</b>Impedance control, search</div>
+    <div><b>Week 5</b>Experiments</div>
+    <div><b>Week 6</b>Robustness, report</div>
+  </div>
+</section>
+
+<div class="foot" id="count"></div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  let i = 0;
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => {
+      s.classList.toggle('active', k === i);
+      s.querySelectorAll('video').forEach(v => {
+        if (k === i) { v.currentTime = 0; v.playbackRate = +(v.dataset.rate || 1); v.play().catch(() => {}); } else v.pause();
+      });
+    });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+  }
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (['ArrowLeft', 'PageUp'].includes(e.key)) show(i - 1);
+    if (e.key === 'f') document.documentElement.requestFullscreen?.();
+  });
+  document.addEventListener('click', e => show(e.clientX > innerWidth / 3 ? i + 1 : i - 1));
+  show(0);
+</script>
+</body>
+</html>
