@@ -19,7 +19,7 @@ KD = np.array([40, 40, 40, 10, 10, 5.0])
 
 
 def main():
-    model = build_model(sample_layout(SceneConfig(), seed=4, orientation="mixed"))
+    model = build_model(sample_layout(SceneConfig(), seed=4))
     data = mujoco.MjData(model)
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
     q_home = data.qpos[:6].copy()

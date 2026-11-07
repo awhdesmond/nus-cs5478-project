@@ -9,7 +9,7 @@ import mujoco
 import numpy as np
 
 from sim.config import PEGS, SceneConfig
-from sim.scene import FINGER_JOINTS
+from sim.scene import FINGER_JOINTS, port_hole_half
 from sim.ur5e import UR5E_JOINTS
 
 
@@ -138,3 +138,56 @@ class Sim:
         self.model.eq_data[weld, 3:6] = rel_pos
         self.model.eq_data[weld, 6:10] = rel_quat
         d.eq_active[weld] = 1
+
+    # --- ground truth (for scoring and checks only: a controller must never call these) -----
+
+    def peg_ends(self, kind: str) -> tuple[np.ndarray, np.ndarray]:
+        """World positions of a peg's insertion end and its top end."""
+        return self.data.site(f"{kind}_tip").xpos.copy(), self.data.site(f"{kind}_top").xpos.copy()
+
+    def end_in_port(self, kind: str, port: str, end: str = "tip", depth: float | None = None) -> bool:
+        """Is this end of the peg inside `port`'s hole: within its footprint, at most `depth` above its floor?
+
+        `end` is "tip" (the insertion end) or "top". depth None = anywhere below the port's entrance.
+        """
+        point = self.data.site(f"{kind}_{end}").xpos
+        bottom = self.data.site(f"{port}_port_bottom")
+        # Express the point in the port's own frame: then the hole is centred at the origin, axis along z.
+        local = bottom.xmat.reshape(3, 3).T @ (point - bottom.xpos)
+        h = port_hole_half(self.cfg, port)
+        inside = np.hypot(local[0], local[1]) < h if port == "round" else max(abs(local[0]), abs(local[1])) < h
+        return bool(inside and local[2] <= (self.cfg.port_depth if depth is None else depth))
+
+    def seated(self, kind: str, tol: float = 0.002) -> bool:
+        """Success: the insertion end is within `tol` of the floor of the peg's *own* port."""
+        return self.end_in_port(kind, kind, depth=tol)
+
+    def in_wrong_port(self, kind: str) -> str | None:
+        """The other port, if either end of this peg has gone into it."""
+        for port in PEGS:
+            if port != kind and (self.end_in_port(kind, port) or self.end_in_port(kind, port, end="top")):
+                return port
+        return None
+
+    def peg_contact_force(self, kind: str) -> np.ndarray:
+        """Total contact force on a peg from everything except the fingers, world frame [N].
+
+        This is the force the proposal caps at 30 N: what the peg feels from the port and the table.
+        """
+        geom = self.peg_geoms[kind]
+        total, wrench = np.zeros(3), np.zeros(6)
+        for i in range(self.data.ncon):
+            contact = self.data.contact[i]
+            pair = {contact.geom1, contact.geom2}
+            if geom not in pair or pair & self.finger_geoms:
+                continue
+            # mj_contactForce gives the force in the contact's own frame (rows = its axes in world), acting on
+            # geom2. Rotate it to world, and flip it if our peg is geom1.
+            mujoco.mj_contactForce(self.model, self.data, i, wrench)
+            f = contact.frame.reshape(3, 3).T @ wrench[:3]
+            total += f if contact.geom2 == geom else -f
+        return total
+
+    def max_penetration(self) -> float:
+        """How deep the deepest contact overlaps right now [m] (MuJoCo contacts are soft, so slightly > 0)."""
+        return max((-c.dist for c in self.data.contact[:self.data.ncon]), default=0.0)

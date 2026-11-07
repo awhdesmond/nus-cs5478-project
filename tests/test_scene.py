@@ -115,52 +115,33 @@ def test_ports_sit_at_their_configured_poses():
 # --- 1c: pegs and seeded layouts -------------------------------------------------------------
 
 from sim.config import PEGS
-from sim.layout import ORIENTATIONS, peg_axis_segment, sample_layout, segment_distance
+from sim.layout import sample_layout
 
 
-def test_segment_distance_known_cases():
-    p = lambda x, y: np.array([x, y], dtype=float)
-    assert segment_distance(p(0, 0), p(1, 0), p(0, 1), p(1, 1)) == pytest.approx(1.0)   # parallel, 1 apart
-    assert segment_distance(p(0, 0), p(2, 2), p(0, 2), p(2, 0)) == 0.0                 # crossing
-    assert segment_distance(p(0, 0), p(1, 0), p(2, 0), p(2, 0)) == pytest.approx(1.0)   # segment to a point
-    assert segment_distance(p(0, 0), p(0, 0), p(3, 4), p(3, 4)) == pytest.approx(5.0)   # point to point
-
-
-@pytest.mark.parametrize("orientation", ORIENTATIONS)
-def test_layouts_are_seeded_in_bounds_and_spaced(orientation):
+def test_layouts_are_seeded_in_bounds_and_spaced():
     cfg = SceneConfig()
-    pick_lo = np.array(cfg.pick_area_center) - cfg.pick_area_half
-    pick_hi = np.array(cfg.pick_area_center) + cfg.pick_area_half
-    port_lo = np.array(cfg.port_area_center) - cfg.port_area_half
-    port_hi = np.array(cfg.port_area_center) + cfg.port_area_half
-    lying_seen = set()
+    areas = {"peg": (cfg.pick_area_center, cfg.pick_area_half, cfg.min_peg_spacing),
+             "port": (cfg.port_area_center, cfg.port_area_half, cfg.min_port_spacing)}
     for seed in range(40):
-        layout = sample_layout(cfg, seed, orientation)
-        assert layout == sample_layout(cfg, seed, orientation)  # same seed, same layout
-        segments = [peg_axis_segment(cfg, layout.peg_poses[k]) for k in PEGS]
-        for seg in segments:
-            for end in seg:
-                assert np.all(end >= pick_lo - 1e-12) and np.all(end <= pick_hi + 1e-12)
-        assert segment_distance(*segments[0], *segments[1]) >= cfg.min_peg_spacing
-        ports = [layout.port_poses[k] for k in PEGS]
-        for pose in ports:
-            assert np.all(np.array([pose.x, pose.y]) >= port_lo) and np.all(np.array([pose.x, pose.y]) <= port_hi)
-        assert math.dist((ports[0].x, ports[0].y), (ports[1].x, ports[1].y)) >= cfg.min_port_spacing
-        lying_seen |= {layout.peg_poses[k].lying for k in PEGS}
-    assert lying_seen == {"upright": {False}, "mixed": {False, True}, "lying": {True}}[orientation]
+        layout = sample_layout(cfg, seed)
+        assert layout == sample_layout(cfg, seed)  # same seed, same layout
+        for what, poses in (("peg", layout.peg_poses), ("port", layout.port_poses)):
+            center, half, spacing = areas[what]
+            for pose in poses.values():
+                assert np.all(np.abs(np.array([pose.x, pose.y]) - center) <= half)   # inside its area
+            a, b = poses.values()
+            assert math.dist((a.x, a.y), (b.x, b.y)) >= spacing                      # far enough apart
 
 
-def test_peg_tips_start_where_the_layout_says():
-    cfg = sample_layout(SceneConfig(), 3, "lying")
+def test_pegs_stand_upright_where_the_layout_says():
+    cfg = sample_layout(SceneConfig(), 3)
     model = build_model(cfg)
     data = start_at_home(model)
     mujoco.mj_forward(model, data)
     for kind in PEGS:
         pose = cfg.peg_poses[kind]
-        tip = data.site(f"{kind}_tip").xpos
-        # Lying: the marked end is half a length *behind* the centre along the yaw direction.
-        expected = np.array([pose.x, pose.y]) - cfg.peg_length / 2 * np.array([math.cos(pose.yaw), math.sin(pose.yaw)])
-        np.testing.assert_allclose(tip[:2], expected, atol=1e-9)
+        np.testing.assert_allclose(data.site(f"{kind}_tip").xpos, [pose.x, pose.y, cfg.table_height], atol=1e-9)
+        np.testing.assert_allclose(data.site(f"{kind}_top").xpos[2], cfg.table_height + cfg.peg_length, atol=1e-9)
 
 
 def test_home_keyframe_still_puts_the_arm_at_home(model):
@@ -170,10 +151,9 @@ def test_home_keyframe_still_puts_the_arm_at_home(model):
     np.testing.assert_allclose(model.key("home").qpos[:6], stock.key("home").qpos)
 
 
-@pytest.mark.parametrize("orientation", ["upright", "mixed", "lying"])
-def test_pegs_rest_still(orientation):
+def test_pegs_rest_still():
     """Pegs dropped into the scene settle and stay put for 2 s, touching nothing but the table."""
-    cfg = sample_layout(SceneConfig(), 1, orientation)
+    cfg = sample_layout(SceneConfig(), 1)
     model = build_model(cfg)
     data = start_at_home(model)
     q_home = data.qpos[:6].copy()
@@ -300,7 +280,7 @@ def robot_geoms(model):
 
 @pytest.mark.parametrize("seed", range(6))
 def test_from_ready_the_camera_sees_both_pegs_and_ports_whole_and_no_arm(seed):
-    cfg = sample_layout(SceneConfig(), seed, "mixed")
+    cfg = sample_layout(SceneConfig(), seed)
     sim = Sim(build_model(cfg), cfg)
     sim.reset("ready")
     model = sim.model
@@ -319,3 +299,44 @@ def test_from_ready_the_camera_sees_both_pegs_and_ports_whole_and_no_arm(seed):
         for obj in (peg, port):
             assert np.isin(geom, obj).any()               # visible...
             assert not np.isin(border, obj).any()         # ...and not cut off by the image edge
+
+
+# --- 1f: ground truth and the week-1 checks --------------------------------------------------
+
+from dataclasses import replace
+
+from harness.scene_check import keying_check, rest_check
+
+
+def teleport_peg(sim, kind, tip_at):
+    """Stand a peg upright with its insertion end at `tip_at`."""
+    joint = sim.model.joint(f"{kind}_peg")
+    centre = np.array(tip_at) + [0, 0, sim.cfg.peg_length / 2]
+    sim.data.qpos[joint.qposadr[0]:joint.qposadr[0] + 7] = [*centre, 1, 0, 0, 0]
+    mujoco.mj_forward(sim.model, sim.data)
+
+
+def test_ground_truth_tells_seated_and_wrong_port_apart():
+    cfg = replace(SceneConfig(), clearance=0.003)   # at 3 mm the round peg fits the square hole
+    sim = Sim(build_model(cfg), cfg)
+    sim.reset("ready")
+    floor = lambda port: sim.data.site(f"{port}_port_bottom").xpos + [0, 0, 0.0005]
+    teleport_peg(sim, "round", floor("round"))
+    assert sim.seated("round") and sim.in_wrong_port("round") is None
+    teleport_peg(sim, "round", floor("square"))
+    assert not sim.seated("round") and sim.in_wrong_port("round") == "square"
+    teleport_peg(sim, "round", floor("round") + [0, 0, 0.005])   # 5 mm short of the floor
+    assert not sim.seated("round") and sim.in_wrong_port("round") is None
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2])
+def test_scene_rests_stably(seed):
+    result = rest_check(sample_layout(SceneConfig(), seed))
+    assert result.passed, result
+
+
+def test_each_peg_fits_only_its_own_port_at_1mm():
+    """The week-1 deliverable: at 1 mm clearance, own port seats; the other blocks it at the rim."""
+    for r in keying_check(SceneConfig()):
+        assert r.passed, r
+        assert r.entered == (r.peg == r.port), r

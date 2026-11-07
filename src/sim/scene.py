@@ -8,16 +8,14 @@ import math
 import mujoco
 import numpy as np
 
-from sim.config import SceneConfig, PegPose, PEGS
+from sim.config import SceneConfig, PlanarPose, PEGS
 from sim.ur5e import UR5E_JOINTS, load_ur5e_spec
 from sim.holes import BOX, WALL_RGBA, add_ngon_hole, add_square_hole
-from sim.utils import quat_mul, quat_z
+from sim.utils import quat_z
 
 
 TABLE_RGBA = [0.35, 0.37, 0.40, 1.0]
 PEG_RGBA = [0.85, 0.65, 0.15, 1.0]  # both pegs the same amber: the camera must tell them apart by shape
-BAND_RGBA = [0.15, 0.35, 0.90, 1.0]  # blue: marks the insertion end
-BAND_PROUD = 0.0001  # [m] the band sits 0.1 mm outside the peg's surface so it's drawn on top of it
 CYLINDER = mujoco.mjtGeom.mjGEOM_CYLINDER
 
 GRIPPER_RGBA = [0.3, 0.3, 0.35, 1.0]
@@ -95,49 +93,31 @@ def add_port(spec: mujoco.MjSpec, cfg: SceneConfig, kind: str) -> None:
     port.add_site(name=f"{kind}_port_entrance", pos=[0, 0, d], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
 
 
-def peg_body_pose(cfg: SceneConfig, kind: str, pose: PegPose) -> tuple[np.ndarray, np.ndarray]:
+def peg_body_pose(cfg: SceneConfig, pose: PlanarPose) -> tuple[np.ndarray, np.ndarray]:
     """Where a peg's body (its centre) sits at rest on the table, and its orientation quaternion.
 
-    The peg's own +z axis runs from its marked end (bottom when upright) to its top.
+    The peg stands upright on its insertion end: its own +z axis runs from that end up to its top.
     """
-    q_yaw = quat_z(pose.yaw)
-    if not pose.lying:
-        # Standing on the table: centre half a length up.
-        return np.array([pose.x, pose.y, cfg.table_height + cfg.peg_length / 2]), np.array(q_yaw)
-    # Lying: first tip it over by +90° about y (its +z now points along world +x, and the square peg's
-    # local x face is underneath), then turn it by yaw. Its centre is half a width up.
-    tip_over = (math.cos(math.pi / 4), 0.0, math.sin(math.pi / 4), 0.0)
-    return np.array([pose.x, pose.y, cfg.table_height + peg_half(cfg, kind)]), np.array(quat_mul(q_yaw, tip_over))
+    return np.array([pose.x, pose.y, cfg.table_height + cfg.peg_length / 2]), np.array(quat_z(pose.yaw))
 
 
 def add_peg(spec: mujoco.MjSpec, cfg: SceneConfig, kind: str) -> None:
-    """A peg: a free body (it falls, slides, can be grasped) with a blue band on its marked end.
+    """A peg: a free body (it falls, slides, can be grasped), standing on its insertion end.
 
-    Body `<kind>_peg`; geoms `<kind>_peg` (the solid) and `<kind>_band` (visual only); sites `<kind>_tip`
-    (marked end) and `<kind>_top`, used later for ground truth.
+    Body and geom `<kind>_peg`; sites `<kind>_tip` (insertion end) and `<kind>_top`, used later for ground truth.
     """
-    L, band, w = cfg.peg_length, cfg.tip_band_length, peg_half(cfg, kind)
-    pos, quat = peg_body_pose(cfg, kind, cfg.peg_poses[kind])
+    L, w = cfg.peg_length, peg_half(cfg, kind)
+    pos, quat = peg_body_pose(cfg, cfg.peg_poses[kind])
     peg = spec.worldbody.add_body(name=f"{kind}_peg", pos=pos.tolist(), quat=quat.tolist())
     # A free joint gives the body all 6 degrees of freedom: 3 position + 3 rotation (7 numbers in qpos:
     # position, then a quaternion).
     peg.add_freejoint(name=f"{kind}_peg")
-    contact = contact_params(cfg)
     if kind == "round":
         solid = dict(type=CYLINDER, size=[w, L / 2])  # cylinder size = (radius, half-length)
-        band_shape = dict(type=CYLINDER, size=[w + BAND_PROUD, band / 2 + BAND_PROUD])
-        # condim 6 adds torsional and rolling friction to this peg's contacts; rolling friction stops a lying
-        # cylinder from rolling away.
-        contact["friction"] = [cfg.friction, 0.005, cfg.round_rolling_friction]
-        contact["condim"] = 6
     else:
         solid = dict(type=BOX, size=[w, w, L / 2])
-        band_shape = dict(type=BOX, size=[w + BAND_PROUD, w + BAND_PROUD, band / 2 + BAND_PROUD])
     # Mass comes from volume × density (MuJoCo's default 1000 kg/m³): about 4 g per peg.
-    peg.add_geom(name=f"{kind}_peg", rgba=PEG_RGBA, **solid, **contact)
-    # The band: contype/conaffinity 0 = never collides; density 0 = no mass. Only the camera sees it.
-    peg.add_geom(name=f"{kind}_band", pos=[0, 0, -L / 2 + band / 2], rgba=BAND_RGBA, contype=0, conaffinity=0,
-                 density=0.0, **band_shape)
+    peg.add_geom(name=f"{kind}_peg", rgba=PEG_RGBA, **solid, **contact_params(cfg))
     peg.add_site(name=f"{kind}_tip", pos=[0, 0, -L / 2], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
     peg.add_site(name=f"{kind}_top", pos=[0, 0, L / 2], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
 
