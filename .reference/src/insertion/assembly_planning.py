@@ -90,7 +90,7 @@ class ClearanceChecker:
         self.active = self.obstacle_geoms[: len(boxes)]
 
     def clearance(self, q: np.ndarray, distmax: float = 0.05) -> tuple[float, str]:
-        """(minimum arm–obstacle distance capped at distmax [m], name of the closest obstacle)."""
+        """(minimum arm-obstacle distance capped at distmax [m], name of the closest obstacle)."""
         self.data.qpos[self.qpos_adr] = q
         mujoco.mj_kinematics(self.model, self.data)
         best, name = distmax, ""
@@ -108,7 +108,7 @@ class SidewaysPlan:
     q_via: np.ndarray  # tip `via_height` above the pre-insertion pose
     q_pre: np.ndarray  # tip at the pre-insertion pose (the insertion controller starts here)
     q_seated: np.ndarray  # tip at the hole bottom
-    clearance: float  # [m] worst arm–obstacle distance over via, pre and seated
+    clearance: float  # [m] worst arm-obstacle distance over via, pre and seated
     closest: str
 
 
@@ -140,7 +140,7 @@ def plan_sideways_insertion(
 
     The tip-site IK target is the connector upright at each yaw; the hand orientation follows from the in-hand
     estimate held in the tool-tip site. Via, pre-insertion and seated poses must be reachable in one arm
-    configuration (no joint jumps between them) with every arm–obstacle distance ≥ margin.
+    configuration (no joint jumps between them) with every arm-obstacle distance ≥ margin.
     """
     rng = np.random.default_rng(seed)
     seeds = seed_configurations(ik_tip.model, ik_tip, q_now, rng)

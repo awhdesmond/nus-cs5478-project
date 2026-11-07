@@ -1,4 +1,4 @@
-"""Two-connector assembly scene (weeks 6–7 extension).
+"""Two-connector assembly scene (weeks 6-7 extension).
 
 UR5e (torque motors) + parallel-jaw gripper with a wrist F/T sensor, a table, a fixture with a
 round (N-gon) and a square socket (each its own block, at a sampled position and yaw), a round and a
@@ -34,7 +34,7 @@ TIP_BAND_PROUD = 0.0001  # [m] the visual band sits this far outside the connect
 GRIPPER_RGBA = [0.3, 0.3, 0.35, 1.0]
 FINGER_RGBA = [0.55, 0.55, 0.6, 1.0]
 TABLE_RGBA = [0.35, 0.37, 0.40, 1.0]
-HIDDEN_SITE_GROUP = 4  # sites stay out of camera images (the default renderer shows groups 0–2)
+HIDDEN_SITE_GROUP = 4  # sites stay out of camera images (the default renderer shows groups 0-2)
 PLANNING_GEOM_GROUP = 5  # planning-only obstacle geoms: not rendered, no contacts
 N_PLANNING_OBSTACLES = 6
 PAD_DEPTH = 0.008  # [m] tcp (grasp contact centre) this far above the fingertips
@@ -332,7 +332,7 @@ def build_assembly_model(cfg: AssemblyConfig) -> mujoco.MjModel:
 
 
 def segment_distance(a0, a1, b0, b1) -> float:
-    """Minimum distance between 2D segments a0–a1 and b0–b1 (points allowed)."""
+    """Minimum distance between 2D segments a0-a1 and b0-b1 (points allowed)."""
 
     def point_to_segment(p, s0, s1):
         d = s1 - s0

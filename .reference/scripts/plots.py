@@ -4,7 +4,7 @@
     uv run python scripts/plots.py --only search   # one figure by name
 
 `results/` is gitignored, so figures are written to docs/figures/ and travel with the report.
-Palette: categorical slots 1–3 of the reference data-viz palette (validated for this many series); aqua and
+Palette: categorical slots 1-3 of the reference data-viz palette (validated for this many series); aqua and
 yellow sit below 3:1 on the light surface, so every series is also direct-labelled or named on its own axis.
 """
 
@@ -95,7 +95,7 @@ def fig_scene() -> None:
     save(fig, "f1_scene")
 
 
-# --- weeks 1–5: the insertion module ------------------------------------------------------------------------
+# --- weeks 1-5: the insertion module ------------------------------------------------------------------------
 
 
 def fig_controller_success() -> None:
@@ -240,7 +240,7 @@ def fig_compliance_checks() -> None:
     save(fig, "f1b_compliance_checks")
 
 
-# --- weeks 6–7: the two-connector task ----------------------------------------------------------------------
+# --- weeks 6-7: the two-connector task ----------------------------------------------------------------------
 
 
 def _m5() -> pd.DataFrame:

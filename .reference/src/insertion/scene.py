@@ -41,7 +41,7 @@ def hole_width(cfg: SceneConfig) -> float:
 
 
 def contact_params(cfg: SceneConfig) -> dict:
-    """Friction and solver params for any geom in the peg–socket contact pair."""
+    """Friction and solver params for any geom in the peg-socket contact pair."""
     return dict(
         friction=[cfg.friction, 0.005, 0.0001],
         solref=list(cfg.contact_solref),
@@ -194,7 +194,7 @@ def add_socket(spec: mujoco.MjSpec, cfg: SceneConfig) -> mujoco.MjsBody:
 
 
 def arm_ctrlrange(model: mujoco.MjModel) -> np.ndarray:
-    """Control range of the six arm torque motors (added first, so actuators 0–5)."""
+    """Control range of the six arm torque motors (added first, so actuators 0-5)."""
     names = [model.actuator(i).name for i in range(len(UR5E_JOINTS))]
     assert names == [j.removesuffix("_joint") for j in UR5E_JOINTS], names
     return model.actuator_ctrlrange[: len(UR5E_JOINTS)]

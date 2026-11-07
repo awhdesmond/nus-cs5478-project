@@ -3,7 +3,7 @@
     τ = Jᵀ F + τ_bias(q, q̇) − D_q q̇,     F = [sat(K_p e_p) + D_p (ṗ* − ṗ);  K_r e_r + D_r (ω* − ω)]
 
 e_p = p* − p is the tip position error, e_r the orientation error (rotation vector toward R*),
-and [ṗ; ω] = J q̇. The arm behaves like a spring–damper about the setpoint: in free space it
+and [ṗ; ω] = J q̇. The arm behaves like a spring-damper about the setpoint: in free space it
 tracks it; in contact it yields and the contact force settles at ≈ K·(setpoint penetration),
 bounded by the spring saturation. No F/T measurement is needed for the control law itself.
 

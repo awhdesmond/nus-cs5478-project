@@ -41,7 +41,7 @@ class Sim:
         mujoco.mj_forward(self.model, self.data)
 
     def step(self, ctrl: np.ndarray) -> None:
-        """Arm joint torques for actuators 0–5 (any further actuators, e.g. a gripper, keep their ctrl)."""
+        """Arm joint torques for actuators 0-5 (any further actuators, e.g. a gripper, keep their ctrl)."""
         self.data.ctrl[: len(ctrl)] = ctrl
         mujoco.mj_step(self.model, self.data)
 

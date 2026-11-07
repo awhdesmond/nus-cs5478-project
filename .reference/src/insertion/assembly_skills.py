@@ -136,7 +136,7 @@ class ConnectorLog:
     wrong_socket: bool = False
     wrong_end: bool = False  # ground truth: inserted unmarked end first
     sideways_yaw_deg: float = float("nan")  # lying: chosen insertion yaw (finger pointing direction)
-    sideways_clearance_mm: float = float("nan")  # lying: planned worst arm–obstacle clearance
+    sideways_clearance_mm: float = float("nan")  # lying: planned worst arm-obstacle clearance
     # Perception at the capture this connector's pick used (ground truth comparison, for scoring)
     identified_correctly: bool = False  # the estimate labelled with this kind lies on the true connector of this kind
     connector_xy_error_mm: float = float("nan")  # upright: top centre; lying: axis centre
@@ -181,7 +181,7 @@ def visual_seating(connector: ConnectorEstimate | None, socket: SocketEstimate |
 
     Pass the socket estimate from a capture with the hole still empty (the one the insertion used). With a
     connector standing in it, the off-centre camera sees the connector's side hide part of the fixture top, and the
-    detected opening shifts 0.7–1.7 mm away from the image centre (ideal camera).
+    detected opening shifts 0.7-1.7 mm away from the image centre (ideal camera).
 
     xy tolerance = half the clearance (a seated connector can sit that far off the hole axis) + `xy_margin` for
     perception: over 160 benchmark runs the realistic camera's offset exceeded half the clearance by ≤ 0.51 mm, and
@@ -232,7 +232,7 @@ class AssemblyRun:
         self.ik = JacobianIK(self.sim.model, "tcp")
         self.ik_tip = JacobianIK(self.sim.model, "tool_tip")
         self.checker = ClearanceChecker(self.sim.model, self.ik)
-        self.plan_margin = 0.005  # [m] arm–obstacle clearance required by the sideways-insertion planner
+        self.plan_margin = 0.005  # [m] arm-obstacle clearance required by the sideways-insertion planner
         self.carry_height = 0.36  # [m] tcp height for lifting a lying connector before turning it sideways
         self.runner = SegmentRunner(self.sim.model, self.ik, JointPDConfig())
         self.object_error = object_error

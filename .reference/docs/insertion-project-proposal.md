@@ -23,7 +23,7 @@ A 6-DOF manipulator with a parallel-jaw gripper and a fixed overhead RGB-D camer
 - **Scene.** A round connector and a square connector are placed at random,
   non-overlapping positions and orientations in a pick area, each either standing upright
   or lying on its side. Two sockets, a round hole and a square hole, sit at random
-  positions and orientations, each with **1–3 mm clearance**.
+  positions and orientations, each with **1-3 mm clearance**.
 - **Sequence.** Using the camera, the robot identifies the **round connector first**,
   grasps it, inserts it into the round socket and releases it; it then identifies the
   square connector, grasps it and inserts it into the square socket. A lying connector is
@@ -66,7 +66,7 @@ exceeding a 30 N cap.
 3. **Antipodal grasp planning.** Back-project the connector's depth pixels to a point cloud,
    estimate surface normals, and sample finger contact pairs for the parallel-jaw gripper,
    keeping pairs whose contact line lies inside both friction cones (force closure) and
-   that clear the table and the other connector. Then approach–close–lift–transport–release
+   that clear the table and the other connector. Then approach-close-lift-transport-release
    sequencing, and an in-hand pose estimate used to place the connector tip at the socket.
    A connector lying on its side is grasped across its width and turned in the hand to point
    down, with the arm configuration chosen by a clearance check against perceived obstacles.
@@ -148,24 +148,24 @@ stage-wise failure breakdown (perception / grasp / planning / insertion / releas
 - Results: success rates by stage and condition; perception error distributions;
   controller comparison (open-loop, guarded retry, impedance, spiral search);
   contact-force and cycle-time plots
-- Written report (~3–5 pages): task setup, method, results, discussion
+- Written report (~3-5 pages): task setup, method, results, discussion
 - Demo video of a full two-connector assembly, with camera view and search trace
 
 ## 6. Timeline
 
-Assumes roughly 10–16 hours per week.
+Assumes roughly 10-16 hours per week.
 
 | Week | Focus | Definition of done |
 |---|---|---|
 | 1 | Environment + evaluation harness | MuJoCo scene; torque-controlled arm; stable contact; forces readable; harness logging; one easy insertion |
 | 2 | Nominal motion + baseline | IK and trajectories reach the pre-insertion pose from varied starts; guarded-move-with-retry baseline |
-| 2–3 | Compliance controller | Cartesian impedance validated in isolation; F/T contact detection |
-| 3.5–4 | Search and alignment | Spiral search; end-to-end insertion at 1 mm clearance |
+| 2-3 | Compliance controller | Cartesian impedance validated in isolation; F/T contact detection |
+| 3.5-4 | Search and alignment | Spiral search; end-to-end insertion at 1 mm clearance |
 | 5 | Evaluation and tuning | Insertion grids; failure modes diagnosed; spiral search vs. baseline |
-| 6–7 | Perception, grasping, two connectors | Scene with fixture and connectors; perception check; antipodal grasping with attach-on-grasp; pick and release; square insertion; lying connectors with in-hand reorientation; full pipeline grid |
+| 6-7 | Perception, grasping, two connectors | Scene with fixture and connectors; perception check; antipodal grasping with attach-on-grasp; pick and release; square insertion; lying connectors with in-hand reorientation; full pipeline grid |
 | 8 | Results and writeup | Plots, report, demo videos |
 
-Weeks 1–5 are complete (§10).
+Weeks 1-5 are complete (§10).
 
 ## 7. Risk Assessment and Contingency
 
@@ -197,7 +197,7 @@ committed work (including the writeup) is complete with time remaining.
 - **Friction grasp.** Replace attach-on-grasp with a part held only by finger friction, with
   grip-force control and in-hand slip measured.
 - **Socket tilt uncertainty.** Socket axis tilted a few degrees from its perceived orientation.
-- **Partially deformable connector.** A short 2–3 link chain with joint compliance behind
+- **Partially deformable connector.** A short 2-3 link chain with joint compliance behind
   the plug, so the connector can lag and swing relative to the gripper.
 - **Cable assembly.** The two keyed parts as the plugs of a fibre patch cable (SC-style square,
   FC/ST-style round), inserting both ends into their ports with the cable tethering the first.
@@ -210,7 +210,7 @@ committed work (including the writeup) is complete with time remaining.
 | Perception | Ground truth provided | Overhead RGB-D camera; segmentation, identification and pose estimation from images |
 | Grasp synthesis | Antipodal grasps from ground-truth point cloud and normals | Antipodal grasps from the camera's point cloud, with estimated normals |
 | Grasp physics | Friction grasp; hold and carry stability scored | Attach-on-grasp with antipodal grasp poses (friction grasp is a stretch goal) |
-| Objects | YCB objects (irregular shapes) | Two keyed connectors (simple shapes), upright or lying; correct part–socket assignment |
+| Objects | YCB objects (irregular shapes) | Two keyed connectors (simple shapes), upright or lying; correct part-socket assignment |
 | Motion | Motion planning and maze navigation | IK, trajectory generation and collision-avoiding approach; no mobile base |
 | Precision and contact | 10 cm placement; no force control | Millimetre-clearance insertion; compliant force control and contact-based search |
 

@@ -1,6 +1,6 @@
 # Vision-Guided Contact-Rich Connector Insertion with Compliant Control
 
-**CS5478 Intelligent Robots — Project Report** · *Draft (weeks 1–6). `TODO` marks sections filled in later weeks.*
+**CS5478 Intelligent Robots — Project Report** · *Draft (weeks 1-6). `TODO` marks sections filled in later weeks.*
 
 ---
 
@@ -22,7 +22,7 @@ needed in up to 55 % of insertions once perception error no longer cancelled bet
 
 Inserting wire terminals and connectors into sockets remains one of the least automated steps in electronics assembly. At millimetre scale the uncertainty between gripper and socket pose exceeds the insertion clearance, so a purely position-controlled arm jams or damages the part instead of seating it. The task is *contact-rich*: success depends on how the robot responds to contact, not only on where it moves.
 
-This project studies a scoped version of the problem in simulation: a 6-DOF arm inserts a rigid connector into a socket with 1–3 mm clearance under bounded pose uncertainty. We compare an open-loop insert, a guarded-move-with-random-retry baseline, and a compliant controller (Cartesian impedance with contact-triggered spiral search) over a grid of clearances and uncertainty levels.
+This project studies a scoped version of the problem in simulation: a 6-DOF arm inserts a rigid connector into a socket with 1-3 mm clearance under bounded pose uncertainty. We compare an open-loop insert, a guarded-move-with-random-retry baseline, and a compliant controller (Cartesian impedance with contact-triggered spiral search) over a grid of clearances and uncertainty levels.
 
 > TODO: one sentence on the Intrinsic × Open Robotics AI for Industry Challenge as motivation, with a citation (verify figures against a primary source first).
 
@@ -33,7 +33,7 @@ from the camera.
 **Contributions.** (1) A reproducible MuJoCo environment for keyed-connector assembly with contact behaviour validated
 at 1 mm clearance; (2) an evaluation harness that separates what a controller may observe from ground truth, and scores
 seeded trials across clearance, friction, perception noise and part orientation; (3) a controlled comparison of
-non-compliant and compliant insertion strategies (99.1 % vs 56–86 % over 3,600 trials); (4) a classical perception and
+non-compliant and compliant insertion strategies (99.1 % vs 56-86 % over 3,600 trials); (4) a classical perception and
 grasping pipeline that identifies, localises and orients both connectors — including turning a lying connector upright
 in the hand without re-grasping — and seats both in 1,120 of 1,120 runs; (5) a measurement of *which* perception errors
 actually stress contact-rich insertion, and of what a second, independent completion check is worth.
@@ -44,7 +44,7 @@ actually stress contact-rich insertion, and of what a second, independent comple
 
 ### 2.1 Task
 
-**Insertion module (weeks 1–5).** A UR5e with a round peg rigidly attached to its flange must insert the peg into a
+**Insertion module (weeks 1-5).** A UR5e with a round peg rigidly attached to its flange must insert the peg into a
 square socket. The cable behind the connector is treated as rigid (§7).
 
 - **Clearance** *c* (total): hole width = peg diameter + *c*, with *c* ∈ {3, 1} mm (baseline grid).
@@ -53,7 +53,7 @@ square socket. The cable behind the connector is treated as rigid (§7).
 - **Friction**: μ = 0.3 (typical of brass or tin-plated pins in plastic housings) is the main setting; μ = 0.8 (dry steel on steel) is a high-friction benchmark.
 - **Success**: the peg tip reaches within 2 mm of the hole bottom, inside the hole footprint, within the cycle-time budget (60 s), without the contact force exceeding the 30 N cap. The cap applies to the 10 ms moving average of the true contact force (sustained force). Single-step (1 ms) peaks are reported separately: they scale with contact speed and the solver's contact stiffness, and safety standards such as ISO/TS 15066 treat transient contact separately from quasi-static force.
 
-**Full task (weeks 6–7).** The peg is replaced by a parallel-jaw gripper, and pose uncertainty comes from perception
+**Full task (weeks 6-7).** The peg is replaced by a parallel-jaw gripper, and pose uncertainty comes from perception
 instead of a synthetic offset. Each trial places **two keyed connectors** — one round (Ø10 mm), one square (8.5 mm),
 both 50 mm long, with a coloured band marking the insertion end — at random non-overlapping poses in a pick area, each
 either standing upright or lying on its side. A fixture holds a round and a square socket at random positions and
@@ -73,7 +73,7 @@ weakens at larger clearances.
 - **Simulator**: MuJoCo 3.x at 1 ms timestep, implicit-fast integrator, elliptic friction cones. Chosen over PyBullet for more stable, accurate contact at millimetre scale.
 - **Robot**: UR5e from MuJoCo Menagerie. The stock position servos are replaced by joint-torque motors (±150 Nm base joints, ±28 Nm wrist) so the controller owns gravity compensation and compliance.
 - **Socket**: built from box primitives (MuJoCo collides meshes via their convex hull, which would fill the hole), with a 2 mm 45° chamfer formed from rotated boxes. Placed where the insertion path stays clear of the UR5e's elbow, wrist and shoulder singularities.
-- **Sensing**: a force/torque sensor at the flange–peg interface, tared at rest and low-pass filtered (30 Hz).
+- **Sensing**: a force/torque sensor at the flange-peg interface, tared at rest and low-pass filtered (30 Hz).
 
 For the full task the scene adds:
 
@@ -139,7 +139,7 @@ All non-compliant motion is tracked by joint PD with gravity and Coriolis compen
 
 $$\tau = K_p (q^* - q) + K_d (\dot q^* - \dot q) + \tau_\text{bias}(q, \dot q)$$
 
-with τ_bias from recursive Newton–Euler. This holds the home pose with zero drift (versus 44 mrad sag without compensation). Its Cartesian stiffness is low (~1.3 N/mm) and anisotropic: pressing vertically also produces lateral force.
+with τ_bias from recursive Newton-Euler. This holds the home pose with zero drift (versus 44 mrad sag without compensation). Its Cartesian stiffness is low (~1.3 N/mm) and anisotropic: pressing vertically also produces lateral force.
 
 ### 3.4 Baselines
 
@@ -148,17 +148,17 @@ with τ_bias from recursive Newton–Euler. This holds the home pose with zero d
 
 ### 3.5 Compliant contact control
 
-During the contact phase the arm is controlled as a Cartesian spring–damper about a moving setpoint at the peg tip:
+During the contact phase the arm is controlled as a Cartesian spring-damper about a moving setpoint at the peg tip:
 
 $$\tau = J^\top F + \tau_\text{bias}(q, \dot q) - D_q \dot q, \qquad F = \begin{bmatrix} \operatorname{sat}\!\left(K_p e_p\right) + D_p(\dot p^* - \dot p) \\ K_r e_r + D_r(\omega^* - \omega) \end{bmatrix}$$
 
-where *e_p* is the tip position error, *e_r* the orientation error as in §3.1, and [ṗ; ω] = J q̇. In free space the tip tracks the setpoint; in contact it yields, and the contact force settles near K·(setpoint penetration). The spring force is saturated at 15 N so contact force stays bounded whatever the setpoint. Damping is set per axis as D = 2ζ√(K Λ_ii) with ζ = 1, using the task-space inertia Λ = (J M⁻¹ Jᵀ)⁻¹ at the start of the contact phase (4–8 kg translational, 0.1–0.3 kg·m² rotational, nearly constant over the insertion workspace). The control law needs no force measurement; the wrist F/T sensor is used only for contact detection and monitoring.
+where *e_p* is the tip position error, *e_r* the orientation error as in §3.1, and [ṗ; ω] = J q̇. In free space the tip tracks the setpoint; in contact it yields, and the contact force settles near K·(setpoint penetration). The spring force is saturated at 15 N so contact force stays bounded whatever the setpoint. Damping is set per axis as D = 2ζ√(K Λ_ii) with ζ = 1, using the task-space inertia Λ = (J M⁻¹ Jᵀ)⁻¹ at the start of the contact phase (4-8 kg translational, 0.1-0.3 kg·m² rotational, nearly constant over the insertion workspace). The control law needs no force measurement; the wrist F/T sensor is used only for contact detection and monitoring.
 
 **Gain selection.**
 - *Lateral* stiffness is low (300 N/m) and *axial* stiffness higher (1000 N/m). On a 45° chamfer with friction μ, a peg pushed with force P slides at most δ = P(1−μ)/(K_xy(1+μ)) before the lateral spring stalls it.
 - *Rotational* stiffness is 0.5 Nm/rad. The edge-contact torque on a 5 mm-radius peg is only ~0.05 Nm per 10 N, so higher values cannot realign the peg (Table 4).
 
-**Insertion.** After the joint-space approach (§3.2), the controller switches to impedance and moves the setpoint straight down to 5 mm below the nominal hole bottom. It moves at 1 cm/s, slowing to 2.5 mm/s within ±3 mm of the entrance. A leash pauses the setpoint whenever the tip lags it by more than 5 mm along the insertion axis. This caps the push at ≈5–6 N and prevents windup: without it, a peg held on the chamfer accumulated spring force and struck the hole wall at 57 mm/s (130 N) when it dropped in.
+**Insertion.** After the joint-space approach (§3.2), the controller switches to impedance and moves the setpoint straight down to 5 mm below the nominal hole bottom. It moves at 1 cm/s, slowing to 2.5 mm/s within ±3 mm of the entrance. A leash pauses the setpoint whenever the tip lags it by more than 5 mm along the insertion axis. This caps the push at ≈5-6 N and prevents windup: without it, a peg held on the chamfer accumulated spring force and struck the hole wall at 57 mm/s (130 N) when it dropped in.
 
 **Table 4** — Isolation checks (no insertion). Source: `results/compliance_check/`.
 
@@ -196,11 +196,11 @@ The impedance insert only succeeds when the offset lies within the chamfer's cap
 | **Re-anchoring** after a pause at the spiral point nearest the tip | The setpoint jumped ahead after every pause and immediately stalled again |
 | **Leaky stall timer** | A setpoint clamped at the leash flickers between stalled and free each step, so a hard reset never detected the stall |
 | **Hop**: when stalled on the flat top, or where centring has already failed, unload the peg for 0.15 s and sweep past | At μ = 0.8 the spiral stalled on friction, and centring on a flat surface moves the setpoint backwards along the friction force |
-| **Drop-speed governor**: while the tip falls faster than 3 mm/s, release the vertical spring and damp the fall to 3 mm/s | Sweeping off the flat top over the (lower) chamfer let the peg fall at ~20 mm/s; landing produced 30–53 N spikes |
+| **Drop-speed governor**: while the tip falls faster than 3 mm/s, release the vertical spring and damp the fall to 3 mm/s | Sweeping off the flat top over the (lower) chamfer let the peg fall at ~20 mm/s; landing produced 30-53 N spikes |
 
 The effect of these fixes is measured in §5.1: at μ = 0.8, 1 mm / ±5 mm, success rose from 55 % (sweep-only controller) to 100 %, and timeouts fell from 9 to 0.
 
-**Search-time bound.** Covering radius r takes a path length of ≈ πr²/p. For the ±5 mm uncertainty square (r ≈ 7.1 mm) that is ≈ 160 mm, or ~16 s at 10 mm/s, before pauses; in practice the hole is usually found within the first few turns: mean search time per cell is 0.7–8.4 s (longest single search 28.6 s, at μ = 0.8, 1 mm / ±5 mm), and 36 % of trials need no search at all.
+**Search-time bound.** Covering radius r takes a path length of ≈ πr²/p. For the ±5 mm uncertainty square (r ≈ 7.1 mm) that is ≈ 160 mm, or ~16 s at 10 mm/s, before pauses; in practice the hole is usually found within the first few turns: mean search time per cell is 0.7-8.4 s (longest single search 28.6 s, at μ = 0.8, 1 mm / ±5 mm), and 36 % of trials need no search at all.
 
 ### 3.7 Perception
 
@@ -213,20 +213,20 @@ classical CV, so every step is inspectable:
    image (the lit face is bright and saturated, and its edges stay sharp when depth is noisy), falling back to the
    depth face if the two disagree in area. Its pixels are intersected with the top plane, so the footprint is metric
    and free of perspective.
-3. **Lying connectors.** Regions 3–15 mm above the local table, excluding the fixture's neighbourhood (its hole floors
+3. **Lying connectors.** Regions 3-15 mm above the local table, excluding the fixture's neighbourhood (its hole floors
    sit at the same height) and upright parts' neighbourhoods (their side faces span all heights). The long axis comes
    from the principal direction of the back-projected points and the centre from the axis extremes.
 4. **Sockets.** The fixture's top surface is a plane with holes; each hole is filled and intersected with that plane.
    A square socket's yaw comes from its block's ~43 mm outer edges rather than its ~13 mm opening.
 5. **Identification.** An upright footprint is fitted with an equal-area circle and an equal-area square and labelled by
    the better overlap (IoU). A lying part is labelled from three cross-section cues averaged as normalised margins: how
-   much the top drops within ±3.5 mm of the ridge (a cylinder drops ~1.5 mm, a square top does not), the 2–98 % width,
+   much the top drops within ±3.5 mm of the ridge (a cylinder drops ~1.5 mm, a square top does not), the 2-98 % width,
    and the ridge height. A scene prior (exactly one round and one square) resolves the pair jointly.
 6. **Insertion end.** For a lying connector, the blue band's pixels (hue and saturation gated) decide which way the
    axis points.
 
 Convex-hull rectangularity and circularity were tried first and broke under depth noise (hulls inflate: 25 % of sockets
-misidentified at σ = 2 mm). Yaw from the depth minimum-area rectangle degraded to 1.5–3.2° p95 with noise, against
+misidentified at σ = 2 mm). Yaw from the depth minimum-area rectangle degraded to 1.5-3.2° p95 with noise, against
 0.47° from the colour outline at every level, which is why shape comes from colour and localisation from depth.
 
 ### 3.8 Grasp synthesis and the in-hand estimate
@@ -261,7 +261,7 @@ insertion controller, which starts from it rather than re-planning.
 it hangs down, and that does not cancel: up to ~5 mm. Two thresholds were then wrong. A connector resting on the
 fixture top looked 3 mm *inside* the hole, so search never started; and a seated connector looked past its goal, so the
 spring pushed with only 1.5 N and the completion check never fired. For sideways insertions the controller therefore
-judges surface contact and seating depth against *half the hole depth* (10 mm) instead of 2.5–5 mm, and keeps the
+judges surface contact and seating depth against *half the hole depth* (10 mm) instead of 2.5-5 mm, and keeps the
 setpoint one leash-length below the tip after the planned path ends, so the push stays ≈ 5 N.
 
 ### 3.10 Deciding an insertion is finished
@@ -277,7 +277,7 @@ The robot must decide completion without ground truth, and two independent check
   ~49 mm; one standing on the table beside the block, 20 mm), and be centred on the hole within half the clearance plus
   a perception margin. Both heights come from the same image at the same place, so the calibration bias largely
   cancels. The socket estimate used is the one from *before* insertion: with a connector standing in the hole, the
-  off-centre camera sees its side hide part of the fixture top and the detected opening shifts 0.7–1.7 mm outward.
+  off-centre camera sees its side hide part of the fixture top and the detected opening shifts 0.7-1.7 mm outward.
 
 The robot reports "done" only if both agree. §5.6 measures what each check is worth.
 
@@ -347,13 +347,13 @@ Across all 160 trials, spiral search had no timeouts and no force-cap violations
 
 | Cells | Spiral success [95 % CI] | Guarded success [95 % CI] | Only spiral / only guarded | McNemar p | Cycle time, both succeeded (spiral vs guarded) |
 |---|---|---|---|---|---|
-| 1 mm clearance (4 cells) | 100 % [0.84, 1.00] each | 50–60 % | 37 / 0 | ≤ 0.008 per cell | 11–18 s vs 28–31 s (median ratio 0.40–0.69) |
-| 3 mm clearance (4 cells) | 100 % [0.84, 1.00] each | 100 % | 0 / 0 | 1 | 10.7–15.4 s vs 7.1–17.7 s |
+| 1 mm clearance (4 cells) | 100 % [0.84, 1.00] each | 50-60 % | 37 / 0 | ≤ 0.008 per cell | 11-18 s vs 28-31 s (median ratio 0.40-0.69) |
+| 3 mm clearance (4 cells) | 100 % [0.84, 1.00] each | 100 % | 0 / 0 | 1 | 10.7-15.4 s vs 7.1-17.7 s |
 | All 160 trials | 100 % [0.98, 1.00] | 77 % [0.70, 0.83] | 37 / 0 | 1.5 × 10⁻¹¹ | 12.8 s vs 18.3 s (median ratio 0.94) |
 
 Spiral search is never worse than guarded retry on the same trial. It wins outright at 1 mm clearance, where guarded retry's random attempts rarely land inside the ~1 mm capture region within the budget. At 3 mm with ±2 mm uncertainty, guarded retry is faster (7 s vs 11 s) because spiral search always pays for the slow compliant touchdown.
 
-### 5.2 Clearance ratchet (weeks 2–3)
+### 5.2 Clearance ratchet (weeks 2-3)
 
 **Table 3a** — Success rate, 20 seeds per cell, uncertainty within the chamfer's capture range. Source: `results/ratchet_{straight,impedance}/summary.csv`. All 10 mm and 5 mm cells are 100 % for both controllers.
 
@@ -443,9 +443,9 @@ perception error that does not cancel on insertion.
 With one camera and upright parts, the calibration bias shifts the connector and its socket the same way, so it mostly
 cancels: the non-cancelling error stays ~1 mm and the chamfer absorbs it without search. Two things break that. Giving
 each object an independent ±2 mm error raises the non-cancelling error to ~3.3 mm p95 and search runs in up to 36 % of
-1 mm-clearance insertions (4–6 % at 3 mm). Reorienting a lying connector does the same thing for free: its along-axis
+1 mm-clearance insertions (4-6 % at 3 mm). Reorienting a lying connector does the same thing for free: its along-axis
 error becomes depth and lateral error once the part hangs down, so it searches about half the time under the realistic
-camera. Every search found the hole (206 of 206), taking 0.8–3.1 s on average, and a searched upright insertion took
+camera. Every search found the hole (206 of 206), taking 0.8-3.1 s on average, and a searched upright insertion took
 only ~1.1 s longer overall.
 
 ### 5.6 What each completion check is worth
@@ -463,10 +463,10 @@ one socket separates them:
 
 ![Visual height for clean and obstructed sockets](figures/f8_completion_checks.png)
 
-**Figure 8** — The connector's top height above its socket separates the two populations completely: 29.6–30.6 mm when
-seated, 33.6–34.2 mm when held up by 4 mm of debris. The force check cannot see the difference — the connector is
+**Figure 8** — The connector's top height above its socket separates the two populations completely: 29.6-30.6 mm when
+seated, 33.6-34.2 mm when held up by 4 mm of debris. The force check cannot see the difference — the connector is
 pushing, stopped, and within its depth window — while the camera can. The margin is only ~0.6 mm at 4 mm of debris,
-though, so obstructions of 2–3 mm fall in an ambiguous band between the ground-truth tolerance (2 mm) and the visual
+though, so obstructions of 2-3 mm fall in an ambiguous band between the ground-truth tolerance (2 mm) and the visual
 threshold (3 mm).
 
 ---
@@ -478,7 +478,7 @@ axis to 0.08 mm and seats at 1 mm clearance without touching the chamfer. Every 
 between the believed and the true pose, which is why the grids ratchet uncertainty rather than clearance alone.
 
 **Compliance and search do different jobs.** Impedance control lets the chamfer guide a peg that lands within its
-capture range — 100 % at ±2 mm — but it cannot find a hole it lands outside of, and falls to 20–45 % at ±5 mm.
+capture range — 100 % at ±2 mm — but it cannot find a hole it lands outside of, and falls to 20-45 % at ±5 mm.
 Contact-triggered search closes exactly that gap (Figure 2), at the cost of a second or two (Figure 3). Neither part is
 redundant: search without compliance would grind the peg across the fixture face, and compliance without search stalls
 where it lands (Figure 4).
@@ -499,7 +499,7 @@ average, with single-step peaks reported separately.
 camera's calibration error shifts a connector and its socket the same way, so it largely cancels at insertion: in-hand
 tip error reads ~4 mm against ground truth, yet upright insertions searched in 0.5 % of cases and every run succeeded.
 A pipeline can look robust while barely exercising the machinery that makes it robust. Two things expose it: giving
-each object an independent error (search rises to 26–36 % at 1 mm clearance), and reorienting a part, which converts an
+each object an independent error (search rises to 26-36 % at 1 mm clearance), and reorienting a part, which converts an
 error that used to cancel into one that does not — a lying connector's along-axis error becomes depth error once it
 hangs down, and those insertions search about half the time (Figure 7).
 
@@ -547,7 +547,7 @@ the friction grasp left as future work.
 1. E. Todorov, T. Erez and Y. Tassa. "MuJoCo: A physics engine for model-based control." *IEEE/RSJ International
    Conference on Intelligent Robots and Systems (IROS)*, 2012.
 2. Google DeepMind. *MuJoCo Menagerie: high-quality models for MuJoCo* (UR5e model), software repository.
-3. N. Hogan. "Impedance Control: An Approach to Manipulation, Parts I–III." *ASME Journal of Dynamic Systems,
+3. N. Hogan. "Impedance Control: An Approach to Manipulation, Parts I-III." *ASME Journal of Dynamic Systems,
    Measurement, and Control*, 107(1), 1985.
 4. B. Siciliano, L. Sciavicco, L. Villani and G. Oriolo. *Robotics: Modelling, Planning and Control.* Springer, 2009.
    (Damped least-squares inverse kinematics; operational-space and impedance control.)

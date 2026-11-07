@@ -62,7 +62,7 @@ class DepthNoise:
 
     sigma: float = 0.0  # [m] per-pixel Gaussian depth noise
     quantization: float = 0.0  # [m] depth resolution; 0 disables
-    rgb_sigma: float = 0.0  # [intensity levels, 0–255] per-pixel, per-channel Gaussian colour noise
+    rgb_sigma: float = 0.0  # [intensity levels, 0-255] per-pixel, per-channel Gaussian colour noise
     # Extrinsic calibration error: the calibration handed to perception is off from the true camera pose by a
     # fixed (per camera instance) random offset, uniform in ±calib_translation per axis and a rotation of up to
     # calib_rotation_deg about a random axis. Biases every estimate the same way, like a real hand-eye calibration.

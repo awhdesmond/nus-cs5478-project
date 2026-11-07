@@ -107,7 +107,7 @@ class GeometricEstimatorConfig:
     min_connector_px: int = 150
     min_hole_px: int = 150
     min_fixture_px: int = 2000
-    top_face_min_value: int = 200  # HSV value (0–255) of the lit top face; lower admits brightly lit side faces
+    top_face_min_value: int = 200  # HSV value (0-255) of the lit top face; lower admits brightly lit side faces
     top_face_min_saturation: int = 80  # HSV saturation: the connector colour, not grey fixture or table
     colour_area_ratio: tuple[float, float] = (0.6, 1.8)  # colour top face must be this size relative to depth's
     median_filter_px: int = 5  # depth median filter (odd, ≤ 5 for float images); 0 disables
@@ -120,15 +120,15 @@ class GeometricEstimatorConfig:
     upright_exclusion_px: int = 15  # dilation around upright connectors (their side faces span all heights)
     lying_central_half_length: float = 0.018  # [m] cross-section uses |along-axis| below this (away from the ends)
     lying_drop_half_width: float = 0.0035  # [m] top drop measured this far either side of the ridge
-    # Measured on 12 lying layouts at depth σ 0 / 1 / 2 mm: drop round 1.21–1.67 mm vs square −0.22–0.74 mm;
-    # 2–98 % width round 9.37–9.79 vs square 8.32–9.02 mm; ridge height round ≈ 10 vs square ≈ 8.5 mm.
+    # Measured on 12 lying layouts at depth σ 0 / 1 / 2 mm: drop round 1.21-1.67 mm vs square −0.22-0.74 mm;
+    # 2-98 % width round 9.37-9.79 vs square 8.32-9.02 mm; ridge height round ≈ 10 vs square ≈ 8.5 mm.
     lying_drop_split: tuple[float, float] = (0.00073, 0.00073)  # [m] (midpoint, half-span)
     lying_width_split: tuple[float, float] = (0.0092, 0.00075)
     lying_ridge_split: tuple[float, float] = (0.00925, 0.00075)
     lying_score_scale: float = 0.15  # maps the averaged margin onto the upright IoU-difference scale for the prior
-    # Tip band (blue): hue 107–112, saturation ≥ 143 when rendered; the table shares the hue but not the saturation
-    # (≤ 30), the fixture reaches saturation 64, the amber connector body has hue 21–30.
-    band_hue: tuple[int, int] = (95, 125)  # OpenCV hue (0–179)
+    # Tip band (blue): hue 107-112, saturation ≥ 143 when rendered; the table shares the hue but not the saturation
+    # (≤ 30), the fixture reaches saturation 64, the amber connector body has hue 21-30.
+    band_hue: tuple[int, int] = (95, 125)  # OpenCV hue (0-179)
     band_min_saturation: int = 100
     min_band_px: int = 40
 

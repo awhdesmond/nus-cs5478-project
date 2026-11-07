@@ -33,7 +33,7 @@ class SceneConfig:
     # Physics
     timestep: float = 0.001  # try 0.0005 if contact jitters
     # Sliding friction. 0.3 ≈ brass/tin-plated pins in plastic housings (main setting); 0.8 (dry steel-on-steel)
-    # is used as a high-friction benchmark. Dominant factor for chamfer-guided insertion: see weeks 2–3 findings.
+    # is used as a high-friction benchmark. Dominant factor for chamfer-guided insertion: see weeks 2-3 findings.
     friction: float = 0.3
     elliptic_cone: bool = True
     # Stiffer-than-default contact, applied to socket AND peg (MuJoCo averages the pair).
@@ -68,7 +68,7 @@ class ImpedanceConfig:
 
     # Soft laterally, stiff along the insertion axis. On a 45° chamfer with friction μ, a peg pushed with
     # force P slides at most δ = P(1−μ)/(K_xy(1+μ)) before the lateral spring stalls it, so K_xy must be low.
-    # Sweep at 1 mm clearance, ±2 mm: K_xy 1000 → 70–80% success (μ=0.3); K_xy ≤ 300 → 100%, no cap violations.
+    # Sweep at 1 mm clearance, ±2 mm: K_xy 1000 → 70-80% success (μ=0.3); K_xy ≤ 300 → 100%, no cap violations.
     stiffness_pos: tuple[float, float, float] = (300.0, 300.0, 1000.0)  # [N/m]
     # 4° commanded tilt pressed at 15 N ends at 0.01° for K_rot ≤ 0.5, 0.9° at 1.0, 2.1° at 2.0, 3.8° at 20.
     stiffness_rot: tuple[float, float, float] = (0.5, 0.5, 0.5)  # [Nm/rad]
@@ -101,7 +101,7 @@ class SpiralSearchConfig:
     # Sweep lightly (friction drag μ·F must stay well under the lateral leash force), push harder when paused.
     search_force: float = 2.0  # [N] normal push while sweeping (setpoint held search_force/K_z below contact height)
     # Normal push while paused on the chamfer, from a setpoint anchored below the CONTACT height so the spring relaxes
-    # as the peg drops (a setpoint tracking the tip kept pushing and drove the peg into the hole wall, 32–72 N).
+    # as the peg drops (a setpoint tracking the tip kept pushing and drove the peg into the hole wall, 32-72 N).
     pause_force: float = 5.0  # [N]
     search_stiffness_xy: float = 1500.0  # [N/m] stiffer laterally while searching so friction drag (μ·F/K) doesn't distort the spiral
     # Radial spacing between turns. Must not exceed the capture width. At high friction the chamfer barely funnels
@@ -131,7 +131,7 @@ class SpiralSearchConfig:
     center_gain: float = 0.01  # [m/s per N]
     center_speed_max: float = 0.005  # [m/s]
     # Drop-speed governor: when the sweep carries the peg off the flat top over the (lower) chamfer or hole, it is
-    # briefly airborne and falls toward the setpoint; landing at ~20 mm/s gave 30–53 N spikes (≈2.7 N per mm/s).
+    # briefly airborne and falls toward the setpoint; landing at ~20 mm/s gave 30-53 N spikes (≈2.7 N per mm/s).
     # While falling faster than this, the vertical spring is released and damping holds the fall to this speed.
     max_drop_speed: float = 0.003  # [m/s]
 
@@ -160,7 +160,7 @@ class SensorConfig:
 @dataclass
 class UncertaintyConfig:
     # Offset between believed and true socket pose; the controller only sees the believed pose.
-    translation_max: float = 0.0  # [m], ratchet 0 → small → 0.005–0.010
+    translation_max: float = 0.0  # [m], ratchet 0 → small → 0.005-0.010
     rotation_max_deg: float = 0.0  # ratchet after translation, target ±5°
 
 

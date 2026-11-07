@@ -40,7 +40,7 @@ def joint_pd_torque(
 def bias_torque(model: mujoco.MjModel, data: mujoco.MjData, qpos_adr, dof_adr, q, qd) -> np.ndarray:
     """Gravity + Coriolis joint torques at (q, q̇), computed on a scratch MjData.
 
-    For controllers that only have observations: runs kinematics and recursive Newton–Euler
+    For controllers that only have observations: runs kinematics and recursive Newton-Euler
     with zero acceleration, skipping collision detection.
     """
     data.qpos[qpos_adr] = q

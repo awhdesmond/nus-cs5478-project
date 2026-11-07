@@ -1,4 +1,4 @@
-"""Assembly benchmark (M3–M5): perception-driven pick and compliant insertion of both connectors over random layouts.
+"""Assembly benchmark (M3-M5): perception-driven pick and compliant insertion of both connectors over random layouts.
 
     uv run python scripts/assembly_benchmark.py                               # default grid, 20 layouts per cell
     uv run python scripts/assembly_benchmark.py --layouts 5 --clearances 0.003 --frictions 0.3 --conditions ideal

@@ -10,6 +10,19 @@ class PlanarPose:
     yaw: float = 0.0
 
 
+PEGS = ("round", "square")
+
+@dataclass
+class PegPose(PlanarPose):
+    """A peg's pose on the table.
+
+    Upright: standing on its marked (insertion) end, turned by yaw. Lying: on its side (the square peg on a
+    face) with its long axis horizontal along (cos yaw, sin yaw), pointing from the marked end to the top.
+    """
+
+    lying: bool = False   # inherits x, y, yaw from PlanarPose and adds this one field
+
+
 @dataclass
 class SceneConfig:
     # --- Physics ---------------------------------------------------------------------------
@@ -36,9 +49,25 @@ class SceneConfig:
     # peg's 12.0 mm diagonal is wider than the round hole's widest point.
     round_radius: float = 0.005  # [m]
     square_half: float = 0.00425  # [m] half of 8.5 mm across the flats
+    peg_length: float = 0.050  # [m] marked end to top
+
+    # A blue band (visual only: no mass, no contact) marks each peg's insertion end, so the camera can tell
+    # which way a lying peg points.
+    tip_band_length: float = 0.008  # [m]
+
+    # A lying cylinder rocks and rolls away in MuJoCo with sliding friction alone.
+    # A little rolling friction, like a real plastic part's, holds it still.
+    round_rolling_friction: float = 0.001  # [m]
+
+    # Default poses; sample_layout (sim/layout.py) draws new ones per trial.
+    peg_poses: dict[str, PegPose] = field(default_factory=lambda: {
+        "round": PegPose(0.05, 0.45),
+        "square": PegPose(0.12, 0.55, 0.3),
+    })
+
 
     # --- Ports -----------------------------------------------------------------------------
-    clearance: float = 0.001  # [m] hole width minus peg width (proposal grid: 1–3 mm)
+    clearance: float = 0.001  # [m] hole width minus peg width (proposal grid: 1-3 mm)
 
     # MuJoCo collides with a mesh's convex hull, which would fill a hole in, so holes are built from
     # boxes; the round hole is a 16-sided polygon.
@@ -54,6 +83,24 @@ class SceneConfig:
         "round": PlanarPose(-0.16, 0.47, 0.0),
         "square": PlanarPose(-0.10, 0.53, 0.4),
     })
+
+    # --- Layout areas --------
+    # Pick zone: where the pegs start. Lying pegs must lie wholly inside it.
+    pick_area_center: tuple[float, float] = (0.085, 0.50)
+    pick_area_half: tuple[float, float] = (0.075, 0.10)
+
+    # Between peg axes (centres if upright): open fingers reach 21 mm either side of a peg being grasped,
+    # so this keeps them off the other peg.
+    min_peg_spacing: float = 0.06  # [m]
+
+    # Port area: where the port blocks' centres go, left of the pick zone, with room for a block at any yaw
+    # to stay in the camera's view.
+    port_area_center: tuple[float, float] = (-0.15, 0.50)
+    port_area_half: tuple[float, float] = (0.05, 0.08)
+
+    # Between port centres: fingers inserting the second peg (±10 mm when closed) stay clear of the first peg,
+    # which stands 30 mm out of its port.
+    min_port_spacing: float = 0.06  # [m]
 
     # --- Table -----------------------------------------------------------------------------
     table_height: float = 0.17  # [m] table top above the floor

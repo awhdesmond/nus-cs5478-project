@@ -110,3 +110,80 @@ def test_ports_sit_at_their_configured_poses():
                                    atol=1e-12)
         rot = data.site(f"{kind}_port_bottom").xmat.reshape(3, 3)
         assert math.atan2(rot[1, 0], rot[0, 0]) == pytest.approx(pose.yaw)
+
+# --- 1c: pegs and seeded layouts -------------------------------------------------------------
+
+from sim.config import PEGS
+from sim.layout import ORIENTATIONS, peg_axis_segment, sample_layout, segment_distance
+
+
+def test_segment_distance_known_cases():
+    p = lambda x, y: np.array([x, y], dtype=float)
+    assert segment_distance(p(0, 0), p(1, 0), p(0, 1), p(1, 1)) == pytest.approx(1.0)   # parallel, 1 apart
+    assert segment_distance(p(0, 0), p(2, 2), p(0, 2), p(2, 0)) == 0.0                 # crossing
+    assert segment_distance(p(0, 0), p(1, 0), p(2, 0), p(2, 0)) == pytest.approx(1.0)   # segment to a point
+    assert segment_distance(p(0, 0), p(0, 0), p(3, 4), p(3, 4)) == pytest.approx(5.0)   # point to point
+
+
+@pytest.mark.parametrize("orientation", ORIENTATIONS)
+def test_layouts_are_seeded_in_bounds_and_spaced(orientation):
+    cfg = SceneConfig()
+    pick_lo = np.array(cfg.pick_area_center) - cfg.pick_area_half
+    pick_hi = np.array(cfg.pick_area_center) + cfg.pick_area_half
+    port_lo = np.array(cfg.port_area_center) - cfg.port_area_half
+    port_hi = np.array(cfg.port_area_center) + cfg.port_area_half
+    lying_seen = set()
+    for seed in range(40):
+        layout = sample_layout(cfg, seed, orientation)
+        assert layout == sample_layout(cfg, seed, orientation)  # same seed, same layout
+        segments = [peg_axis_segment(cfg, layout.peg_poses[k]) for k in PEGS]
+        for seg in segments:
+            for end in seg:
+                assert np.all(end >= pick_lo - 1e-12) and np.all(end <= pick_hi + 1e-12)
+        assert segment_distance(*segments[0], *segments[1]) >= cfg.min_peg_spacing
+        ports = [layout.port_poses[k] for k in PEGS]
+        for pose in ports:
+            assert np.all(np.array([pose.x, pose.y]) >= port_lo) and np.all(np.array([pose.x, pose.y]) <= port_hi)
+        assert math.dist((ports[0].x, ports[0].y), (ports[1].x, ports[1].y)) >= cfg.min_port_spacing
+        lying_seen |= {layout.peg_poses[k].lying for k in PEGS}
+    assert lying_seen == {"upright": {False}, "mixed": {False, True}, "lying": {True}}[orientation]
+
+
+def test_peg_tips_start_where_the_layout_says():
+    cfg = sample_layout(SceneConfig(), 3, "lying")
+    model = build_model(cfg)
+    data = start_at_home(model)
+    mujoco.mj_forward(model, data)
+    for kind in PEGS:
+        pose = cfg.peg_poses[kind]
+        tip = data.site(f"{kind}_tip").xpos
+        # Lying: the marked end is half a length *behind* the centre along the yaw direction.
+        expected = np.array([pose.x, pose.y]) - cfg.peg_length / 2 * np.array([math.cos(pose.yaw), math.sin(pose.yaw)])
+        np.testing.assert_allclose(tip[:2], expected, atol=1e-9)
+
+
+def test_home_keyframe_still_puts_the_arm_at_home(model):
+    """The rebuilt keyframe keeps the menagerie's arm angles."""
+    from sim.ur5e import load_stock_ur5e
+    stock = load_stock_ur5e()
+    np.testing.assert_allclose(model.key("home").qpos[:6], stock.key("home").qpos)
+
+
+@pytest.mark.parametrize("orientation", ["upright", "mixed", "lying"])
+def test_pegs_rest_still(orientation):
+    """Pegs dropped into the scene settle and stay put for 2 s, touching nothing but the table."""
+    cfg = sample_layout(SceneConfig(), 1, orientation)
+    model = build_model(cfg)
+    data = start_at_home(model)
+    q_home = data.qpos[:6].copy()
+    kp = np.array([400, 400, 400, 100, 100, 50.0])
+    kd = np.array([40, 40, 40, 10, 10, 5.0])
+    mujoco.mj_forward(model, data)
+    start = {k: data.body(f"{k}_peg").xpos.copy() for k in PEGS}
+    for _ in range(2000):
+        data.ctrl[:] = data.qfrc_bias[:6] + kp * (q_home - data.qpos[:6]) - kd * data.qvel[:6]
+        mujoco.mj_step(model, data)
+    for kind in PEGS:
+        assert np.linalg.norm(data.body(f"{kind}_peg").xpos - start[kind]) < 1e-4   # moved less than 0.1 mm
+    touching = {tuple(sorted((model.geom(c.geom1).name, model.geom(c.geom2).name))) for c in data.contact[:data.ncon]}
+    assert touching <= {("round_peg", "table"), ("square_peg", "table")}, touching
