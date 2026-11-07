@@ -260,3 +260,62 @@ def test_ft_sensor_reads_the_gripper_weight_at_rest():
     weight = sim.model.body_subtreemass[sim.gripper_body] * 9.81   # gripper + fingers [N]
     assert np.linalg.norm(sim.ft_raw()[:3]) == pytest.approx(weight, rel=0.01)
 
+
+# --- 1e: overhead camera and ready pose ------------------------------------------------------
+
+
+def test_ready_pose_puts_the_tool_down_at_ready_tcp():
+    cfg = SceneConfig()
+    sim = Sim(build_model(cfg), cfg)
+    sim.reset("ready")
+    tcp = sim.data.site("tcp")
+    np.testing.assert_allclose(tcp.xpos, cfg.ready_tcp, atol=1e-4)            # within 0.1 mm
+    # "Tool down": the tcp's z axis (out of the flange) points along world -z.
+    np.testing.assert_allclose(tcp.xmat.reshape(3, 3)[:, 2], [0, 0, -1], atol=1e-3)
+
+
+def test_camera_matches_the_proposal():
+    cfg = SceneConfig()
+    model = build_model(cfg)
+    cam = model.camera("overhead")
+    assert model.cam_fovy[cam.id] == 25.0
+    assert cfg.camera_pos[2] - cfg.table_height == pytest.approx(0.75)
+    assert model.vis.global_.offwidth >= 1280 and model.vis.global_.offheight >= 960
+    assert not model.light_castshadow.any()
+
+
+def robot_geoms(model):
+    """Every geom on the robot: bodies from the arm's base down to the fingertips."""
+    base = model.body("base").id
+
+    def on_robot(body):
+        while body > 0:  # walk up the body tree; body 0 is the world
+            if body == base:
+                return True
+            body = model.body_parentid[body]
+        return False
+
+    return [g for g in range(model.ngeom) if on_robot(model.geom_bodyid[g])]
+
+
+@pytest.mark.parametrize("seed", range(6))
+def test_from_ready_the_camera_sees_both_pegs_and_ports_whole_and_no_arm(seed):
+    cfg = sample_layout(SceneConfig(), seed, "mixed")
+    sim = Sim(build_model(cfg), cfg)
+    sim.reset("ready")
+    model = sim.model
+    # Segmentation rendering: each pixel holds (object id, object type) instead of a colour.
+    with mujoco.Renderer(model, 240, 320) as renderer:   # low resolution keeps the test fast
+        renderer.enable_segmentation_rendering()
+        renderer.update_scene(sim.data, camera="overhead")
+        seg = renderer.render()
+    geom = np.where(seg[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, seg[..., 0], -1)  # geom id per pixel, -1 if none
+    border = np.concatenate([geom[0], geom[-1], geom[:, 0], geom[:, -1]])
+
+    assert not np.isin(geom, robot_geoms(model)).any()   # not a single arm or gripper pixel
+    for kind in PEGS:
+        peg = [model.geom(f"{kind}_peg").id]
+        port = [g for g in range(model.ngeom) if model.geom_bodyid[g] == model.body(f"{kind}_port").id]
+        for obj in (peg, port):
+            assert np.isin(geom, obj).any()               # visible...
+            assert not np.isin(border, obj).any()         # ...and not cut off by the image edge

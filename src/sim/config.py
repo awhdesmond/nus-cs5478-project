@@ -99,6 +99,22 @@ class SceneConfig:
     finger_friction: float = 1.0  # rubber-like pads
 
 
+    # --- Overhead camera ---
+    # Above the middle of the work area, looking straight down. From here one pixel covers about 0.34 mm of
+    # table, so a 10 mm peg top is ~30 pixels across: enough to tell a circle from a square.
+    camera_pos: tuple[float, float, float] = (-0.03, 0.50, 0.92)  # 0.92 = table 0.17 + 0.75
+    camera_fovy: float = 25.0  # [deg]
+    image_width: int = 1280
+    image_height: int = 960
+
+    # --- Ready pose: where the arm waits while the camera takes pictures ------------------------------
+    # Tool pointing down, tcp at ready_tcp above the table's near edge, between the arm's base and the table.
+    # From here no part of the arm is in the camera's view, whatever the layout. ready_arm are the joint
+    # angles for that pose, solved once with inverse kinematics (step 3 adds IK; a test checks them now).
+    ready_tcp: tuple[float, float, float] = (-0.05, 0.28, 0.40)
+    ready_arm: tuple[float, ...] = (-1.8846, -2.1625, 2.0185, -1.4268, -1.5708, -0.3138)  # [rad]
+
+
     # --- Layout areas --------
     # Pick zone: where the pegs start. Lying pegs must lie wholly inside it.
     pick_area_center: tuple[float, float] = (0.085, 0.50)

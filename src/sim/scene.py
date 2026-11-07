@@ -209,8 +209,21 @@ def add_attach_weld(spec: mujoco.MjSpec, kind: str) -> None:
                       data=[0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], **RIGID)
 
 
-def rebuild_keyframes(spec: mujoco.MjSpec) -> None:
-    """Re-create the `home` keyframe for the bigger model.
+def add_camera(spec: mujoco.MjSpec, cfg: SceneConfig) -> None:
+    """The fixed overhead RGB-D camera `overhead`.
+
+    A MuJoCo camera looks along its own -z axis with +y up in the image, so the identity orientation looks
+    straight down, with image "up" pointing to world +y.
+    """
+    spec.worldbody.add_camera(name="overhead", pos=list(cfg.camera_pos), quat=[1, 0, 0, 0], fovy=cfg.camera_fovy)
+    # Offscreen rendering draws into a buffer that defaults to 640 × 480; it must fit the full image.
+    spec.visual.global_.offwidth = max(spec.visual.global_.offwidth, cfg.image_width)
+    spec.visual.global_.offheight = max(spec.visual.global_.offheight, cfg.image_height)
+
+
+def rebuild_keyframes(spec: mujoco.MjSpec, cfg: SceneConfig) -> None:
+    """Re-create the keyframes for the bigger model: `home` (the menagerie's) and `ready` (the camera pose).
+
 
     A keyframe stores the whole qpos vector. The menagerie's `home` was saved for the 6 arm joints only, so
     once the pegs' free joints exist it no longer fits and compiling would fail. Rebuild it: arm at the
@@ -220,11 +233,11 @@ def rebuild_keyframes(spec: mujoco.MjSpec) -> None:
     for key in list(spec.keys):
         spec.delete(key)
     model = spec.compile()  # compile once to learn the full qpos layout
-    qpos = model.qpos0.copy()
-    for joint, angle in zip(UR5E_JOINTS, arm_home):
-        qpos[model.joint(joint).qposadr[0]] = angle  # look joints up by name, not position
-    spec.add_key(name="home", qpos=qpos.tolist(), ctrl=[0.0] * model.nu)
-
+    for name, arm in (("home", arm_home), ("ready", cfg.ready_arm)):
+        qpos = model.qpos0.copy()
+        for joint, angle in zip(UR5E_JOINTS, arm):
+            qpos[model.joint(joint).qposadr[0]] = angle  # look joints up by name, not position
+        spec.add_key(name=name, qpos=qpos.tolist(), ctrl=[0.0] * model.nu)
 
 def build_spec(cfg: SceneConfig) -> mujoco.MjSpec:
     """The scene before compiling, so later parts (and tests) can keep adding to it."""
@@ -232,14 +245,19 @@ def build_spec(cfg: SceneConfig) -> mujoco.MjSpec:
     spec.option.timestep = cfg.timestep
     if cfg.elliptic_cone:
         spec.option.cone = mujoco.mjtCone.mjCONE_ELLIPTIC
+
+    for light in spec.lights:
+        light.castshadow = False
+
     add_table(spec, cfg)
     add_gripper(spec, cfg)
     add_ft_sensor(spec)
+    add_camera(spec, cfg)
     for kind in PEGS:
         add_port(spec, cfg, kind)
         add_peg(spec, cfg, kind)
         add_attach_weld(spec, kind)
-    rebuild_keyframes(spec)  # last: needs every joint in place
+    rebuild_keyframes(spec, cfg)  # last: needs every joint in place
     return spec
 
 
