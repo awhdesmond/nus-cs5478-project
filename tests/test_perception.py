@@ -84,3 +84,39 @@ def test_depth_noise_is_seeded_and_has_the_configured_spread(scene):
     np.testing.assert_array_equal(a.depth, b.depth)       # same seed, same noise
     np.testing.assert_array_equal(a.rgb, clean.rgb)       # colour is untouched
     assert np.std(a.depth - clean.depth) == pytest.approx(0.002, rel=0.02)
+
+# --- 2b: segmentation ----------------------------------------------------------------------------
+
+from perception.segment import segment
+
+
+def body_ids(sim):
+    """Ground truth for tests: which body each pixel shows (-1 = none)."""
+    geoms = geom_ids(sim)
+    return np.where(geoms >= 0, sim.model.geom_bodyid[np.maximum(geoms, 0)], -1)
+
+
+@pytest.mark.parametrize("noise", [0.0, 0.002])
+def test_segmentation_finds_two_pegs_and_two_blocks(noise):
+    for seed in range(5):
+        cfg = replace(sample_layout(SceneConfig(), seed), depth_noise=noise)
+        sim = Sim(build_model(cfg), cfg)
+        sim.reset("ready")
+        with OverheadCamera(sim.model, cfg) as camera:
+            seg = segment(camera.capture(sim.data, np.random.default_rng(seed)))
+        assert abs(seg.table_z - cfg.table_height) < 0.0003       # table found to 0.3 mm
+        assert len(seg.of_kind("peg")) == 2 and len(seg.of_kind("block")) == 2, (seed, seg.regions)
+
+        bodies = body_ids(sim)
+        for region in seg.regions:
+            # The ground-truth body this region mostly covers, and how well they agree.
+            ids, n = np.unique(bodies[region.mask], return_counts=True)
+            body = ids[np.argmax(n)]
+            name = sim.model.body(body).name
+            assert name.endswith("_peg" if region.kind == "peg" else "_port"), (seed, name, region.kind)
+            truth = bodies == body
+            # Almost all of the object's pixels are found; the bottom 6 mm of a peg's side is below threshold.
+            assert (region.mask & truth).sum() / truth.sum() > 0.9, (seed, name)
+            assert (region.mask & ~truth).sum() / region.mask.sum() < 0.02, (seed, name)  # few strays
+            nominal = sim.cfg.peg_length if region.kind == "peg" else sim.cfg.port_base + sim.cfg.port_depth
+            assert abs(region.top - nominal) < 0.0005, (seed, name, region.top)        # top within 0.5 mm
