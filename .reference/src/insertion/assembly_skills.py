@@ -141,7 +141,7 @@ class ConnectorLog:
     identified_correctly: bool = False  # the estimate labelled with this kind lies on the true connector of this kind
     connector_xy_error_mm: float = float("nan")  # upright: top centre; lying: axis centre
     socket_xy_error_mm: float = float("nan")  # entrance centre
-    relative_xy_error_mm: float = float("nan")  # |connector error − socket error|: what doesn't cancel on insertion
+    relative_xy_error_mm: float = float("nan")  # |connector error - socket error|: what doesn't cancel on insertion
     cycle_time: float = float("nan")  # [s] pick start → post-release capture and check (or the recapture after a failed pick)
     peak_force_10ms: float = 0.0  # [N] ground-truth connector contact force (excluding fingers)
     insert_time: float = float("nan")  # [s]
@@ -175,7 +175,7 @@ def visual_seating(connector: ConnectorEstimate | None, socket: SocketEstimate |
                    height_tolerance: float = 0.003, xy_margin: float = 0.001) -> tuple[bool, float, float]:
     """Is the connector seated in the socket, judged from an overhead capture? Returns (seated, height, offset) [m].
 
-    A seated connector's top stands connector_length − socket_depth (30 mm) above the fixture top; one resting on
+    A seated connector's top stands connector_length - socket_depth (30 mm) above the fixture top; one resting on
     the chamfer stands ~49 mm, one wedged part-way in somewhere between. The gap is many times the depth noise, and
     the same camera's calibration bias largely cancels between the two estimates.
 
@@ -416,7 +416,7 @@ class AssemblyRun:
         width = 2 * connector_half_width(cfg, kind)
         tcp_xy = estimate.centre[:2] + axis * (cfg.connector_length / 2 - cfg.grasp_below_top)
         tcp = np.array([*tcp_xy, estimate.centre[2] + cfg.lying_fingertip_clearance + PAD_DEPTH])
-        # tool_down(yaw) closes along yaw − 90° and has its x axis along yaw: put the connector axis along tool ±x,
+        # tool_down(yaw) closes along yaw - 90° and has its x axis along yaw: put the connector axis along tool ±x,
         # choosing the wrist yaw nearest zero.
         yaw = math.atan2(axis[1], axis[0])
         tool_yaw = min((math.remainder(yaw + k * math.pi, 2 * math.pi) for k in (0, 1)), key=abs)
@@ -443,7 +443,7 @@ class AssemblyRun:
         """Connector tip in the tool frame.
 
         Along the closing axis (tool y) the connector sits midway between the finger pads, which the finger
-        joint positions give directly (the left pad closes toward −y, the right toward +y): y = (right − left)/2.
+        joint positions give directly (the left pad closes toward -y, the right toward +y): y = (right - left)/2.
         Across the fingers and in height, use the perceived connector top. A square gripped across its flats is
         squared up to the fingers, so its axes align with the tool's.
         """

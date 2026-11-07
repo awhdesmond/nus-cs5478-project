@@ -136,7 +136,7 @@ def connector_body_pose(cfg: AssemblyConfig, kind: str, pose: ConnectorPose) -> 
     """Resting body position and quaternion for a connector pose (upright on its marked end, or lying).
 
     The body's +z runs from the marked insertion end (`tip` site) to the top. Lying: +z points along
-    (cos yaw, sin yaw), so the marked end is at centre − (cos yaw, sin yaw)·L/2."""
+    (cos yaw, sin yaw), so the marked end is at centre - (cos yaw, sin yaw)·L/2."""
     q_yaw = np.array([math.cos(pose.yaw / 2), 0, 0, math.sin(pose.yaw / 2)])
     if not pose.lying:
         return np.array([pose.x, pose.y, cfg.table_height + cfg.connector_length / 2]), q_yaw
@@ -244,11 +244,11 @@ def add_cable(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
     cable = mujoco.MjSpec.from_string(xml)
     x, y = cfg.cable_anchor
     axis_height = cfg.square_half + 0.0005  # plug A rests just above the table
-    # The composite runs along the clamp's +x; turn it 180° about z so the cable points off the table's left edge (−x).
+    # The composite runs along the clamp's +x; turn it 180° about z so the cable points off the table's left edge (-x).
     frame = spec.worldbody.add_frame(pos=[x, y, cfg.table_height + axis_height], quat=[0, 0, 0, 1])
     frame.attach_body(cable.body("clamp"), "cable_", "")
 
-    # End A: plug pointing back onto the table (clamp −x), inserted socket-depth deep into a port block.
+    # End A: plug pointing back onto the table (clamp -x), inserted socket-depth deep into a port block.
     clamp = spec.body("cable_clamp")
     _add_cable_plug(clamp, "cable_plug_a", [0, 0, 0], [0, 0, 0, 1], cfg)
     exposed = cfg.cable_boot_length + cfg.cable_plug_length - cfg.socket_depth  # boot + plug length left outside the port
@@ -265,7 +265,7 @@ def add_cable(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
 
 
 def add_camera(spec: mujoco.MjSpec, cfg: AssemblyConfig) -> None:
-    """Overhead camera: MuJoCo cameras look along their −z, so identity orientation looks straight down."""
+    """Overhead camera: MuJoCo cameras look along their -z, so identity orientation looks straight down."""
     spec.worldbody.add_camera(name="overhead", pos=list(cfg.camera_pos), quat=[1, 0, 0, 0], fovy=cfg.camera_fovy)
     spec.visual.global_.offwidth = max(spec.visual.global_.offwidth, cfg.image_width)
     spec.visual.global_.offheight = max(spec.visual.global_.offheight, cfg.image_height)

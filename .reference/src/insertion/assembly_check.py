@@ -25,7 +25,7 @@ def rot_z(yaw: float) -> np.ndarray:
 
 
 def tool_down(yaw: float) -> np.ndarray:
-    """Tool (tcp) frame pointing straight down; fingers close along the world direction yaw − 90°."""
+    """Tool (tcp) frame pointing straight down; fingers close along the world direction yaw - 90°."""
     return rot_z(yaw) @ np.diag([1.0, -1.0, -1.0])
 
 

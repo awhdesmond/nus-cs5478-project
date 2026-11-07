@@ -7,13 +7,13 @@ normals of its top-face outline (from the camera). For each candidate closing di
   `patch_depth` of the extreme, and its normal comes from a line fit over the whole patch (a longer
   baseline than local outline normals, which pixel staircasing biases by a few degrees);
 - the grasp is antipodal (force closure with two contacts) if the line between the contacts lies inside
-  both friction cones, i.e. the angle between each patch normal and ±d is ≤ atan(μ) − margin;
+  both friction cones, i.e. the angle between each patch normal and ±d is ≤ atan(μ) - margin;
 - a patch shorter than `min_patch_length` is a corner or edge contact that would twist, so it is rejected;
 - the grasp must fit the gripper opening and keep the fingers clear of any other object.
 
 Candidates are ranked by friction-cone margin (then patch length), with a small preference for tool yaws
 near the current wrist yaw. Each passing candidate's direction is then refined (twice) to the mean of its two
-patch normals (n_hi − n_lo), so a square is gripped square-on to its flats rather than anywhere inside the
+patch normals (n_hi - n_lo), so a square is gripped square-on to its flats rather than anywhere inside the
 passing window of the direction grid. For a square this selects closing across opposite flats; for a round connector
 any diameter passes.
 """
@@ -42,7 +42,7 @@ class GraspConfig:
 @dataclass
 class GraspProposal:
     tcp: np.ndarray  # tcp position (finger pad centre), world [m]
-    tool_yaw: float  # yaw for `tool_down`: fingers close along the world direction tool_yaw − 90°
+    tool_yaw: float  # yaw for `tool_down`: fingers close along the world direction tool_yaw - 90°
     closing_angle: float  # world angle of the closing direction d [rad]
     width: float  # [m] object width along d
     friction_margin_deg: float
@@ -138,7 +138,7 @@ def propose_grasps(
             finger_centres = [centre + d * finger_reach, centre - d * finger_reach]
             if any(np.linalg.norm(f - o) < cfg.keepout_radius for f in finger_centres for o in obstacles_xy):
                 continue
-        # Closing along d or −d is the same grasp; pick the tool yaw nearest the preference.
+        # Closing along d or -d is the same grasp; pick the tool yaw nearest the preference.
         options = [theta + math.pi / 2 + k * math.pi for k in (-2, -1, 0, 1, 2)]
         tool_yaw = math.remainder(min(options, key=lambda y: abs(math.remainder(y - preferred_tool_yaw, 2 * math.pi))), 2 * math.pi)
         yaw_away = abs(math.degrees(math.remainder(tool_yaw - preferred_tool_yaw, 2 * math.pi)))

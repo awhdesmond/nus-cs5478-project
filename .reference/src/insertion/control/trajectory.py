@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-# Peak |ṡ| and |s̈| of the quintic blend s(τ) = 10τ³ − 15τ⁴ + 6τ⁵ on τ ∈ [0, 1].
+# Peak |ṡ| and |s̈| of the quintic blend s(τ) = 10τ³ - 15τ⁴ + 6τ⁵ on τ ∈ [0, 1].
 QUINTIC_PEAK_VEL = 1.875
 QUINTIC_PEAK_ACC = 10 / math.sqrt(3)
 

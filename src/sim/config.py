@@ -84,6 +84,21 @@ class SceneConfig:
         "square": PlanarPose(-0.10, 0.53, 0.4),
     })
 
+    # --- Gripper (a parallel jaw on the flange; the fingers close along the gripper's own y axis) --------
+    finger_open_gap: float = 0.030  # [m] between the finger pads when fully open: room for a 10 mm peg ± 10 mm
+    finger_length: float = 0.050  # [m]
+    finger_width: float = 0.016  # [m] along the gripper's x
+    finger_thickness: float = 0.006  # [m] along the closing direction
+    palm_offset: float = 0.030  # [m] flange to the finger roots
+    pad_depth: float = 0.008  # [m] the tool centre point (tcp) sits this far above the fingertips
+    grip_force: float = 20.0  # [N] the finger motor's force limit
+
+    # Closing speed limit, as on a real gripper. Without it the fingers slammed shut in ~27 ms in the first
+    # attempt, bit into the peg unevenly and knocked it off-centre in the hand.
+    finger_speed: float = 0.02  # [m/s] per finger
+    finger_friction: float = 1.0  # rubber-like pads
+
+
     # --- Layout areas --------
     # Pick zone: where the pegs start. Lying pegs must lie wholly inside it.
     pick_area_center: tuple[float, float] = (0.085, 0.50)

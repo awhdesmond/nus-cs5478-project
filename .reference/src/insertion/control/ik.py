@@ -2,7 +2,7 @@
 
 Each iteration takes a damped least-squares step on the stacked position + orientation error
 
-    Δq = Jᵀ (J Jᵀ + λ² I)⁻¹ e,     e = [p* − p,  ½ Σᵢ rᵢ × r*ᵢ]
+    Δq = Jᵀ (J Jᵀ + λ² I)⁻¹ e,     e = [p* - p,  ½ Σᵢ rᵢ × r*ᵢ]
 
 then clamps q to the joint limits. Damping keeps steps bounded near singularities (plain
 J⁺ blows up as σ_min → 0) at the cost of slightly slower convergence; iterating still drives

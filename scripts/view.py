@@ -11,6 +11,7 @@ import mujoco.viewer
 import numpy as np
 
 from sim.config import SceneConfig
+from sim.layout import sample_layout
 from sim.scene import build_model
 
 KP = np.array([400, 400, 400, 100, 100, 50.0])
@@ -18,7 +19,7 @@ KD = np.array([40, 40, 40, 10, 10, 5.0])
 
 
 def main():
-    model = build_model(SceneConfig())
+    model = build_model(sample_layout(SceneConfig(), seed=4, orientation="mixed"))
     data = mujoco.MjData(model)
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
     q_home = data.qpos[:6].copy()

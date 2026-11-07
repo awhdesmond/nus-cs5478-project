@@ -155,7 +155,7 @@ $$\tau = J^\top F + \tau_\text{bias}(q, \dot q) - D_q \dot q, \qquad F = \begin{
 where *e_p* is the tip position error, *e_r* the orientation error as in §3.1, and [ṗ; ω] = J q̇. In free space the tip tracks the setpoint; in contact it yields, and the contact force settles near K·(setpoint penetration). The spring force is saturated at 15 N so contact force stays bounded whatever the setpoint. Damping is set per axis as D = 2ζ√(K Λ_ii) with ζ = 1, using the task-space inertia Λ = (J M⁻¹ Jᵀ)⁻¹ at the start of the contact phase (4-8 kg translational, 0.1-0.3 kg·m² rotational, nearly constant over the insertion workspace). The control law needs no force measurement; the wrist F/T sensor is used only for contact detection and monitoring.
 
 **Gain selection.**
-- *Lateral* stiffness is low (300 N/m) and *axial* stiffness higher (1000 N/m). On a 45° chamfer with friction μ, a peg pushed with force P slides at most δ = P(1−μ)/(K_xy(1+μ)) before the lateral spring stalls it.
+- *Lateral* stiffness is low (300 N/m) and *axial* stiffness higher (1000 N/m). On a 45° chamfer with friction μ, a peg pushed with force P slides at most δ = P(1-μ)/(K_xy(1+μ)) before the lateral spring stalls it.
 - *Rotational* stiffness is 0.5 Nm/rad. The edge-contact torque on a 5 mm-radius peg is only ~0.05 Nm per 10 N, so higher values cannot realign the peg (Table 4).
 
 **Insertion.** After the joint-space approach (§3.2), the controller switches to impedance and moves the setpoint straight down to 5 mm below the nominal hole bottom. It moves at 1 cm/s, slowing to 2.5 mm/s within ±3 mm of the entrance. A leash pauses the setpoint whenever the tip lags it by more than 5 mm along the insertion axis. This caps the push at ≈5-6 N and prevents windup: without it, a peg held on the chamfer accumulated spring force and struck the hole wall at 57 mm/s (130 N) when it dropped in.
@@ -273,7 +273,7 @@ The robot must decide completion without ground truth, and two independent check
   height carries the camera's calibration bias — an earlier height-only test stopped short and let connectors drop in
   on release.
 - **Visual check (after release).** From the next overhead image, the connector's top must stand
-  connector_length − socket_depth = 30 mm above its socket's top surface (a connector resting on the chamfer stands
+  connector_length - socket_depth = 30 mm above its socket's top surface (a connector resting on the chamfer stands
   ~49 mm; one standing on the table beside the block, 20 mm), and be centred on the hole within half the clearance plus
   a perception margin. Both heights come from the same image at the same place, so the calibration bias largely
   cancels. The socket estimate used is the one from *before* insertion: with a connector standing in the hole, the
@@ -484,7 +484,7 @@ redundant: search without compliance would grind the peg across the fixture face
 where it lands (Figure 4).
 
 **Friction dominates chamfer-guided insertion.** A peg pushed with force *P* slides at most
-δ = P(1−μ)/(K_xy(1+μ)) down a 45° chamfer before the lateral spring stalls it. At μ = 0.8 the friction angle (38.7°)
+δ = P(1-μ)/(K_xy(1+μ)) down a 45° chamfer before the lateral spring stalls it. At μ = 0.8 the friction angle (38.7°)
 nearly matches the chamfer, so it barely funnels; the capture region shrinks to the clearance itself, which is why the
 spiral pitch must be ≤ 1 mm. A sweep-only version of the controller scored 55 % there. Diagnosing *how* it failed — it
 spent ~49 of 50 s paused or stalled, stepped over the capture region, and spiked on landing — produced the safeguards

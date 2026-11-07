@@ -1,8 +1,8 @@
 """Overhead RGB-D camera: rendering, calibration and back-projection.
 
 Conventions (verified against ray casts): the depth image holds distance along the optical axis
-(not ray length); image row 0 is the top of the view; MuJoCo cameras look along their −z with +y up,
-so pixel (u, v) at depth z maps to camera-frame ((u + ½ − c_x)·z/f, −(v + ½ − c_y)·z/f, −z).
+(not ray length); image row 0 is the top of the view; MuJoCo cameras look along their -z with +y up,
+so pixel (u, v) at depth z maps to camera-frame ((u + ½ - c_x)·z/f, -(v + ½ - c_y)·z/f, -z).
 """
 
 from dataclasses import dataclass

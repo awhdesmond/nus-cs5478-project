@@ -278,7 +278,7 @@ def fig_search_usage() -> None:
             labels2.append(f"{name}\n{'0' if error == 0 else '±2 mm'}")
             colours.append(colour)
     box(ax2, groups, labels2, colours)
-    ax2.set_ylabel("connector − socket error (mm)")
+    ax2.set_ylabel("connector - socket error (mm)")
     ax2.set_title("Perception error that does not cancel", loc="left")
     save(fig, "f5_search_usage")
 

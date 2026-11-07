@@ -26,7 +26,7 @@ class StraightDownParams:
 
 
 def pointing_down() -> np.ndarray:
-    """Peg-tip frame with the peg axis (+z) along world −z (the home-pose orientation)."""
+    """Peg-tip frame with the peg axis (+z) along world -z (the home-pose orientation)."""
     return np.diag([1.0, -1.0, -1.0])
 
 

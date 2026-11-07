@@ -44,7 +44,7 @@ from insertion.camera import CameraObservation
 class ShapeFit:
     kind: str  # "round" or "square"
     centre_xy: np.ndarray  # [m]
-    yaw: float  # [rad], square: in [−π/4, π/4); round: 0
+    yaw: float  # [rad], square: in [-π/4, π/4); round: 0
     iou_square: float  # overlap with the best-yaw square of equal area
     iou_round: float  # overlap with the circle of equal area
     size: float  # [m] equivalent diameter (round) or side (square)
@@ -120,7 +120,7 @@ class GeometricEstimatorConfig:
     upright_exclusion_px: int = 15  # dilation around upright connectors (their side faces span all heights)
     lying_central_half_length: float = 0.018  # [m] cross-section uses |along-axis| below this (away from the ends)
     lying_drop_half_width: float = 0.0035  # [m] top drop measured this far either side of the ridge
-    # Measured on 12 lying layouts at depth σ 0 / 1 / 2 mm: drop round 1.21-1.67 mm vs square −0.22-0.74 mm;
+    # Measured on 12 lying layouts at depth σ 0 / 1 / 2 mm: drop round 1.21-1.67 mm vs square -0.22-0.74 mm;
     # 2-98 % width round 9.37-9.79 vs square 8.32-9.02 mm; ridge height round ≈ 10 vs square ≈ 8.5 mm.
     lying_drop_split: tuple[float, float] = (0.00073, 0.00073)  # [m] (midpoint, half-span)
     lying_width_split: tuple[float, float] = (0.0092, 0.00075)

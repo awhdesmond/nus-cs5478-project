@@ -38,7 +38,7 @@ class PerceptionRow:
     xy_error: float  # [m]
     z_error: float  # [m]
     yaw_error: float  # [rad], square only (nan for round)
-    squareness: float  # IoU(square) − IoU(circle) of the fitted footprint (lying: cross-section score)
+    squareness: float  # IoU(square) - IoU(circle) of the fitted footprint (lying: cross-section score)
     lying: bool = False  # true orientation (connectors)
     orientation_correct: bool = True  # estimate's upright/lying matches
     axis_error: float = float("nan")  # [rad] lying: long-axis direction error (mod 180°)

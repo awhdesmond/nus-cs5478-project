@@ -23,7 +23,8 @@ def start_at_home(model):
 
 
 def test_arm_has_six_torque_motors_at_the_real_limits(model):
-    assert model.nu == 6
+    assert model.nu == 7 and model.actuator(6).name == "gripper"  # 6 arm motors + gripper
+
     for i, limit in enumerate(UR5E_TORQUE_LIMITS):
         np.testing.assert_allclose(model.actuator_ctrlrange[i], [-limit, limit])
         # A pure motor: gain 1 on ctrl, and no position/velocity terms (a servo would have them).
@@ -42,7 +43,7 @@ def test_arm_falls_without_torque(model):
 
 
 def test_gravity_compensation_plus_pd_holds_home(model):
-    """τ = qfrc_bias + Kp·(q* − q) − Kd·q̇ holds the pose: the controller pattern used from now on."""
+    """τ = qfrc_bias + Kp·(q* - q) - Kd·q̇ holds the pose: the controller pattern used from now on."""
     data = start_at_home(model)
     q_home = data.qpos[:6].copy()         # only arm joints exist so far; later we look up by name
     kp = np.array([400, 400, 400, 100, 100, 50.0])   # stiffer on the big joints
@@ -51,7 +52,7 @@ def test_gravity_compensation_plus_pd_holds_home(model):
         q, qd = data.qpos[:6], data.qvel[:6]
         # qfrc_bias = torque needed to cancel gravity (+ Coriolis) at the current state.
         # MuJoCo recomputes it on every step; we just add it.
-        data.ctrl[:] = data.qfrc_bias[:6] + kp * (q_home - q) - kd * qd
+        data.ctrl[:6] = data.qfrc_bias[:6] + kp * (q_home - q) - kd * qd
         mujoco.mj_step(model, data)
     assert np.abs(data.qpos[:6] - q_home).max() < 1e-3   # within 1 mrad: effectively still
 
@@ -181,9 +182,81 @@ def test_pegs_rest_still(orientation):
     mujoco.mj_forward(model, data)
     start = {k: data.body(f"{k}_peg").xpos.copy() for k in PEGS}
     for _ in range(2000):
-        data.ctrl[:] = data.qfrc_bias[:6] + kp * (q_home - data.qpos[:6]) - kd * data.qvel[:6]
+        data.ctrl[:6] = data.qfrc_bias[:6] + kp * (q_home - data.qpos[:6]) - kd * data.qvel[:6]
         mujoco.mj_step(model, data)
     for kind in PEGS:
         assert np.linalg.norm(data.body(f"{kind}_peg").xpos - start[kind]) < 1e-4   # moved less than 0.1 mm
     touching = {tuple(sorted((model.geom(c.geom1).name, model.geom(c.geom2).name))) for c in data.contact[:data.ncon]}
     assert touching <= {("round_peg", "table"), ("square_peg", "table")}, touching
+
+
+# --- 1d: gripper, attach-on-grasp, wrist F/T -------------------------------------------------
+
+from sim.sim import Sim
+
+KP = np.array([400, 400, 400, 100, 100, 50.0])
+KD = np.array([40, 40, 40, 10, 10, 5.0])
+
+
+def hold(sim, q_hold, seconds):
+    """Keep the arm still at q_hold (gravity compensation + PD) while the world runs."""
+    for _ in range(round(seconds / sim.model.opt.timestep)):
+        sim.step(sim.gravity_comp() + KP * (q_hold - sim.q()) - KD * sim.qd())
+
+
+def peg_in_gripper_frame(sim, kind):
+    """Where the peg's centre is, seen from the gripper: constant while the peg is held rigidly."""
+    g = sim.data.body("gripper")
+    return g.xmat.reshape(3, 3).T @ (sim.data.body(f"{kind}_peg").xpos - g.xpos)
+
+
+def put_peg_between_open_fingers(sim, kind):
+    """Teleport a peg so it sits centred between the pads, lined up with the gripper (tests only: no IK yet)."""
+    joint = sim.model.joint(f"{kind}_peg")
+    tcp = sim.data.site("tcp")
+    quat = np.zeros(4)
+    mujoco.mju_mat2Quat(quat, tcp.xmat)
+    sim.data.qpos[joint.qposadr[0]:joint.qposadr[0] + 7] = [*tcp.xpos, *quat]
+    sim.data.qvel[joint.dofadr[0]:joint.dofadr[0] + 6] = 0.0
+    # Start the fingers 0.1 mm short of the peg, so it can't fall far before they close on it.
+    width = 2 * (sim.cfg.round_radius if kind == "round" else sim.cfg.square_half)
+    almost = (sim.cfg.finger_open_gap - width) / 2 - 0.0001
+    for adr in sim.finger_qpos:
+        sim.data.qpos[adr] = almost
+    sim.data.ctrl[sim.gripper_act] = almost
+    mujoco.mj_forward(sim.model, sim.data)
+
+
+@pytest.mark.parametrize("kind", PEGS)
+def test_gripper_grasps_holds_and_releases_a_peg(kind):
+    sim = Sim(build_model(SceneConfig()), SceneConfig())
+    sim.reset()
+    q_home = sim.q()
+    put_peg_between_open_fingers(sim, kind)
+    assert sim.attached() is None
+
+    sim.command_gripper(True)
+    hold(sim, q_home, 0.1)
+    assert sim.attached() == kind                       # both pads touched → welded
+    width = 2 * (sim.cfg.round_radius if kind == "round" else sim.cfg.square_half)
+    assert sim.finger_gap() == pytest.approx(width, abs=0.3e-3)   # pads stopped on the peg's sides
+
+    held = peg_in_gripper_frame(sim, kind)
+    hold(sim, q_home, 1.0)
+    assert np.linalg.norm(peg_in_gripper_frame(sim, kind) - held) < 1e-4   # no slip over 1 s: < 0.1 mm
+
+    sim.command_gripper(False)
+    z = sim.data.body(f"{kind}_peg").xpos[2]
+    hold(sim, q_home, 0.3)
+    assert sim.attached() is None
+    assert sim.data.body(f"{kind}_peg").xpos[2] < z - 0.05   # released: it fell
+
+
+def test_ft_sensor_reads_the_gripper_weight_at_rest():
+    """At rest the wrist carries only the gripper, so the sensor reads its weight (mass × g)."""
+    sim = Sim(build_model(SceneConfig()), SceneConfig())
+    sim.reset()
+    hold(sim, sim.q(), 0.5)
+    weight = sim.model.body_subtreemass[sim.gripper_body] * 9.81   # gripper + fingers [N]
+    assert np.linalg.norm(sim.ft_raw()[:3]) == pytest.approx(weight, rel=0.01)
+

@@ -26,7 +26,7 @@ MAX_ROT_ERROR_DEG = 0.5
 @dataclass
 class ReachResult:
     seed: int
-    start_joint_change: float  # max |q_pre − q_start| [rad]
+    start_joint_change: float  # max |q_pre - q_start| [rad]
     ik_converged: bool
     move_time: float  # [s]
     pos_error: float  # [m] after settling

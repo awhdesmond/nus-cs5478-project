@@ -1,4 +1,4 @@
-"""Joint-space PD with gravity compensation: τ = Kp·(q* − q) + Kd·(q̇* − q̇) + qfrc_bias.
+"""Joint-space PD with gravity compensation: τ = Kp·(q* - q) + Kd·(q̇* - q̇) + qfrc_bias.
 
 Used to hold poses and track joint trajectories in free space; the impedance controller
 takes over for the contact phase.

@@ -19,6 +19,15 @@ PEG_RGBA = [0.85, 0.65, 0.15, 1.0]  # both pegs the same amber: the camera must 
 BAND_RGBA = [0.15, 0.35, 0.90, 1.0]  # blue: marks the insertion end
 BAND_PROUD = 0.0001  # [m] the band sits 0.1 mm outside the peg's surface so it's drawn on top of it
 CYLINDER = mujoco.mjtGeom.mjGEOM_CYLINDER
+
+GRIPPER_RGBA = [0.3, 0.3, 0.35, 1.0]
+FINGER_RGBA = [0.55, 0.55, 0.6, 1.0]
+FINGER_JOINTS = ("finger_left", "finger_right")
+# Equality constraints are soft springs too. These make one effectively rigid: with MuJoCo's soft default, a
+# 5 N push slid the gripper 4 mm along a welded peg in the first attempt.
+RIGID = dict(solref=[0.004, 1.0], solimp=[0.99, 0.999, 0.001, 0.5, 2.0])
+
+
 HIDDEN_SITE_GROUP = 4  # sites are markers for code, not objects; group 4 keeps them out of camera images
 
 
@@ -133,6 +142,73 @@ def add_peg(spec: mujoco.MjSpec, cfg: SceneConfig, kind: str) -> None:
     peg.add_site(name=f"{kind}_top", pos=[0, 0, L / 2], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
 
 
+def add_gripper(spec: mujoco.MjSpec, cfg: SceneConfig) -> None:
+    """A parallel-jaw gripper on the arm's flange: a palm and two fingers on slide joints.
+
+    Body `gripper` (palm) with sites `ft_site` (where the wrist force/torque sensor measures) and `tcp` (tool
+    centre point: midway between the finger pads). The fingers close along the gripper's local y axis. Each
+    finger joint measures how far that finger has closed from fully open [m]; a joint equality makes the right
+    finger mirror the left, and one force-limited position actuator `gripper` drives the left (ctrl = closing
+    travel [m], 0 = open).
+    """
+    # The menagerie marks the flange (tool mounting face) with a site; the gripper body goes exactly there.
+    flange = spec.site("attachment_site")
+    gripper = spec.body("wrist_3_link").add_body(name="gripper", pos=list(flange.pos), quat=list(flange.quat))
+    # +z points out of the flange, so the palm, fingers and tcp are all at positive z.
+    palm_half = (0.02, cfg.finger_open_gap / 2 + cfg.finger_thickness + 0.004, cfg.palm_offset / 2)
+    gripper.add_geom(name="palm", type=BOX, size=list(palm_half), pos=[0, 0, cfg.palm_offset / 2], rgba=GRIPPER_RGBA)
+    gripper.add_site(name="ft_site", pos=[0, 0, 0], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
+
+    travel = cfg.finger_open_gap / 2  # each finger can close by half the gap, until they meet
+    for side, sign in (("left", 1.0), ("right", -1.0)):
+        finger = gripper.add_body(name=f"finger_{side}",
+                                  pos=[0, sign * (cfg.finger_open_gap / 2 + cfg.finger_thickness / 2), cfg.palm_offset])
+        # A slide joint moves along one axis. Pointing it inward (-sign·y) makes positive = closing for both.
+        finger.add_joint(name=f"finger_{side}", type=mujoco.mjtJoint.mjJNT_SLIDE, axis=[0, -sign, 0],
+                         range=[0, travel], damping=2.0, armature=0.01)
+        pads = contact_params(cfg)
+        pads["friction"] = [cfg.finger_friction, 0.005, 0.0001]
+        finger.add_geom(name=f"finger_{side}", type=BOX, pos=[0, 0, cfg.finger_length / 2],
+                        size=[cfg.finger_width / 2, cfg.finger_thickness / 2, cfg.finger_length / 2],
+                        rgba=FINGER_RGBA, mass=0.02, **pads)
+    gripper.add_site(name="tcp", pos=[0, 0, cfg.palm_offset + cfg.finger_length - cfg.pad_depth],
+                     size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
+
+    # right finger = left finger. data = polynomial coefficients (right = 0 + 1·left), padded to MuJoCo's 11.
+    spec.add_equality(type=mujoco.mjtEq.mjEQ_JOINT, name1="finger_right", name2="finger_left",
+                      objtype=mujoco.mjtObj.mjOBJ_JOINT, data=[0, 1, 0, 0, 0] + [0] * 6, **RIGID)
+    # A position actuator is a motor with a built-in spring: force = kp·(ctrl - q) - kv·q̇, clipped to
+    # ±grip_force. Commanding full travel squeezes a peg with up to grip_force.
+    spec.add_actuator(name="gripper", target="finger_left", trntype=mujoco.mjtTrn.mjTRN_JOINT, ctrlrange=[0, travel],
+                      forcerange=[-cfg.grip_force, cfg.grip_force]).set_to_position(kp=2000.0, kv=40.0)
+
+
+def add_ft_sensor(spec: mujoco.MjSpec) -> None:
+    """A six-axis force/torque sensor at `ft_site`, between the flange and the gripper.
+
+    MuJoCo reports the force and torque the wrist applies to everything beyond the site (gripper, plus any
+    held peg), in the site's frame. So at rest it reads their weight; controllers tare that off (step 5).
+    """
+    spec.add_sensor(name="ft_force", type=mujoco.mjtSensor.mjSENS_FORCE, objtype=mujoco.mjtObj.mjOBJ_SITE,
+                    objname="ft_site")
+    spec.add_sensor(name="ft_torque", type=mujoco.mjtSensor.mjSENS_TORQUE, objtype=mujoco.mjtObj.mjOBJ_SITE,
+                    objname="ft_site")
+
+
+def add_attach_weld(spec: mujoco.MjSpec, kind: str) -> None:
+    """An inactive weld between the gripper and a peg, switched on at grasp time (Sim.attach).
+
+    The proposal locks a peg to the gripper once both fingers touch it. A weld equality glues two bodies at a
+    fixed relative pose; Sim.attach fills in that pose when it activates the weld.
+    """
+    spec.add_equality(type=mujoco.mjtEq.mjEQ_WELD, name=f"attach_{kind}", name1="gripper", name2=f"{kind}_peg",
+                      objtype=mujoco.mjtObj.mjOBJ_BODY, active=False,
+                      # data = anchor (3), relative pose (3 position + 4 quaternion), torque scale (1). Set
+                      # explicitly: an MjSpec equality starts with the joint equality's default numbers,
+                      # which put the anchor 1 m off and flung the peg on attach in the first attempt.
+                      data=[0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], **RIGID)
+
+
 def rebuild_keyframes(spec: mujoco.MjSpec) -> None:
     """Re-create the `home` keyframe for the bigger model.
 
@@ -157,9 +233,12 @@ def build_spec(cfg: SceneConfig) -> mujoco.MjSpec:
     if cfg.elliptic_cone:
         spec.option.cone = mujoco.mjtCone.mjCONE_ELLIPTIC
     add_table(spec, cfg)
+    add_gripper(spec, cfg)
+    add_ft_sensor(spec)
     for kind in PEGS:
         add_port(spec, cfg, kind)
         add_peg(spec, cfg, kind)
+        add_attach_weld(spec, kind)
     rebuild_keyframes(spec)  # last: needs every joint in place
     return spec
 

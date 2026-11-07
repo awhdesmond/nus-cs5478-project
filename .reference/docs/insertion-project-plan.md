@@ -53,7 +53,7 @@ insertion is reliable.
 
 **Algorithms**
 1. Jacobian-based IK (damped least squares) + quintic/trapezoidal joint-space trajectory generation — used for the **free-space approach phase**: IK solves the pre-insertion joint config once (from the *believed* socket pose), a joint trajectory is tracked by joint PD + `qfrc_bias`. Control then switches to impedance for the contact phase. Shares the Jacobian (`mj_jacSite`) with the impedance controller.
-2. Cartesian impedance controller (torque-level: `τ = Jᵀ(K·Δx − D·ẋ) + qfrc_bias`) — **the core contribution**. Low rotational stiffness so contact torques can realign the plug.
+2. Cartesian impedance controller (torque-level: `τ = Jᵀ(K·Δx - D·ẋ) + qfrc_bias`) — **the core contribution**. Low rotational stiffness so contact torques can realign the plug.
    Simulated wrist F/T sensor used for contact detection, the force cap, and (optionally) force-regulated insertion along z.
    *Note:* impedance control does not need F/T sensing; admittance does. Admittance on stiff position servos against stiff contact with noisy sim F/T is prone to instability — avoid unless impedance fails.
 3. Contact-triggered spiral search for alignment under pose uncertainty (translation only — rotation handled by chamfer + rotational compliance)
@@ -80,7 +80,7 @@ insertion is reliable.
 - [x] Read contact forces programmatically — this is what the week-2 guarded-move baseline uses (`Sim.peg_contacts()` ground truth for scoring; controllers use `FTSensor`)
 - [x] **Evaluation harness skeleton** — logs success, cycle time, peak force per trial (`harness.run_trials` → CSV + per-step `.npz` trajectories; controllers only see believed socket pose + proprioception + F/T)
 - [x] Quick Jacobian step for Cartesian motion: `mj_jacSite` → `Δq = J⁺·Δx`, iterated toward a target EE position (~5 lines; seeds the week-2 IK) — `JacobianIK`, includes orientation hold so the peg stays vertical
-- [x] **Hardcoded straight-down insert succeeds at loose clearance** (uses the Jacobian step) — `scripts/easy_insert.py`: 3/3 at 10 mm, 5.7 s cycle, no contact. Socket moved to (−0.15, 0.50, 0.18), clear of singularities
+- [x] **Hardcoded straight-down insert succeeds at loose clearance** (uses the Jacobian step) — `scripts/easy_insert.py`: 3/3 at 10 mm, 5.7 s cycle, no contact. Socket moved to (-0.15, 0.50, 0.18), clear of singularities
 
 **Done =** arm commandable, stable contact, forces readable, harness logging, one easy success.
 
@@ -127,7 +127,7 @@ needs to be good enough to reach the pre-insertion pose — don't polish it.*
 **Weeks 2-3 findings** (default friction was 0.8 at the time)
 - **Impact spikes come from arm inertia, not controller stiffness.** Touching down at 1 cm/s gives ~27 N single-step force with both impedance and joint PD. The spike scales ~2.7 N per mm/s (48 N at 20 mm/s → 5 N at 1 mm/s). Rule: descend fast, touch down at ≤2.5 mm/s. This mostly resolves the raw-vs-10 ms force-cap question: at slow touchdown they agree.
 - **Setpoint windup** caused a 130 N wall strike: while the peg was held on the chamfer the setpoint kept descending, and the stored spring force fired the peg into the hole wall (57 mm/s) when it dropped in. Fixed with a leash (`max_lead` 5 mm): the setpoint path pauses while the tip lags.
-- **Chamfer guidance needs low lateral stiffness.** On a 45° chamfer the peg slides at most δ = P(1−μ)/(K_xy(1+μ)) before stalling. Hence K_xy 300 (not 1000).
+- **Chamfer guidance needs low lateral stiffness.** On a 45° chamfer the peg slides at most δ = P(1-μ)/(K_xy(1+μ)) before stalling. Hence K_xy 300 (not 1000).
 - **Friction is the dominant parameter.** Decided 2026-09-14: default μ = 0.3 (brass/tin-plated pins in plastic), μ = 0.8 kept as a high-friction benchmark. Ratchet (20 seeds/cell, ±0.25 rad start noise):
 
 | μ | Clearance | Uncertainty | Open-loop | Impedance |
@@ -283,10 +283,10 @@ below the top) stay 12 mm above the socket when seated.
     - Controller F/T is now expressed in the tool-tip frame (the sensor sits at the gripper base) so force-guided centring stays correct.
   - **Demo:** `results/demos/pipeline_realistic_seed0.mp4` (3D view | live overhead camera | perception overlay with outlines, sockets and the chosen grasp).
 - [x] **M4c Ready pose, visual insertion check, randomised sockets.** *Added and done 2026-09-15.*
-  - *Ready pose:* `ready` keyframe = IK for the tcp at (−0.05, 0.28, 0.40), tool down, same elbow-up branch as `home`. Measured: 0 arm pixels (the arm first enters the image with the tcp at y ≈ 0.38); joint moves to the pick area / sockets 1.3 / 1.4 s (vs 6.7 / 5.8 s from `camera_clear`). Perception from `ready` vs `camera_clear` on 20 realistic layouts: 20/20 identified, estimates within 0.07 mm. The run starts there and returns there after every release.
+  - *Ready pose:* `ready` keyframe = IK for the tcp at (-0.05, 0.28, 0.40), tool down, same elbow-up branch as `home`. Measured: 0 arm pixels (the arm first enters the image with the tcp at y ≈ 0.38); joint moves to the pick area / sockets 1.3 / 1.4 s (vs 6.7 / 5.8 s from `camera_clear`). Perception from `ready` vs `camera_clear` on 20 realistic layouts: 20/20 identified, estimates within 0.07 mm. The run starts there and returns there after every release.
   - *Why not capture straight after retracting:* with the gripper 80 mm above the socket it just used, the square connector and socket are fully visible (next pick unaffected: estimates within 0.24 mm), but the connector just inserted is 62% visible and its socket isn't detected; after the square release the wrist hides the whole fixture.
   - *Visual check* (`visual_seating`): connector top height above the socket top within 3 mm of 30 mm, and its xy within clearance/2 + 1 mm of the socket centre (a fixed 2 mm was nearly exceeded at 3 mm clearance: 1.95 mm). `verified` = F/T belief AND visual. On a hand-placed scene: seated 30.0 / 30.1 mm (ideal / realistic) vs 49.0 mm resting on the chamfer.
-  - *Randomised sockets:* socket centres in x ∈ [−0.19, −0.11], y ∈ [0.42, 0.58], yaw ∈ [0°, 90°), ≥ 60 mm apart (blocks can't overlap; the fingers inserting the second connector clear the first one standing 30 mm proud). Sockets use their own random stream, so a seed's connector layout is unchanged; `--fixed-sockets` reproduces M3/M4.
+  - *Randomised sockets:* socket centres in x ∈ [-0.19, -0.11], y ∈ [0.42, 0.58], yaw ∈ [0°, 90°), ≥ 60 mm apart (blocks can't overlap; the fingers inserting the second connector clear the first one standing 30 mm proud). Sockets use their own random stream, so a seed's connector layout is unchanged; `--fixed-sockets` reproduces M3/M4.
   - *Found and fixed:* comparing the connector with the socket estimated in the **same** image failed on seated connectors (offset 2.35 mm, realistic): a connector standing in the hole hides part of the fixture top from the off-centre camera, and the detected opening shifts 0.7-1.7 mm radially (ideal camera). The check now uses the socket estimate the insertion used, taken with the hole empty.
   - *Benchmark* (same 160-run grid as M3/M4, sockets now randomised): **160/160 both seated**; identification, grasp, lift, seated and still seated 100%; 0 wrong sockets; spiral search never needed; peak sustained force ≤ 6.5 N. F/T belief, visual check and their combination each agreed with ground truth on all 320 connectors — but no insertion failed, so false accepts/rejects are untested (M5 must inject failures). Visual height 29.7-30.5 mm; visual offset minus half the clearance ≤ 0.51 mm (realistic). Mean run 50.7 s simulated (was ~60 s).
 - [x] **M4b Lying connectors (in-hand reorientation, no regrasp).** *Added 2026-09-15.* Each connector starts upright or lying on its side (seeded, independently). A lying connector is grasped from above across its width near one end, lifted, and rotated 90° about the gripper's closing axis so it points down; the hand then approaches the socket from the side, facing away from the other socket, and the M4 compliant insertion runs with the tool horizontal.
@@ -475,7 +475,7 @@ per-milestone notes there have the full context.*
   moving peg clips an edge and are sensitive to solver stiffness; the sustained force is what damages parts.
   Raw peaks are still logged and reported.
 - **Friction dominates chamfer-guided insertion.** A peg pushed with force P slides at most
-  δ = P(1−μ)/(K_xy(1+μ)) down a 45° chamfer before a lateral spring K_xy stalls it; at μ = 0.8 the friction angle
+  δ = P(1-μ)/(K_xy(1+μ)) down a 45° chamfer before a lateral spring K_xy stalls it; at μ = 0.8 the friction angle
   (38.7°) nearly matches the chamfer, so it barely funnels. μ = 0.3 (brass/tin pins in plastic) is the main
   setting; μ = 0.8 is the stress benchmark.
 - **Lying cylinders roll in MuJoCo** with sliding friction only (rocking contacts, up to 70 mm in 6 s); add rolling

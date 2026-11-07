@@ -27,7 +27,7 @@ class SceneConfig:
     socket_chamfer: float = 0.002  # 45° lead-in leg length; 0 disables
     # Hole-bottom centre in world frame. A pedestal fills the gap down to the floor.
     # Chosen below the home pose with the peg pointing down: along pre-insert → seated the elbow stays
-    # ≈2.0 rad, wrist_2 at −π/2 and the wrist 0.43 m off the base axis (clear of all UR singularities).
+    # ≈2.0 rad, wrist_2 at -π/2 and the wrist 0.43 m off the base axis (clear of all UR singularities).
     socket_pos: tuple[float, float, float] = (-0.15, 0.50, 0.18)
 
     # Physics
@@ -64,10 +64,10 @@ class MotionConfig:
 
 @dataclass
 class ImpedanceConfig:
-    """Cartesian impedance at the peg tip: τ = Jᵀ[K·e + D·(ẋ* − ẋ)] + τ_bias − D_q·q̇."""
+    """Cartesian impedance at the peg tip: τ = Jᵀ[K·e + D·(ẋ* - ẋ)] + τ_bias - D_q·q̇."""
 
     # Soft laterally, stiff along the insertion axis. On a 45° chamfer with friction μ, a peg pushed with
-    # force P slides at most δ = P(1−μ)/(K_xy(1+μ)) before the lateral spring stalls it, so K_xy must be low.
+    # force P slides at most δ = P(1-μ)/(K_xy(1+μ)) before the lateral spring stalls it, so K_xy must be low.
     # Sweep at 1 mm clearance, ±2 mm: K_xy 1000 → 70-80% success (μ=0.3); K_xy ≤ 300 → 100%, no cap violations.
     stiffness_pos: tuple[float, float, float] = (300.0, 300.0, 1000.0)  # [N/m]
     # 4° commanded tilt pressed at 15 N ends at 0.01° for K_rot ≤ 0.5, 0.9° at 1.0, 2.1° at 2.0, 3.8° at 20.
@@ -238,7 +238,7 @@ class AssemblyConfig:
     # Rolling friction (condim 6) of 1 mm holds it within 0.04 mm over 6 s; about a real plastic connector's.
     round_rolling_friction: float = 0.001  # [m]
     # Socket centres stay ≥ 25 mm (a yawed block's half-diagonal) plus calibration error inside the camera's view
-    # of the fixture top (x ∈ [−0.24, 0.18], y ∈ [0.34, 0.66]) and clear of the pick area.
+    # of the fixture top (x ∈ [-0.24, 0.18], y ∈ [0.34, 0.66]) and clear of the pick area.
     socket_area_center: tuple[float, float] = (-0.15, 0.50)
     socket_area_half: tuple[float, float] = (0.04, 0.08)
     # Blocks (half-diagonal ≤ 25 mm) can't overlap, and the fingers inserting the second connector (±11 mm)
@@ -290,7 +290,7 @@ class AssemblyConfig:
     cable_anchor: tuple[float, float] = (-0.300, 0.50)  # [m] where the cable leaves its port, at the table's left edge
     # Square plugs on both ends: the square connector's cross-section and marked tip, long enough to seat in a socket
     # (depth 20 mm) with the boot clear of the fixture top. End A is docked in a port block on the table's edge
-    # (x ≤ −0.254, outside the camera's view, which starts at x ≈ −0.248 at the block's height); end B hangs free.
+    # (x ≤ -0.254, outside the camera's view, which starts at x ≈ -0.248 at the block's height); end B hangs free.
     cable_plug_length: float = 0.030  # [m]
     cable_boot_length: float = 0.012  # [m] strain relief between cable and plug
 
