@@ -8,4 +8,5 @@
 uv sync
 uv run pytest
 uv run python scripts/view.py
+uv run python scripts/capture.py --seed 0
 ```

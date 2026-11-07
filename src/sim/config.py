@@ -88,6 +88,10 @@ class SceneConfig:
     image_width: int = 1280
     image_height: int = 960
 
+    # Depth noise: independent Gaussian error per pixel, standard deviation in metres (0 = a perfect depth
+    # image). Real RGB-D cameras at 0.75 m are around 1-2 mm.
+    depth_noise: float = 0.0  # [m]
+
     # --- Ready pose: where the arm waits while the camera takes pictures ------------------------------
     # Tool pointing down, tcp at ready_tcp above the table's near edge, between the arm's base and the table.
     # From here no part of the arm is in the camera's view, whatever the layout. ready_arm are the joint
