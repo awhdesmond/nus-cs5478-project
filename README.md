@@ -7,4 +7,5 @@
 
 uv sync
 uv run pytest
+uv run python scripts/view.py
 ```
