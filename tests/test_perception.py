@@ -158,7 +158,7 @@ def test_pegs_are_identified_and_located(noise):
             true_size = 2 * cfg.round_radius if kind == "round" else 2 * cfg.square_half
             assert abs(est.size - true_size) < 0.0003, (seed, kind, est.size)
         error = wrap_quarter_turn(pegs["square"].yaw - cfg.peg_poses["square"].yaw)
-        assert abs(error) < math.radians(2.5), (seed, math.degrees(error))
+        assert abs(error) < math.radians(1.5), (seed, math.degrees(error))
         # Clear of the threshold, so the "one of each" fallback isn't what got it right.
         assert pegs["round"].fill < 0.84 and pegs["square"].fill > 0.88, seed
 
@@ -194,3 +194,20 @@ def test_ports_are_identified_and_located(noise):
         error = wrap_quarter_turn(ports["square"].yaw - cfg.port_poses["square"].yaw)
         assert abs(error) < math.radians(1.0), (seed, math.degrees(error))
         assert ports["round"].fill < 0.85 and ports["square"].fill > 0.93, seed       # far from the 0.89 split
+
+# --- 2e: perceive and the perception check ---------------------------------------------------------
+
+import pandas as pd
+
+from harness.perception_check import check_layout, summarise
+
+
+def test_check_layout_logs_small_errors_for_every_object():
+    cfg = replace(sample_layout(SceneConfig(), 11), depth_noise=0.002)
+    rows = check_layout(cfg, 11)
+    assert {(r["object"], r["kind"]) for r in rows} == {(o, k) for o in ("peg", "port") for k in PEGS}
+    for r in rows:
+        assert r["found"] and r["xy_error"] < 0.0003 and abs(r["z_error"]) < 0.0005, r
+        assert (r["kind"] == "round") == math.isnan(r["yaw_error"]), r   # yaw only for square objects
+    table = summarise(pd.DataFrame(rows))
+    assert set(table.index) == {(0.002, "peg"), (0.002, "port")} and (table.found == 1).all()

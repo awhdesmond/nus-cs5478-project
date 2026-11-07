@@ -52,7 +52,7 @@ class TopFace:
     centre: np.ndarray  # [m] world, (3,)
     area: float  # [m²]
     fill: float  # area / smallest-rectangle area
-    square_yaw: float  # [rad] the smallest rectangle's yaw, in [-π/4, π/4)
+    square_yaw: float # [rad] its yaw if read as a square, in [-π/4, π/4)
     outline: np.ndarray  # [m] (N, 2)
 
 
