@@ -161,3 +161,36 @@ def test_pegs_are_identified_and_located(noise):
         assert abs(error) < math.radians(2.5), (seed, math.degrees(error))
         # Clear of the threshold, so the "one of each" fallback isn't what got it right.
         assert pegs["round"].fill < 0.84 and pegs["square"].fill > 0.88, seed
+
+# --- 2d: ports -------------------------------------------------------------------------------------
+
+from perception.pegs import square_yaw
+from perception.ports import estimate_ports
+
+
+def test_square_yaw_of_an_ideal_square():
+    for yaw in np.radians([-44, -20, 0, 10, 30, 44]):
+        corners = np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]) * 0.004            # 8 mm square, yaw 0
+        t = np.linspace(0, 1, 50, endpoint=False)[:, None]
+        outline = np.vstack([a + t * (b - a) for a, b in zip(corners, np.roll(corners, -1, axis=0))])
+        turn = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
+        centre = np.array([0.1, 0.5])
+        assert square_yaw(outline @ turn.T + centre, centre) == pytest.approx(yaw, abs=1e-9)
+
+
+@pytest.mark.parametrize("noise", [0.0, 0.002])
+def test_ports_are_identified_and_located(noise):
+    for seed in range(8):
+        cfg = replace(sample_layout(SceneConfig(), seed), depth_noise=noise)
+        sim = Sim(build_model(cfg), cfg)
+        sim.reset("ready")
+        with OverheadCamera(sim.model, cfg) as camera:
+            obs = camera.capture(sim.data, np.random.default_rng(seed))
+        ports = estimate_ports(obs, segment(obs))
+        for kind in PEGS:
+            est, entrance = ports[kind], sim.data.site(f"{kind}_port_entrance").xpos   # vs ground truth
+            assert np.linalg.norm(est.entrance[:2] - entrance[:2]) < 0.0003, (seed, kind)   # 0.3 mm
+            assert abs(est.entrance[2] - entrance[2]) < 0.0005, (seed, kind)                # 0.5 mm
+        error = wrap_quarter_turn(ports["square"].yaw - cfg.port_poses["square"].yaw)
+        assert abs(error) < math.radians(1.0), (seed, math.degrees(error))
+        assert ports["round"].fill < 0.85 and ports["square"].fill > 0.93, seed       # far from the 0.89 split

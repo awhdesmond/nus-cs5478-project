@@ -52,7 +52,7 @@ class TopFace:
     centre: np.ndarray  # [m] world, (3,)
     area: float  # [m²]
     fill: float  # area / smallest-rectangle area
-    rect_yaw: float  # [rad] the smallest rectangle's yaw, in [-π/4, π/4)
+    square_yaw: float  # [rad] the smallest rectangle's yaw, in [-π/4, π/4)
     outline: np.ndarray  # [m] (N, 2)
 
 
@@ -69,16 +69,32 @@ def measure_top_face(obs: CameraObservation, mask: np.ndarray, z: float) -> TopF
     boundary = max(contours, key=len)[:, 0, :]  # (N, 2) pixel (u, v) of the boundary pixels' centres
     outline = cam.on_plane(boundary[:, 0], boundary[:, 1], z)[:, :2]
     # Smallest rectangle around the outline, in millimetres about the centre (float32 keeps precision there).
-    _, (w, h), angle = cv2.minAreaRect(((outline - centre) * 1000).astype(np.float32))
+    _, (w, h), _ = cv2.minAreaRect(((outline - centre) * 1000).astype(np.float32))
     # The contour runs through boundary pixels' centres, so the true shape is one pixel wider and taller.
     w, h = w / 1000 + pixel, h / 1000 + pixel
-    return TopFace(np.array([*centre, z]), area, area / (w * h), wrap_quarter_turn(math.radians(angle)), outline)
+    return TopFace(np.array([*centre, z]), area, area / (w * h), square_yaw(outline, centre), outline)
+
+
+
+def square_yaw(outline: np.ndarray, centre: np.ndarray) -> float:
+    """A square's yaw from its whole outline, in [-π/4, π/4).
+
+    Walking around a square, the distance r from the centre peaks 4 times, at the corners, which sit at
+    yaw + 45° + k·90°. The 4th Fourier harmonic of r(φ) finds that pattern's phase using every outline point,
+    so pixel steps average out (the smallest rectangle uses only a few extreme points: twice the error).
+    At a corner, 4φ = 4·yaw + 180° + k·360°, so e^{4iφ} = -e^{4i·yaw}: hence the minus sign.
+    """
+    d = outline - centre
+    phi, r = np.arctan2(d[:, 1], d[:, 0]), np.hypot(d[:, 0], d[:, 1])
+    harmonic = np.sum((r - r.mean()) * np.exp(4j * phi))  # big where r is big, at each corner's angle × 4
+    return wrap_quarter_turn(float(np.angle(-harmonic)) / 4)
+
 
 
 def as_peg(face: TopFace, kind: str) -> PegEstimate:
     """Read a measured top face as a peg of this kind."""
     if kind == "square":
-        return PegEstimate("square", face.centre, face.rect_yaw, math.sqrt(face.area), face.fill, face.outline)
+        return PegEstimate("square", face.centre, face.square_yaw, math.sqrt(face.area), face.fill, face.outline)
     # A circle has no yaw; its size is the diameter of a circle of that area.
     return PegEstimate("round", face.centre, 0.0, 2 * math.sqrt(face.area / math.pi), face.fill, face.outline)
 
