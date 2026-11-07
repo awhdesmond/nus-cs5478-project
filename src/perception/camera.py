@@ -42,6 +42,17 @@ class CameraModel:
         v = -local[..., 1] * self.focal / depth + self.height / 2 - 0.5
         return u, v, depth
 
+    def on_plane(self, u, v, z: float) -> np.ndarray:
+        """Where the rays through pixels (u, v) hit the horizontal plane at world height z, shape (..., 3).
+
+        Unlike backproject, this needs no depth: for a surface whose height is known (a peg's top face),
+        the pixel alone fixes the point, so depth noise can't move it sideways.
+        """
+        ray = self.backproject(u, v, 1.0) - self.position  # direction through each pixel
+        t = (z - self.position[2]) / ray[..., 2]  # how far along the ray to reach height z
+        return self.position + t[..., None] * ray
+
+
     def pixel_grid(self) -> tuple[np.ndarray, np.ndarray]:
         """u and v for every pixel, each (height, width), to back-project a whole depth image at once."""
         return np.meshgrid(np.arange(self.width), np.arange(self.height))

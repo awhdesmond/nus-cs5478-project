@@ -120,3 +120,44 @@ def test_segmentation_finds_two_pegs_and_two_blocks(noise):
             assert (region.mask & ~truth).sum() / region.mask.sum() < 0.02, (seed, name)  # few strays
             nominal = sim.cfg.peg_length if region.kind == "peg" else sim.cfg.port_base + sim.cfg.port_depth
             assert abs(region.top - nominal) < 0.0005, (seed, name, region.top)        # top within 0.5 mm
+
+# --- 2c: pegs --------------------------------------------------------------------------------------
+
+import math
+
+from perception.pegs import estimate_pegs, wrap_quarter_turn
+
+
+def test_on_plane_finds_points_of_known_height():
+    cam = CameraModel.from_fovy(640, 480, 30.0, [0.1, 0.2, 1.0], np.eye(3))  # looking straight down
+    points = np.random.default_rng(1).uniform([-0.1, 0, 0.3], [0.3, 0.4, 0.3], (20, 3))  # all at z = 0.3
+    u, v, _ = cam.project(points)
+    np.testing.assert_allclose(cam.on_plane(u, v, 0.3), points, atol=1e-12)
+
+
+def test_wrap_quarter_turn():
+    for angle, wrapped in [(0.0, 0.0), (math.pi / 2, 0.0), (math.radians(50), math.radians(-40)),
+                           (math.radians(-46), math.radians(44)), (math.pi / 4, -math.pi / 4)]:
+        assert wrap_quarter_turn(angle) == pytest.approx(wrapped)
+
+
+@pytest.mark.parametrize("noise", [0.0, 0.002])
+def test_pegs_are_identified_and_located(noise):
+    for seed in range(8):
+        cfg = replace(sample_layout(SceneConfig(), seed), depth_noise=noise)
+        sim = Sim(build_model(cfg), cfg)
+        sim.reset("ready")
+        with OverheadCamera(sim.model, cfg) as camera:
+            obs = camera.capture(sim.data, np.random.default_rng(seed))
+        pegs = estimate_pegs(obs, segment(obs))
+        for kind in PEGS:
+            est, top = pegs[kind], sim.data.site(f"{kind}_top").xpos   # estimate vs ground truth
+            # Right kind (else this would be the other peg, centimetres away) and where it really is.
+            assert np.linalg.norm(est.top[:2] - top[:2]) < 0.0003, (seed, kind)        # 0.3 mm
+            assert abs(est.top[2] - top[2]) < 0.0005, (seed, kind)                     # 0.5 mm
+            true_size = 2 * cfg.round_radius if kind == "round" else 2 * cfg.square_half
+            assert abs(est.size - true_size) < 0.0003, (seed, kind, est.size)
+        error = wrap_quarter_turn(pegs["square"].yaw - cfg.peg_poses["square"].yaw)
+        assert abs(error) < math.radians(2.5), (seed, math.degrees(error))
+        # Clear of the threshold, so the "one of each" fallback isn't what got it right.
+        assert pegs["round"].fill < 0.84 and pegs["square"].fill > 0.88, seed
