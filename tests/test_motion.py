@@ -75,3 +75,71 @@ def test_ik_reaches_poses_all_over_the_pick_and_port_areas(kin):
             assert np.linalg.norm(pos - [x, y, z]) < 1e-5
             # Same branch as ready: the shoulder, elbow and wrist-1/2 joints stay within ~1 rad of ready.
             assert np.abs(result.q - q_ready)[:5].max() < 1.2, result.q - q_ready
+
+# --- 3b: trajectories and tracking -----------------------------------------------------------------
+
+from motion.control import JointTracker, follow
+from motion.trajectory import CartesianMove, JointMove, quintic
+from sim.layout import sample_layout
+from sim.sim import Sim
+
+
+def test_quintic_starts_and_ends_at_rest():
+    T = 2.0
+    assert quintic(0, T) == (0, 0, 0) and quintic(T, T) == pytest.approx((1, 0, 0))
+    assert quintic(T / 2, T)[1] == pytest.approx(1.875 / T)                     # peak speed, at the middle
+    h = 1e-6                                                                   # derivatives are consistent
+    for t in (0.3, 1.1, 1.7):
+        assert (quintic(t + h, T)[0] - quintic(t, T)[0]) / h == pytest.approx(quintic(t, T)[1], rel=1e-4)
+        assert (quintic(t + h, T)[1] - quintic(t, T)[1]) / h == pytest.approx(quintic(t, T)[2], rel=1e-4)
+
+
+def test_joint_move_goes_from_start_to_end():
+    q0, q1 = np.zeros(6), np.array([0.5, -0.2, 0.1, 0, 0, 1.0])
+    move = JointMove(q0, q1)
+    assert move.duration == pytest.approx(1.875 * 1.0 / 1.0)                  # 1 rad at ≤ 1 rad/s peak
+    np.testing.assert_allclose(move.sample(0)[0], q0)
+    q, qd, _ = move.sample(move.duration)
+    np.testing.assert_allclose(q, q1)
+    np.testing.assert_allclose(qd, 0, atol=1e-12)
+
+
+def test_cartesian_move_keeps_the_tcp_on_a_straight_line(kin):
+    q0 = np.array(SceneConfig().ready_arm)
+    p0, _ = kin.fk(q0)
+    p1 = p0 + [0.10, 0.15, -0.12]
+    move = CartesianMove(kin, q0, p1, tool_down(0.8))                          # also turns 0.8 rad
+    for t in np.linspace(0, move.duration, 37):
+        p, _ = kin.fk(move.sample(t)[0])
+        off_line = np.linalg.norm(np.cross(p - p0, p1 - p0)) / np.linalg.norm(p1 - p0)
+        assert off_line < 1e-5                                                 # within 0.01 mm of the line
+    p, R = kin.fk(move.sample(move.duration)[0])
+    np.testing.assert_allclose(p, p1, atol=1e-5)
+    assert np.linalg.norm(rotation_error(tool_down(0.8), R)) < 1e-4
+
+
+def test_arm_reaches_random_poses_in_the_pick_and_port_areas():
+    """In the simulation, under torque control: move above a random point, descend in a straight line, lift."""
+    rng = np.random.default_rng(1)
+    for seed in range(4):
+        cfg = sample_layout(SceneConfig(), seed)
+        sim = Sim(build_model(cfg), cfg)
+        sim.reset("ready")
+        kin, tracker = Kinematics(sim.model), JointTracker(sim)
+        for center, half in ((cfg.pick_area_center, cfg.pick_area_half), (cfg.port_area_center, cfg.port_area_half)):
+            x, y = rng.uniform(np.array(center) - half, np.array(center) + half)
+            R = tool_down(rng.uniform(-math.pi / 2, math.pi / 2))
+            above, low = [x, y, cfg.table_height + 0.15], [x, y, cfg.table_height + 0.07]  # 7 cm: above the pegs
+            # Each move is planned from where the arm is when it starts, hence the lambdas.
+            for plan in (lambda: JointMove(sim.q(), kin.ik(above, R, sim.q()).q),
+                         lambda: CartesianMove(kin, sim.q(), low, R),
+                         lambda: CartesianMove(kin, sim.q(), above, R)):
+                errors = follow(sim, tracker, plan())
+                assert np.abs(errors).max() < 0.002, seed                     # tracked within 2 mrad throughout
+            tcp = sim.data.site("tcp")
+            assert np.linalg.norm(tcp.xpos - above) < 0.0005, seed            # ended within 0.5 mm
+            assert np.linalg.norm(rotation_error(R, tcp.xmat.reshape(3, 3))) < math.radians(0.1)
+            # The arm touched nothing: the only contacts are the pegs resting on the table.
+            pairs = {tuple(sorted((sim.model.geom(c.geom1).name, sim.model.geom(c.geom2).name)))
+                     for c in sim.data.contact[:sim.data.ncon]}
+            assert pairs <= {("round_peg", "table"), ("square_peg", "table")}, pairs
