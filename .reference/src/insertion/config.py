@@ -267,7 +267,7 @@ class AssemblyConfig:
     lying_fingertip_clearance: float = 0.0035  # [m]
 
     # Camera (fixed overhead, looking straight down)
-    # 0.75 m above the table with a 25° vertical field of view covers ~0.44 × 0.33 m (fixture + pick area)
+    # 0.75 m above the table with a 25° vertical field of view covers ~0.44 x 0.33 m (fixture + pick area)
     # at ~0.34 mm per pixel, so a 10 mm connector spans ~30 px.
     camera_pos: tuple[float, float, float] = (-0.03, 0.50, 0.92)
     camera_fovy: float = 25.0  # [deg]

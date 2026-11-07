@@ -25,7 +25,7 @@ def quintic(t: float, T: float) -> tuple[float, float, float]:
 
 
 def move_duration(distance: float, max_speed: float, min_duration: float = 0.5) -> float:
-    """Shortest quintic duration that keeps the peak speed (1.875 × average) at or under max_speed."""
+    """Shortest quintic duration that keeps the peak speed (1.875 x average) at or under max_speed."""
     return max(min_duration, 1.875 * distance / max_speed)
 
 
@@ -56,7 +56,7 @@ class CartesianMove:
         q0 = np.asarray(q0, float)
         p0, R0 = kin.fk(q0)
         p1 = np.asarray(p1, float)
-        turn = rotation_error(R1, R0)  # axis × angle from the start orientation to the end one
+        turn = rotation_error(R1, R0)  # axis x angle from the start orientation to the end one
         # Rotation counts as distance too: 1 rad of turn is treated like 0.1 m of travel.
         self.duration = duration or move_duration(max(np.linalg.norm(p1 - p0), 0.1 * np.linalg.norm(turn)), max_speed)
         self.dt = dt
@@ -84,7 +84,7 @@ class CartesianMove:
 
 
 def rotate(R: np.ndarray, rotvec: np.ndarray) -> np.ndarray:
-    """R turned by the world-frame rotation `rotvec` (axis × angle)."""
+    """R turned by the world-frame rotation `rotvec` (axis x angle)."""
     angle = np.linalg.norm(rotvec)
     if angle < 1e-12:
         return R.copy()

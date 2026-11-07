@@ -96,15 +96,15 @@ exceeding a 30 N cap.
 Trials run across unseen random seeds, in the spirit of the default project's per-seed
 scoring. Each seed fixes a connector layout and the robot's start pose.
 
-**Full-task grid:** connector orientation {all upright, all lying, mixed} × camera {ideal,
-realistic} × clearance {3, 1} mm × friction {0.3, 0.8} × 20 seeds per condition. A robustness
+**Full-task grid:** connector orientation {all upright, all lying, mixed} x camera {ideal,
+realistic} x clearance {3, 1} mm x friction {0.3, 0.8} x 20 seeds per condition. A robustness
 condition adds an **independent per-object pose error** (±2 mm per object) on top of the camera
 noise: a single camera's calibration error is largely common to a connector and its socket, so it
 cancels at insertion and barely exercises the search, whereas independent errors — or reorienting a
 part, which turns an error that used to cancel into one that does not — do. A failure-injection
 condition places a small obstruction in one socket so the completion checks can be scored against a
 known-bad insertion. **Insertion-module grid** (insertion only, synthetic pose uncertainty):
-clearance {3, 2, 1} mm × uncertainty {±1, ±3, ±5} mm × friction {0.3, 0.8}, 50 seeds per condition.
+clearance {3, 2, 1} mm x uncertainty {±1, ±3, ±5} mm x friction {0.3, 0.8}, 50 seeds per condition.
 
 **Metrics and statistics.** Success rate with 95 % Wilson intervals; controllers compared pairwise
 on identical seeds with an exact McNemar test, and cycle time compared only on trials both solved;

@@ -86,7 +86,7 @@ def square_yaw(outline: np.ndarray, centre: np.ndarray) -> float:
     """
     d = outline - centre
     phi, r = np.arctan2(d[:, 1], d[:, 0]), np.hypot(d[:, 0], d[:, 1])
-    harmonic = np.sum((r - r.mean()) * np.exp(4j * phi))  # big where r is big, at each corner's angle × 4
+    harmonic = np.sum((r - r.mean()) * np.exp(4j * phi))  # big where r is big, at each corner's angle x 4
     return wrap_quarter_turn(float(np.angle(-harmonic)) / 4)
 
 

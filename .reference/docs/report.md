@@ -11,7 +11,7 @@ position-controlled arm jams instead of seating the part. We study this in MuJoC
 *insertion module*: a torque-level Cartesian impedance controller with contact-triggered spiral search inserts a peg
 under a believed socket pose that is wrong by up to ±5 mm. Over 3,600 trials it seats 99.1 % against 86.1 % for a
 guarded-move-with-retry baseline, 78.1 % for impedance alone and 56.4 % open loop (paired, exact McNemar
-p ≈ 1.5 × 10⁻¹¹). Second, the *full task*: an overhead RGB-D camera locates two keyed connectors, standing or lying on
+p ≈ 1.5 x 10⁻¹¹). Second, the *full task*: an overhead RGB-D camera locates two keyed connectors, standing or lying on
 their side, and the robot identifies each, plans an antipodal grasp, turns a lying connector upright in the hand, and
 inserts it into its own socket. Over 1,120 runs every connector was seated in the correct socket; spiral search was
 needed in up to 55 % of insertions once perception error no longer cancelled between part and socket.
@@ -24,7 +24,7 @@ Inserting wire terminals and connectors into sockets remains one of the least au
 
 This project studies a scoped version of the problem in simulation: a 6-DOF arm inserts a rigid connector into a socket with 1-3 mm clearance under bounded pose uncertainty. We compare an open-loop insert, a guarded-move-with-random-retry baseline, and a compliant controller (Cartesian impedance with contact-triggered spiral search) over a grid of clearances and uncertainty levels.
 
-> TODO: one sentence on the Intrinsic × Open Robotics AI for Industry Challenge as motivation, with a citation (verify figures against a primary source first).
+> TODO: one sentence on the Intrinsic x Open Robotics AI for Industry Challenge as motivation, with a citation (verify figures against a primary source first).
 
 The project then extends that module into a full perception-driven task: an overhead RGB-D camera, two keyed
 connectors that may be standing or lying on their side, and two sockets, with every pose the controller uses coming
@@ -79,7 +79,7 @@ For the full task the scene adds:
 
 - **Gripper**: a parallel-jaw gripper built from primitives (coupled finger slide joints, one force-limited position
   actuator, 20 mm/s closing speed limit), with the F/T sensor behind it at the wrist.
-- **Camera**: a fixed overhead RGB-D camera, 1280 × 960 at 25° vertical field of view, 0.75 m above the table
+- **Camera**: a fixed overhead RGB-D camera, 1280 x 960 at 25° vertical field of view, 0.75 m above the table
   (≈ 0.34 mm/px, so a connector top spans ~30 px). Intrinsics come from the model; the *calibration* handed to
   perception is deliberately imperfect (below).
 - **Camera noise model**: depth noise σ ∈ {0, 1, 2} mm, RGB noise, and a per-camera extrinsic calibration error of up
@@ -118,7 +118,7 @@ All scenarios stay below 0.5 mm penetration and 5 % jitter with no solver warnin
 
 ### 3.1 Inverse kinematics
 
-Joint targets for the peg tip come from damped least-squares IK on the 6×6 geometric Jacobian *J* (from MuJoCo's `mj_jacSite`):
+Joint targets for the peg tip come from damped least-squares IK on the 6x6 geometric Jacobian *J* (from MuJoCo's `mj_jacSite`):
 
 $$\Delta q = J^\top \left(J J^\top + \lambda^2 I\right)^{-1} e, \qquad e = \begin{bmatrix} p^* - p \\ \tfrac12 \sum_i r_i \times r_i^* \end{bmatrix}$$
 
@@ -286,17 +286,17 @@ The robot reports "done" only if both agree. §5.6 measures what each check is w
 ## 4. Evaluation Protocol
 
 - **Harness**: every controller implements the same interface (observation → joint torques). Controllers see the model (for kinematics), joint state, filtered wrist F/T and the believed entrance only. Ground-truth contact force, penetration and the true socket pose are used solely for scoring.
-- **Grid**: friction {0.3, 0.8} × clearance {3, 1} mm × uncertainty {±2, ±5} mm × 20 seeds per cell. Seeds fix both the socket offset and the start pose, so all controllers face identical trials.
+- **Grid**: friction {0.3, 0.8} x clearance {3, 1} mm x uncertainty {±2, ±5} mm x 20 seeds per cell. Seeds fix both the socket offset and the start pose, so all controllers face identical trials.
 - **Metrics**: success rate with 95 % Wilson intervals; cycle time over successful trials; peak contact force, both 10 ms moving average (scored) and single-step (reported); failure reason (timeout / force cap).
 - **Paired comparison**: because seeds fix the trial, two controllers are compared on the same trials with an exact McNemar test on discordant outcomes; efficiency is compared on trials both controllers solved.
 
 **Full-task protocol.** A seed fixes the whole layout: both connector poses and orientations, both socket poses and
 yaws, and the camera's calibration error. Grids:
 
-- **Orientation grid** (480 runs): orientation {all upright, all lying, mixed} × camera {ideal, realistic} ×
-  clearance {3, 1} mm × μ {0.3, 0.8} × 20 layouts.
-- **Stress grid** (640 runs): orientation {upright, mixed} × camera {ideal, realistic} × clearance {3, 1} mm ×
-  μ {0.3, 0.8} × **independent per-object perception error** {0, ±2 mm} × 20 layouts. The per-object error gives each
+- **Orientation grid** (480 runs): orientation {all upright, all lying, mixed} x camera {ideal, realistic} x
+  clearance {3, 1} mm x μ {0.3, 0.8} x 20 layouts.
+- **Stress grid** (640 runs): orientation {upright, mixed} x camera {ideal, realistic} x clearance {3, 1} mm x
+  μ {0.3, 0.8} x **independent per-object perception error** {0, ±2 mm} x 20 layouts. The per-object error gives each
   connector and each socket its own fixed offset, so — unlike a single camera's calibration bias — it does *not* cancel
   between a part and its socket.
 - **Failure injection** (40 runs): a 4 mm block on one socket's floor, so that connector cannot seat.
@@ -349,7 +349,7 @@ Across all 160 trials, spiral search had no timeouts and no force-cap violations
 |---|---|---|---|---|---|
 | 1 mm clearance (4 cells) | 100 % [0.84, 1.00] each | 50-60 % | 37 / 0 | ≤ 0.008 per cell | 11-18 s vs 28-31 s (median ratio 0.40-0.69) |
 | 3 mm clearance (4 cells) | 100 % [0.84, 1.00] each | 100 % | 0 / 0 | 1 | 10.7-15.4 s vs 7.1-17.7 s |
-| All 160 trials | 100 % [0.98, 1.00] | 77 % [0.70, 0.83] | 37 / 0 | 1.5 × 10⁻¹¹ | 12.8 s vs 18.3 s (median ratio 0.94) |
+| All 160 trials | 100 % [0.98, 1.00] | 77 % [0.70, 0.83] | 37 / 0 | 1.5 x 10⁻¹¹ | 12.8 s vs 18.3 s (median ratio 0.94) |
 
 Spiral search is never worse than guarded retry on the same trial. It wins outright at 1 mm clearance, where guarded retry's random attempts rarely land inside the ~1 mm capture region within the budget. At 3 mm with ±2 mm uncertainty, guarded retry is faster (7 s vs 11 s) because spiral search always pays for the slow compliant touchdown.
 
@@ -387,7 +387,7 @@ search sweeps (the 10 ms mean rises to ~10 N), finds the hole and seats. Raw 1 k
 
 ### 5.4 Perception accuracy
 
-Over 40 layouts per level × depth noise σ ∈ {0, 1, 2} mm × {upright, lying, mixed} layouts (720 parts):
+Over 40 layouts per level x depth noise σ ∈ {0, 1, 2} mm x {upright, lying, mixed} layouts (720 parts):
 
 | Quantity | Result |
 |---|---|
@@ -564,5 +564,5 @@ the friction grasp left as future work.
     which motivates scoring the force cap on a moving average.)
 
 > TODO: add a primary reference for contact-based spiral search in peg-in-hole assembly (e.g. Park et al., *Intuitive
-> peg-in-hole assembly strategy with a compliant manipulator*), and the Intrinsic × Open Robotics AI for Industry
+> peg-in-hole assembly strategy with a compliant manipulator*), and the Intrinsic x Open Robotics AI for Industry
 > Challenge — verify both citations and any quoted figures against the primary sources before submission.

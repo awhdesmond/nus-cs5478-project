@@ -2,7 +2,7 @@
 
 Each iteration takes a damped least-squares step on the stacked position + orientation error
 
-    Δq = Jᵀ (J Jᵀ + λ² I)⁻¹ e,     e = [p* - p,  ½ Σᵢ rᵢ × r*ᵢ]
+    Δq = Jᵀ (J Jᵀ + λ² I)⁻¹ e,     e = [p* - p,  ½ Σᵢ rᵢ x r*ᵢ]
 
 then clamps q to the joint limits. Damping keeps steps bounded near singularities (plain
 J⁺ blows up as σ_min → 0) at the cost of slightly slower convergence; iterating still drives
@@ -42,7 +42,7 @@ class JacobianIK:
         return self.data.site_xpos[self.site_id].copy(), self.data.site_xmat[self.site_id].reshape(3, 3).copy()
 
     def jacobian(self, q: np.ndarray) -> np.ndarray:
-        """6×6 geometric Jacobian [linear; angular] of the site at `q`."""
+        """6x6 geometric Jacobian [linear; angular] of the site at `q`."""
         self.fk(q)
         mujoco.mj_jacSite(self.model, self.data, self._jacp, self._jacr, self.site_id)
         return np.vstack([self._jacp[:, self.dof_adr], self._jacr[:, self.dof_adr]])

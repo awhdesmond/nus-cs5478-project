@@ -24,7 +24,7 @@ class JointTracker:
         self._M = np.zeros((sim.model.nv, sim.model.nv))
 
     def mass_matrix(self) -> np.ndarray:
-        """The arm's 6×6 joint-space mass matrix at the current state (MuJoCo computes it every step)."""
+        """The arm's 6x6 joint-space mass matrix at the current state (MuJoCo computes it every step)."""
         mujoco.mj_fullM(self.sim.model, self.sim.data, self._M)  # MuJoCo stores it sparse; this expands it
         dof = self.sim.arm_dof
         return self._M[np.ix_(dof, dof)]

@@ -83,7 +83,7 @@ def set_frame(sim: Sim, q: np.ndarray) -> None:
 
 
 def frame_indices(times: np.ndarray, fps: float, speed: float) -> np.ndarray:
-    """Recorded-step index for each output frame at `fps`, playing at `speed`× real time."""
+    """Recorded-step index for each output frame at `fps`, playing at `speed`x real time."""
     frame_times = np.arange(0.0, times[-1], speed / fps)
     return np.searchsorted(times, frame_times).clip(0, len(times) - 1)
 

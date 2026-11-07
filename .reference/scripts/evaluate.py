@@ -1,4 +1,4 @@
-"""Evaluate a controller over a clearance × uncertainty grid through the harness.
+"""Evaluate a controller over a clearance x uncertainty grid through the harness.
 
     uv run python scripts/evaluate.py --controller guarded --clearances 0.003 0.001 --uncertainties 0.002 0.005 --trials 20
     uv run python scripts/evaluate.py --controller straight --clearances 0.001 --uncertainties 0.005 --trials 5 --record

@@ -116,7 +116,7 @@ def add_peg(spec: mujoco.MjSpec, cfg: SceneConfig, kind: str) -> None:
         solid = dict(type=CYLINDER, size=[w, L / 2])  # cylinder size = (radius, half-length)
     else:
         solid = dict(type=BOX, size=[w, w, L / 2])
-    # Mass comes from volume × density (MuJoCo's default 1000 kg/m³): about 4 g per peg.
+    # Mass comes from volume x density (MuJoCo's default 1000 kg/m³): about 4 g per peg.
     peg.add_geom(name=f"{kind}_peg", rgba=PEG_RGBA, **solid, **contact_params(cfg))
     peg.add_site(name=f"{kind}_tip", pos=[0, 0, -L / 2], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
     peg.add_site(name=f"{kind}_top", pos=[0, 0, L / 2], size=[0.002, 0, 0], group=HIDDEN_SITE_GROUP)
@@ -196,7 +196,7 @@ def add_camera(spec: mujoco.MjSpec, cfg: SceneConfig) -> None:
     straight down, with image "up" pointing to world +y.
     """
     spec.worldbody.add_camera(name="overhead", pos=list(cfg.camera_pos), quat=[1, 0, 0, 0], fovy=cfg.camera_fovy)
-    # Offscreen rendering draws into a buffer that defaults to 640 × 480; it must fit the full image.
+    # Offscreen rendering draws into a buffer that defaults to 640 x 480; it must fit the full image.
     spec.visual.global_.offwidth = max(spec.visual.global_.offwidth, cfg.image_width)
     spec.visual.global_.offheight = max(spec.visual.global_.offheight, cfg.image_height)
 

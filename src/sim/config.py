@@ -55,7 +55,7 @@ class SceneConfig:
     round_sides: int = 16
     port_depth: float = 0.020  # [m] hole floor to board top
     port_chamfer: float = 0.002  # [m] 45° lead-in around each hole's rim
-    port_wall: float = 0.006  # [m] solid material between a hole's rim and the next box (≥ 2 × chamfer)
+    port_wall: float = 0.006  # [m] solid material between a hole's rim and the next box (≥ 2 x chamfer)
     port_base: float = 0.010  # [m] solid plate under each hole (it's the hole's floor)
 
     # Each port is its own block on the table. Pose = hole centre (x, y) and the block's yaw;
@@ -121,4 +121,4 @@ class SceneConfig:
     # --- Table -----------------------------------------------------------------------------
     table_height: float = 0.17  # [m] table top above the floor
     table_center: tuple[float, float] = (-0.05, 0.50)  # [m] in front of the arm's base (at the origin)
-    table_half: tuple[float, float] = (0.25, 0.15)  # [m] a 500 × 300 mm table
+    table_half: tuple[float, float] = (0.25, 0.15)  # [m] a 500 x 300 mm table

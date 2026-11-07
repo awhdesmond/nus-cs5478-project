@@ -17,7 +17,7 @@ class CameraCalibration:
     height: int
     focal: float  # [px], square pixels
     position: np.ndarray  # camera origin, world [m]
-    rotation: np.ndarray  # camera-to-world rotation (3×3)
+    rotation: np.ndarray  # camera-to-world rotation (3x3)
 
     @classmethod
     def from_model(cls, model: mujoco.MjModel, data: mujoco.MjData, camera: str, width: int, height: int) -> "CameraCalibration":
@@ -26,7 +26,7 @@ class CameraCalibration:
         return cls(width, height, float(focal), data.cam(camera).xpos.copy(), data.cam(camera).xmat.reshape(3, 3).copy())
 
     def back_project(self, depth: np.ndarray, mask: np.ndarray | None = None) -> np.ndarray:
-        """World points (N×3) for the pixels in `mask` (all pixels if None), in row-major order."""
+        """World points (Nx3) for the pixels in `mask` (all pixels if None), in row-major order."""
         rows, cols = np.nonzero(np.ones_like(depth, dtype=bool) if mask is None else mask)
         z = depth[rows, cols]
         cam = np.stack([
@@ -37,11 +37,11 @@ class CameraCalibration:
         return cam @ self.rotation.T + self.position
 
     def height_map(self, depth: np.ndarray) -> np.ndarray:
-        """World z of every pixel (H×W)."""
+        """World z of every pixel (HxW)."""
         return self.back_project(depth)[:, 2].reshape(depth.shape)
 
     def project(self, points: np.ndarray) -> np.ndarray:
-        """Pixel coordinates (N×2, as u, v) of world points."""
+        """Pixel coordinates (Nx2, as u, v) of world points."""
         cam = (np.atleast_2d(points) - self.position) @ self.rotation
         z = -cam[:, 2]
         return np.stack([cam[:, 0] * self.focal / z + self.width / 2 - 0.5, -cam[:, 1] * self.focal / z + self.height / 2 - 0.5], axis=1)
@@ -51,8 +51,8 @@ class CameraCalibration:
 class CameraObservation:
     """What a controller receives from the camera: images plus the (known) calibration."""
 
-    rgb: np.ndarray  # H×W×3 uint8
-    depth: np.ndarray  # H×W float, distance along the optical axis [m]
+    rgb: np.ndarray  # HxWx3 uint8
+    depth: np.ndarray  # HxW float, distance along the optical axis [m]
     calibration: CameraCalibration
 
 

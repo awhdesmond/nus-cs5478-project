@@ -1,6 +1,6 @@
 """M2 perception check: identification and pose error vs ground truth over random layouts.
 
-    uv run python scripts/perception_check.py                          # 40 layouts × depth noise σ {0, 1, 2} mm
+    uv run python scripts/perception_check.py                          # 40 layouts x depth noise σ {0, 1, 2} mm
                                                                        # (RGB noise 3 levels whenever depth noise is on)
     uv run python scripts/perception_check.py --seeds 100 --sigmas 0 0.001
     uv run python scripts/perception_check.py --orientations upright lying mixed   # M4b: lying connectors too

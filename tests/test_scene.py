@@ -233,7 +233,7 @@ def test_gripper_grasps_holds_and_releases_a_peg(kind):
 
 
 def test_ft_sensor_reads_the_gripper_weight_at_rest():
-    """At rest the wrist carries only the gripper, so the sensor reads its weight (mass × g)."""
+    """At rest the wrist carries only the gripper, so the sensor reads its weight (mass x g)."""
     sim = Sim(build_model(SceneConfig()), SceneConfig())
     sim.reset()
     hold(sim, sim.q(), 0.5)

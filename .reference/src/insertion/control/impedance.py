@@ -36,7 +36,7 @@ class CartesianImpedance:
         self._mass = np.zeros((model.nv, model.nv))
 
     def _update(self, q: np.ndarray, qd: np.ndarray) -> np.ndarray:
-        """Kinematics, Jacobian and bias torques at (q, q̇) on the private MjData. Returns J (6×6)."""
+        """Kinematics, Jacobian and bias torques at (q, q̇) on the private MjData. Returns J (6x6)."""
         d = self.data
         d.qpos[self.qpos_adr] = q
         d.qvel[self.dof_adr] = qd

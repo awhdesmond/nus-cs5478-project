@@ -35,7 +35,7 @@ def rotation_error(R_target: np.ndarray, R: np.ndarray) -> np.ndarray:
     if q_err[0] < 0:
         q_err = -q_err  # same rotation; this sign takes the short way round (angle ≤ 180°)
     rotvec = np.empty(3)
-    mujoco.mju_quat2Vel(rotvec, q_err, 1.0)  # quaternion -> axis × angle
+    mujoco.mju_quat2Vel(rotvec, q_err, 1.0)  # quaternion -> axis x angle
     return rotvec
 
 
@@ -63,7 +63,7 @@ class Kinematics:
         mujoco.mj_comPos(self.model, self.data)  # quantities mj_jacSite needs
 
     def fk(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Forward kinematics: tcp position [m] and orientation (3×3) for arm joint angles q."""
+        """Forward kinematics: tcp position [m] and orientation (3x3) for arm joint angles q."""
         self._set(q)
         return self.data.site_xpos[self.site].copy(), self.data.site_xmat[self.site].reshape(3, 3).copy()
 

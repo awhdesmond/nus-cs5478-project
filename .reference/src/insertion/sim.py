@@ -56,7 +56,7 @@ class Sim:
         return self.data.qfrc_bias[self.dof_adr].copy()
 
     def site_pose(self, name: str) -> tuple[np.ndarray, np.ndarray]:
-        """World position and 3×3 rotation of a site."""
+        """World position and 3x3 rotation of a site."""
         site = self.data.site(name)
         return site.xpos.copy(), site.xmat.reshape(3, 3).copy()
 

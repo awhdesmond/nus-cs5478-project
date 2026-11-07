@@ -49,7 +49,7 @@ src/insertion/
     impedance.py         Cartesian impedance law at torque level
     compliant.py         impedance insert (approach → impedance descent with leash); spiral search insert
 scripts/
-  evaluate.py            run a controller over a friction × clearance × uncertainty grid → trials.csv + summary.csv
+  evaluate.py            run a controller over a friction x clearance x uncertainty grid → trials.csv + summary.csv
   compare.py             paired comparison of two benchmarked controllers (CIs, McNemar, efficiency)
   diagnose_spiral.py     re-run failing spiral trials with diagnostics
   easy_insert.py         run the straight-down insert through the harness
@@ -58,8 +58,8 @@ scripts/
   replay.py              replay a recorded trial in the viewer or render an MP4 (with top-down tip trace)
   make_demos.py          record + render the demo videos → results/demos/
   assembly_demo.py       render the scripted two-connector assembly (angled + overhead camera views)
-  perception_check.py    perception accuracy table over layouts × noise levels → results/perception_check/
-  assembly_benchmark.py  full pick-and-insert benchmark (layouts × clearance × friction × camera condition)
+  perception_check.py    perception accuracy table over layouts x noise levels → results/perception_check/
+  assembly_benchmark.py  full pick-and-insert benchmark (layouts x clearance x friction x camera condition)
   pipeline_demo.py       demo video: 3D view | live overhead camera | perception overlay
   plots.py               report figures from the result CSVs → docs/figures/
   view.py                live interactive viewer (insertion: --controller …; --scene assembly: full pipeline, needs mjpython on macOS)

@@ -155,7 +155,7 @@ class CameraPanels:
 
 
 class ViewerPacer:
-    """Physics-step hook: pushes frames to the passive viewer and keeps the run at `speed`× real time."""
+    """Physics-step hook: pushes frames to the passive viewer and keeps the run at `speed`x real time."""
 
     def __init__(self, viewer, sim: AssemblySim, speed: float, fps: float = 60.0, panels: CameraPanels | None = None,
                  run: AssemblyRun | None = None):
