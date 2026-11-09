@@ -49,14 +49,31 @@ def table_height(z: np.ndarray, bin_size: float = 0.001) -> float:
 
 
 def top_height(heights: np.ndarray) -> float:
-    """An object's top surface height from its pixels' heights.
+    """An object's top-surface height [m above the table], from the heights of all its pixels.
 
-    Its sides (seen in perspective) span everything from 0 up to the top, but the flat top face is the
-    biggest group of equal heights near the top. Take the 90th percentile as a first guess, then the median of
-    pixels within 5 mm of it.
+    The pixels of one object do not share one height. The camera looks down at an angle on anything away
+    from the image centre, so it also sees the *sides* of a peg, and side pixels cover every height from
+    the table (0) up to the top. Depth noise (σ ≈ 2 mm) then scatters every pixel a little further.
+
+    So the obvious summaries are wrong:
+      - mean: dragged down by the side pixels, so a peg can look shorter than it is;
+      - max:  picks the single pixel the noise pushed highest, so it reads a few mm too high.
+
+    Instead, two steps:
+      1. 90th percentile = sort the heights and take the one 90 % of the way up. The flat top face is the
+         highest part of the object and makes up well over 10 % of its pixels, so this lands on the top
+         face, while skipping the few noisy pixels above it. That gives a rough estimate.
+      2. Median of the pixels within 5 mm of that estimate, which are essentially just the top face.
+         5 mm is 2.5 of the noise, wide enough to include almost all of the noisy top-face pixels, yet far
+         narrower than the 20 mm gap between a block's top (30 mm) and a peg's (50 mm), so the two can
+         never be mixed up.
+
+    Checked over 40 random layouts at depth noise 0, 2 and 3 mm: always exactly two pegs and two blocks.
     """
-    guess = np.percentile(heights, 90)
-    return float(np.median(heights[np.abs(heights - guess) < 0.005]))
+    guess = np.percentile(heights, 90)                         # step 1: rough top, robust to outliers
+    top_face = heights[np.abs(heights - guess) < 0.005]        # step 2: keep pixels within 5 mm of it
+    return float(np.median(top_face))                          #         and take their median
+
 
 
 def segment(obs: CameraObservation, cfg: SegmentConfig = SegmentConfig()) -> Segmentation:

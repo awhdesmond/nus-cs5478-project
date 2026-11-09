@@ -1,0 +1,8 @@
+<div class="pipeline">
+      <div class="stage"><h4>Scene</h4><div class="pkg">sim/</div><p>MuJoCo model: torque-controlled UR5e, gripper, F/T sensor, pegs, ports, camera. Seeded layouts.</p></div>
+      <div class="stage"><h4>Perception</h4><div class="pkg">perception/</div><p>RGB-D image → table, pegs and ports: kind, position, yaw.</p></div>
+      <div class="stage"><h4>Motion</h4><div class="pkg">motion/</div><p>Kinematics, IK, smooth trajectories, joint and Cartesian controllers, wrist sensor.</p></div>
+      <div class="stage"><h4>Grasp</h4><div class="pkg">grasp/</div><p>Antipodal grasp from the peg's outline; pick, in-hand estimate, carry to port.</p></div>
+      <div class="stage"><h4>Insertion</h4><div class="pkg">insertion/</div><p>Compliant: impedance + contact + spiral search.</p></div>
+    </div>
+<div class="groundtruth"><b>harness/</b> runs trials and grids, injects pose error, and is the only code that reads ground truth: to score success, measure perception error, and name the first stage that failed.</div>

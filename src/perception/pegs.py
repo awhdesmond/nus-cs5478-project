@@ -67,7 +67,17 @@ def measure_top_face(obs: CameraObservation, mask: np.ndarray, z: float) -> TopF
 
     contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     boundary = max(contours, key=len)[:, 0, :]  # (N, 2) pixel (u, v) of the boundary pixels' centres
+
+    # Put the outline into metres. Each boundary pixel is traced back along its line of sight until it meets
+    # the horizontal plane at the top face's height z (a ray-plane intersection). This removes perspective:
+    # in the image, things further from the camera look smaller, but on the plane the outline is true to
+    # scale, so its area, fill and yaw can be measured directly in metres.
+    #
+    # Why depth noise barely moves the result: the outline's shape comes from the *colour* mask (no noise),
+    # and depth only sets z, a single number taken as the median of many top-face pixels. Their noise mostly
+    # averages out, and a small error in z only scales the outline slightly about the image centre.
     outline = cam.on_plane(boundary[:, 0], boundary[:, 1], z)[:, :2]
+
     # Smallest rectangle around the outline, in millimetres about the centre (float32 keeps precision there).
     _, (w, h), _ = cv2.minAreaRect(((outline - centre) * 1000).astype(np.float32))
     # The contour runs through boundary pixels' centres, so the true shape is one pixel wider and taller.
