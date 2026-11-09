@@ -138,7 +138,7 @@ $$
 A peg standing upright is a *prism*: its side faces are simply its top-face outline extended straight downwards. This means the outline that perception already measured tells us the direction of every side face of the peg, which is exactly the information a grasp planner needs. The gripper's two pads are flat plates. When they close along some direction *d*, each pad touches the points of the outline that stick out furthest along that direction. The planner tries 72 closing directions, spaced 2.5° apart. For each direction it checks three conditions. A grasp is kept only if, on both sides of the peg:
 
 - **The contact is on a flat or a gentle curve, not a corner.** A flat pad pressing on a corner tends to slip off or twist the part. We measure how wide the patch of contact is, counting every outline point within 0.5 mm of the outermost one (about one and a half pixels, enough to absorb the pixel staircase along a straight edge), and a patch narrower than 2 mm counts as a corner. This threshold was not guessed: we measured the patches on real perceived outlines and found that round pegs always give patches of at least 2.3 mm, whereas a square's corners never give more than 2.0 mm.
-- **The surface normal lies inside the friction cone.** When a pad squeezes a surface that is tilted relative to the closing direction, part of the squeezing force tries to push the part sideways out of the grip. Friction can resist this only if the tilt is smaller than $\arctan\mu$, where $\mu$ is the coefficient of friction. Contacts that satisfy this on both sides form an *antipodal grasp*, the classic condition for a stable, force-closed two-finger grip.
+- **The surface normal lies inside the friction cone.** When a pad squeezes a surface that is tilted relative to the closing direction, part of the squeezing force tries to push the part sideways out of the grip. Friction can resist this only if the tilt is smaller than $\arctan\mu$, where $\mu$ is the coefficient of friction. Contacts that satisfy this on both sides form an *antipodal grasp*, the classic condition for a stable, force-closed two-finger grip [1].
 - **The open fingers clear every other object** as the gripper descends, keeping at least 3 mm of space.
 
 Among all the grasps that pass, the planner prefers the one whose contact normals line up best with the closing direction, and among equally good grasps it prefers the one that requires the least rotation of the wrist. Grasps whose alignment is within 5° of the best are treated as equally good, because the pixel staircase alone makes a circle's measured normals wobble by 1 to 2°. For the square peg, a final refinement re-measures the contacts along the axis defined by the two contact normals, repeating a few times until the closing direction settles exactly onto the normal of the square's faces. On perceived pegs this lands within 1.2° of the true face normal, with a median error of 0.35°. For the round peg every direction is equally good, so the wrist simply does not turn.
@@ -157,7 +157,7 @@ The arm then lifts the peg 100 mm, twice the height of the other peg, so it can 
 
 ### 2.5 Compliant insertion
 
-This is the heart of the project. The compliant insertion skill combines the three ideas set out in the proposal: a Cartesian impedance controller that lets the arm yield to contact, force-triggered contact detection using the wrist sensor, and a spiral search to find a hole that the robot has missed.
+This is the heart of the project. The compliant insertion skill combines the three ideas set out in the proposal: a Cartesian impedance controller [2] that lets the arm yield to contact, force-triggered contact detection using the wrist sensor, and a spiral search [3] to find a hole that the robot has missed.
 
 #### Impedance control: turning the arm into a spring
 
@@ -332,6 +332,14 @@ A simulation study is only as convincing as its honesty about what it leaves out
 2. **Let the geometry do the work.** The single biggest improvement to the search came from switching the sideways spring *off* at the moment the chamfer engaged. Controllers that fight against contact lose to controllers that make use of it.
 3. **A system is only as robust as its least tolerant stage.** Once insertion stopped failing, grasping immediately became the limiting factor. Robustness has to be designed from one end of the pipeline to the other, not one stage at a time.
 4. **An easy experiment can hide the very difference you are looking for.** The clean grid reported 100 % success for both controllers. Only the robustness condition, which the proposal included for exactly this reason, revealed how different they really are.
+
+## References {#references}
+
+[1] V.-D. Nguyen, "Constructing Force-Closure Grasps," *International Journal of Robotics Research*, vol. 7, no. 3, pp. 3–16, 1988. <https://journals.sagepub.com/doi/10.1177/027836498800700301>
+
+[2] N. Hogan, "Impedance Control: An Approach to Manipulation," *American Control Conference*, 1984. <https://ieeexplore.ieee.org/abstract/document/4788393>
+
+[3] S. R. Chhatpar and M. S. Branicky, "Search Strategies for Peg-in-Hole Assemblies with Position Uncertainty," *IEEE/RSJ IROS*, 2001. <https://ieeexplore.ieee.org/abstract/document/977187>
 
 ## A Reproducing the results {#appendix}
 

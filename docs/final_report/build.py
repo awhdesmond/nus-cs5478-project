@@ -7,7 +7,7 @@ Markdown dialect
 Front matter      --- / key: value lines / ---   (title, eyebrow, author, affiliation, footer)
 Headings          ## 1 Problem and motivation {#problem}    numbered section: goes in the contents bar
                   ### 2.1 Scene      #### Ports
-Inline            **bold**  *italic*  `code`  [link](url)  and raw HTML such as <sub>j</sub>, <span class="c">..</span>
+Inline            **bold**  *italic*  `code`  [link](url)  <https://autolink>  and raw HTML such as <sub>j</sub>, <span class="c">..</span>
 Maths (LaTeX)     $\lambda^2$ inline;   $$ ... $$ on its own lines for a display formula (typeset by MathJax)
 Lists             - item      1. item
 Tables            | a | b |  with  | --- | ---: |  (---: right-aligns that column)
@@ -47,6 +47,7 @@ def inline(text: str) -> str:
                   lambda m: stash(r"\(" + html.escape(m.group(1), quote=False) + r"\)"), text)
     text = re.sub(r"`([^`]+)`", lambda m: stash(f"<code>{html.escape(m.group(1), quote=False)}</code>"), text)
     text = re.sub(r"\\([\\`*_\[\]#|<>-])", lambda m: stash(html.escape(m.group(1), quote=False)), text)
+    text = re.sub(r"<(https?://[^<>\s]+)>", lambda m: stash(f'<a href="{m.group(1)}">{m.group(1)}</a>'), text)
     text = re.sub(r"</?[A-Za-z][^<>]*>", lambda m: stash(m.group(0)), text)  # raw HTML tags
     text = re.sub(r"&(?!#?\w+;)", "&amp;", text).replace("<", "&lt;").replace(">", "&gt;")
     text = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2">\1</a>', text)
