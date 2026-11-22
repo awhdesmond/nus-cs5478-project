@@ -5,9 +5,6 @@ camera to find a round and a square peg and their ports, grasps each peg, and in
 impedance controller, force/torque contact detection and a spiral search. A stiff position-control
 baseline runs the same pipeline for comparison.
 
-- Paper (NeurIPS format): [docs/neurips_paper/](docs/neurips_paper/) (`main.tex`)
-- Long-form report: [docs/final_report/report.md](docs/final_report/report.md)
-
 ## Requirements
 
 - Python 3.11+ (3.12 tested) and [uv](https://docs.astral.sh/uv/)
